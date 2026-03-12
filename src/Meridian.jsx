@@ -196,7 +196,7 @@ export default function Meridian() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { height: 100%; }
         body { background: #FAFAFA; -webkit-font-smoothing: antialiased; overflow: hidden; }
@@ -550,25 +550,72 @@ export default function Meridian() {
           animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 0.4s forwards;
         }
 
-        /* Headline — each line staggers */
+        /* Headline — handwritten reveal */
         .m-splash-h {
-          font-size: 32px;
+          font-family: 'Caveat', cursive;
+          font-size: 42px;
           font-weight: 600;
-          letter-spacing: -0.8px;
-          line-height: 1.2;
+          line-height: 1.15;
           color: #1A1A1A;
-          margin-bottom: 20px;
+          margin-bottom: 24px;
+          position: relative;
         }
         .m-splash-line {
           display: block;
+          position: relative;
+          overflow: hidden;
+        }
+        .m-splash-line-text {
+          display: inline-block;
           opacity: 0;
-          transform: translateY(20px);
         }
-        .m-splash-line:nth-child(1) {
-          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 0.7s forwards;
+        .m-splash-line:nth-child(1) .m-splash-line-text {
+          animation: m-write-in 0.8s cubic-bezier(0.25, 0.1, 0, 1) 0.7s forwards;
         }
-        .m-splash-line:nth-child(2) {
-          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 0.9s forwards;
+        .m-splash-line:nth-child(2) .m-splash-line-text {
+          animation: m-write-in 0.8s cubic-bezier(0.25, 0.1, 0, 1) 1.1s forwards;
+        }
+        @keyframes m-write-in {
+          0% {
+            opacity: 0;
+            clip-path: inset(0 100% 0 0);
+          }
+          60% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 1;
+            clip-path: inset(0 0% 0 0);
+          }
+        }
+
+        /* Pen cursor that traces each line */
+        .m-splash-line::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 50%;
+          width: 2px;
+          height: 60%;
+          transform: translateY(-50%);
+          background: #1A1A1A;
+          opacity: 0;
+          border-radius: 1px;
+        }
+        .m-splash-line:nth-child(1)::after {
+          animation: m-cursor 0.8s cubic-bezier(0.25, 0.1, 0, 1) 0.7s forwards,
+                     m-cursor-fade 0.3s ease 1.5s forwards;
+        }
+        .m-splash-line:nth-child(2)::after {
+          animation: m-cursor 0.8s cubic-bezier(0.25, 0.1, 0, 1) 1.1s forwards,
+                     m-cursor-fade 0.3s ease 1.9s forwards;
+        }
+        @keyframes m-cursor {
+          0% { opacity: 1; right: 100%; }
+          100% { opacity: 1; right: 0%; }
+        }
+        @keyframes m-cursor-fade {
+          to { opacity: 0; }
         }
 
         .m-splash-sub {
@@ -577,7 +624,7 @@ export default function Meridian() {
           color: #999;
           margin-bottom: 48px;
           opacity: 0;
-          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.2s forwards;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 2.1s forwards;
         }
 
         /* CTA */
@@ -596,7 +643,7 @@ export default function Meridian() {
           cursor: pointer;
           letter-spacing: -0.1px;
           opacity: 0;
-          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.5s forwards;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 2.5s forwards;
           transition: transform 0.3s cubic-bezier(0.25, 0.1, 0, 1), box-shadow 0.3s ease;
         }
         .m-splash-cta:hover {
@@ -613,7 +660,7 @@ export default function Meridian() {
           color: #D4D4D4;
           margin-top: 32px;
           opacity: 0;
-          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.8s forwards;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 2.8s forwards;
           letter-spacing: 0.2px;
         }
 
@@ -647,8 +694,8 @@ export default function Meridian() {
           <div className="m-splash-content">
             <div className="m-splash-mark">Meridian</div>
             <h1 className="m-splash-h">
-              <span className="m-splash-line">Finally, someone</span>
-              <span className="m-splash-line">in your corner.</span>
+              <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
+              <span className="m-splash-line"><span className="m-splash-line-text">in your corner.</span></span>
             </h1>
             <p className="m-splash-sub">
               Navigate co-parenting with clarity, calm,<br />
