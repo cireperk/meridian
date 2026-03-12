@@ -303,17 +303,9 @@ export default function Meridian() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    // PKCE flow: generate code_verifier + code_challenge
-    const verifier = crypto.randomUUID() + crypto.randomUUID();
-    localStorage.setItem("m_code_verifier", verifier);
+  const handleGoogleLogin = () => {
     localStorage.setItem("m_oauth_pending", "1");
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    const digest = await crypto.subtle.digest("SHA-256", data);
-    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}&code_challenge=${challenge}&code_challenge_method=s256`;
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}`;
   };
 
   const handleSignOut = () => {
