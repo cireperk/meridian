@@ -305,7 +305,7 @@ export default function Meridian() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { height: 100%; }
         body { background: #FAFAFA; -webkit-font-smoothing: antialiased; }
@@ -730,19 +730,19 @@ export default function Meridian() {
           animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 0.4s forwards;
         }
 
-        /* Headline — handwritten reveal */
+        /* Headline — smooth flow-in reveal */
         .m-splash-h {
-          font-family: 'Dancing Script', cursive;
-          font-size: 40px;
-          font-weight: 600;
-          line-height: 1.25;
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 36px;
+          font-weight: 500;
+          font-style: italic;
+          line-height: 1.35;
           color: #2A2A2A;
           margin-bottom: 28px;
-          position: relative;
+          letter-spacing: -0.3px;
         }
         .m-splash-line {
           display: block;
-          position: relative;
           overflow: hidden;
         }
         .m-splash-line-text {
@@ -750,15 +750,13 @@ export default function Meridian() {
           clip-path: inset(0 100% 0 0);
           opacity: 0;
         }
-        /* Line 1: starts at 0.5s, takes 1.2s to write */
         .m-splash-line:nth-child(1) .m-splash-line-text {
-          animation: m-write-in 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s forwards;
+          animation: m-flow-in 1.4s cubic-bezier(0.25, 0.1, 0, 1) 0.5s forwards;
         }
-        /* Line 2: starts right after line 1 + brief pause */
         .m-splash-line:nth-child(2) .m-splash-line-text {
-          animation: m-write-in 1s cubic-bezier(0.22, 0.61, 0.36, 1) 1.9s forwards;
+          animation: m-flow-in 1.2s cubic-bezier(0.25, 0.1, 0, 1) 1.6s forwards;
         }
-        @keyframes m-write-in {
+        @keyframes m-flow-in {
           0% {
             opacity: 1;
             clip-path: inset(0 100% 0 0);
@@ -769,41 +767,13 @@ export default function Meridian() {
           }
         }
 
-        /* Pen cursor that traces along */
-        .m-splash-line::after {
-          content: '';
-          position: absolute;
-          top: 15%;
-          width: 1.5px;
-          height: 70%;
-          background: #2A2A2A;
-          opacity: 0;
-          border-radius: 1px;
-          left: 0;
-        }
-        .m-splash-line:nth-child(1)::after {
-          animation: m-pen-move 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s forwards,
-                     m-cursor-fade 0.3s ease 1.7s forwards;
-        }
-        .m-splash-line:nth-child(2)::after {
-          animation: m-pen-move 1s cubic-bezier(0.22, 0.61, 0.36, 1) 1.9s forwards,
-                     m-cursor-fade 0.3s ease 2.9s forwards;
-        }
-        @keyframes m-pen-move {
-          0% { opacity: 1; left: 0%; }
-          100% { opacity: 1; left: 100%; }
-        }
-        @keyframes m-cursor-fade {
-          to { opacity: 0; }
-        }
-
         .m-splash-sub {
           font-size: 16px;
           line-height: 1.7;
           color: #999;
           margin-bottom: 48px;
           opacity: 0;
-          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.2s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.0s forwards;
         }
 
         /* CTA */
@@ -822,7 +792,7 @@ export default function Meridian() {
           cursor: pointer;
           letter-spacing: -0.1px;
           opacity: 0;
-          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.6s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.4s forwards;
           transition: transform 0.3s cubic-bezier(0.25, 0.1, 0, 1), box-shadow 0.3s ease;
         }
         .m-splash-cta:hover {
@@ -846,7 +816,7 @@ export default function Meridian() {
           color: #777;
           cursor: pointer;
           opacity: 0;
-          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.8s forwards;
           transition: background 0.2s, border-color 0.2s, color 0.2s;
           display: inline-flex;
           align-items: center;
@@ -862,12 +832,24 @@ export default function Meridian() {
         }
 
         .m-splash-footer {
+          position: absolute;
+          bottom: 36px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 8px 18px;
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(0, 0, 0, 0.04);
+          border-radius: 100px;
           font-size: 11px;
-          color: #D4D4D4;
-          margin-top: 32px;
+          font-weight: 500;
+          color: #BCBCBC;
+          white-space: nowrap;
           opacity: 0;
-          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.4s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
           letter-spacing: 0.2px;
+          z-index: 2;
         }
 
         @keyframes m-reveal {
@@ -1023,7 +1005,6 @@ export default function Meridian() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                   Watch a message from our founder
                 </button>
-                <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
               </div>
             ) : (
               <div className="m-splash-inner" key="video">
@@ -1069,6 +1050,7 @@ export default function Meridian() {
               </div>
             )}
           </div>
+          <div className="m-splash-footer">Private · Confidential · Not legal advice</div>
         </div>
       )}
 
