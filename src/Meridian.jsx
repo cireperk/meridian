@@ -1,0 +1,558 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const SYSTEM_PROMPT = `You are Meridian, a calm and grounding AI companion for divorced parents navigating co-parenting. You help users understand their divorce decree, handle conflict situations, and draft neutral, child-focused communications.
+
+IMPORTANT RULES:
+- You are NOT a lawyer and never provide legal advice
+- Always remind users to consult their attorney for legal decisions
+- Keep responses calm, neutral, and child-focused
+- Never take sides or fuel conflict
+- When drafting messages, make them brief, factual, and non-inflammatory
+- Always ground your guidance in what the user has shared about their decree
+- Format responses clearly with sections when helpful
+
+Your three core capabilities:
+1. DECREE QUESTIONS - Help users understand what their decree says about a topic
+2. SITUATION GUIDANCE - Help users navigate a specific conflict or situation
+3. DRAFT A MESSAGE - Help users write a calm, neutral message to their co-parent
+
+Always end responses with a brief grounding reminder like "Stay focused on [child's wellbeing / the long game / what you can control]."`;
+
+const MODES = [
+  { id: "guidance", label: "Guidance" },
+  { id: "decree", label: "Decree Q&A" },
+  { id: "draft", label: "Draft" },
+];
+
+const MODE_HINTS = {
+  guidance: "Describe what's happening. I'll help you think it through.",
+  decree: "What would you like to know about your decree?",
+  draft: "What do you need to say to your co-parent?",
+};
+
+// --- Icons (inline SVG for zero dependencies) ---
+const IconUpload = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const IconSend = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
+  </svg>
+);
+
+const IconX = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const IconNew = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </svg>
+);
+
+export default function Meridian() {
+  const [mode, setMode] = useState("guidance");
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [decreeText, setDecreeText] = useState("");
+  const [decreeFileName, setDecreeFileName] = useState("");
+  const fileRef = useRef(null);
+  const bottomRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  // Auto-resize textarea
+  const resizeTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "24px";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  }, []);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDecreeFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => setDecreeText(ev.target.result);
+    reader.readAsText(file);
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    if (textareaRef.current) textareaRef.current.style.height = "24px";
+    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+    setLoading(true);
+
+    const modeContext = {
+      decree: "The user is asking about their divorce decree. Help them understand what it says.",
+      guidance: "The user is describing a co-parenting situation. Provide calm, grounded guidance.",
+      draft: "The user needs to send a message to their co-parent. Draft a neutral, brief, child-focused message.",
+    };
+
+    const decreeContext = decreeText
+      ? `\n\nDIVORCE DECREE CONTENT:\n${decreeText.slice(0, 8000)}`
+      : "\n\nNo decree uploaded yet. Remind the user they can upload their decree for more personalized guidance.";
+
+    const systemWithContext = `${SYSTEM_PROMPT}\n\nCURRENT MODE: ${modeContext[mode]}${decreeContext}`;
+    const history = [...messages, { role: "user", content: userMsg }].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: systemWithContext,
+          messages: history,
+        }),
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || "Something went wrong. Please try again.";
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Connection error. Please try again." },
+      ]);
+    }
+    setLoading(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const hasConversation = messages.length > 0;
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body, #root { height: 100%; }
+        body { background: #FAFAFA; -webkit-font-smoothing: antialiased; }
+
+        .m-app {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          max-width: 480px;
+          margin: 0 auto;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          color: #1A1A1A;
+          background: #fff;
+          position: relative;
+        }
+
+        /* --- Header --- */
+        .m-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid #F0F0F0;
+          background: #fff;
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+        .m-wordmark {
+          font-size: 17px;
+          font-weight: 600;
+          letter-spacing: -0.3px;
+          color: #1A1A1A;
+        }
+        .m-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .m-icon-btn {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          background: none;
+          color: #999;
+          cursor: pointer;
+          border-radius: 10px;
+          transition: background 0.15s, color 0.15s;
+        }
+        .m-icon-btn:hover { background: #F5F5F5; color: #666; }
+
+        /* --- Segmented Control --- */
+        .m-modes {
+          display: flex;
+          gap: 4px;
+          padding: 12px 20px;
+          background: #fff;
+        }
+        .m-mode-btn {
+          flex: 1;
+          padding: 8px 0;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+          background: transparent;
+          color: #999;
+        }
+        .m-mode-btn[data-active="true"] {
+          background: #F5F5F5;
+          color: #1A1A1A;
+        }
+        .m-mode-btn:hover:not([data-active="true"]) {
+          color: #666;
+        }
+
+        /* --- Scroll area --- */
+        .m-scroll {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 20px 20px;
+          display: flex;
+          flex-direction: column;
+        }
+        .m-scroll::-webkit-scrollbar { width: 0; }
+
+        /* --- Decree chip --- */
+        .m-decree-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+          border: 1px dashed #D4D4D4;
+          color: #999;
+          background: none;
+          cursor: pointer;
+          font-family: inherit;
+          transition: border-color 0.15s, color 0.15s;
+          align-self: flex-start;
+          margin-bottom: 16px;
+        }
+        .m-decree-chip:hover { border-color: #AAA; color: #666; }
+        .m-decree-chip[data-loaded="true"] {
+          border-style: solid;
+          border-color: #D1FAE5;
+          background: #F0FDF4;
+          color: #16A34A;
+          cursor: default;
+        }
+        .m-decree-remove {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(0,0,0,0.06);
+          color: #16A34A;
+          cursor: pointer;
+          margin-left: 2px;
+          transition: background 0.15s;
+        }
+        .m-decree-remove:hover { background: rgba(0,0,0,0.1); }
+
+        /* --- Empty state --- */
+        .m-empty {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 20px;
+          text-align: center;
+        }
+        .m-empty-title {
+          font-size: 22px;
+          font-weight: 600;
+          letter-spacing: -0.4px;
+          color: #1A1A1A;
+          margin-bottom: 8px;
+        }
+        .m-empty-body {
+          font-size: 15px;
+          line-height: 1.5;
+          color: #999;
+          max-width: 280px;
+        }
+
+        /* --- Messages --- */
+        .m-messages {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .m-msg {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .m-msg[data-role="user"] { align-items: flex-end; }
+        .m-msg[data-role="assistant"] { align-items: flex-start; }
+
+        .m-bubble {
+          max-width: 88%;
+          font-size: 15px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+        .m-msg[data-role="user"] .m-bubble {
+          background: #1A1A1A;
+          color: #fff;
+          padding: 12px 16px;
+          border-radius: 20px 20px 4px 20px;
+        }
+        .m-msg[data-role="assistant"] .m-bubble {
+          color: #374151;
+          padding: 4px 0;
+        }
+
+        /* --- Typing dots --- */
+        .m-typing {
+          display: flex;
+          gap: 5px;
+          padding: 8px 0;
+        }
+        .m-typing-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #CCC;
+          animation: m-bounce 1.4s ease-in-out infinite;
+        }
+        .m-typing-dot:nth-child(2) { animation-delay: 0.16s; }
+        .m-typing-dot:nth-child(3) { animation-delay: 0.32s; }
+        @keyframes m-bounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        /* --- Input --- */
+        .m-input-area {
+          padding: 12px 20px 24px;
+          background: #fff;
+          border-top: 1px solid #F0F0F0;
+          position: sticky;
+          bottom: 0;
+        }
+        .m-input-row {
+          display: flex;
+          align-items: flex-end;
+          gap: 10px;
+          background: #F5F5F5;
+          border-radius: 16px;
+          padding: 10px 10px 10px 16px;
+          transition: box-shadow 0.2s;
+        }
+        .m-input-row:focus-within {
+          box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+        }
+        .m-textarea {
+          flex: 1;
+          border: none;
+          background: none;
+          color: #1A1A1A;
+          font-size: 15px;
+          font-family: inherit;
+          line-height: 1.5;
+          resize: none;
+          outline: none;
+          min-height: 24px;
+          max-height: 120px;
+        }
+        .m-textarea::placeholder { color: #BCBCBC; }
+        .m-send-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 12px;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.15s, opacity 0.15s;
+          flex-shrink: 0;
+          background: #1A1A1A;
+          color: #fff;
+        }
+        .m-send-btn:disabled {
+          background: #E5E5E5;
+          color: #BCBCBC;
+          cursor: default;
+        }
+        .m-send-btn:not(:disabled):hover { background: #333; }
+
+        .m-disclaimer {
+          font-size: 11px;
+          color: #CCC;
+          text-align: center;
+          margin-top: 10px;
+        }
+      `}</style>
+
+      <div className="m-app">
+        {/* Header */}
+        <header className="m-header">
+          <span className="m-wordmark">Meridian</span>
+          <div className="m-header-actions">
+            {hasConversation && (
+              <button
+                className="m-icon-btn"
+                onClick={() => setMessages([])}
+                title="New conversation"
+              >
+                <IconNew />
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Mode selector */}
+        <div className="m-modes">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              className="m-mode-btn"
+              data-active={mode === m.id}
+              onClick={() => setMode(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Scroll area */}
+        <div className="m-scroll">
+          {/* Decree upload — minimal chip */}
+          {decreeFileName ? (
+            <button className="m-decree-chip" data-loaded="true">
+              <IconCheck />
+              <span>{decreeFileName}</span>
+              <span
+                className="m-decree-remove"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDecreeText("");
+                  setDecreeFileName("");
+                }}
+                title="Remove decree"
+              >
+                <IconX />
+              </span>
+            </button>
+          ) : (
+            <button className="m-decree-chip" onClick={() => fileRef.current?.click()}>
+              <IconUpload />
+              <span>Upload your decree</span>
+            </button>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".txt,.md"
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+
+          {/* Empty state or messages */}
+          {!hasConversation ? (
+            <div className="m-empty">
+              <div className="m-empty-title">{MODE_HINTS[mode].split(".")[0]}.</div>
+              <div className="m-empty-body">
+                {MODE_HINTS[mode]}
+              </div>
+            </div>
+          ) : (
+            <div className="m-messages">
+              {messages.map((msg, i) => (
+                <div key={i} className="m-msg" data-role={msg.role}>
+                  <div className="m-bubble">{msg.content}</div>
+                </div>
+              ))}
+              {loading && (
+                <div className="m-msg" data-role="assistant">
+                  <div className="m-typing">
+                    <div className="m-typing-dot" />
+                    <div className="m-typing-dot" />
+                    <div className="m-typing-dot" />
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="m-input-area">
+          <div className="m-input-row">
+            <textarea
+              ref={textareaRef}
+              className="m-textarea"
+              placeholder={MODE_HINTS[mode]}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                resizeTextarea();
+              }}
+              onKeyDown={handleKeyDown}
+              rows={1}
+            />
+            <button
+              className="m-send-btn"
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+            >
+              <IconSend />
+            </button>
+          </div>
+          <div className="m-disclaimer">
+            Not legal advice — always consult an attorney.
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
