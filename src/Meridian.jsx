@@ -268,7 +268,9 @@ export default function Meridian() {
 
   // --- App state ---
   const [showSplash, setShowSplash] = useState(() => {
-    try { return !JSON.parse(localStorage.getItem("m_messages"))?.length; } catch { return true; }
+    // Skip splash if returning from OAuth callback
+    if (window.location.hash.includes("access_token=")) return false;
+    try { return !localStorage.getItem("m_session"); } catch { return true; }
   });
   const [splashFading, setSplashFading] = useState(false);
   const [splashView, setSplashView] = useState("text"); // "text" | "video"
