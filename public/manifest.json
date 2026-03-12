@@ -1,0 +1,17 @@
+{
+  "name": "Meridian",
+  "short_name": "Meridian",
+  "description": "Your calm co-parenting companion",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFCFB",
+  "theme_color": "#1A1A1A",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

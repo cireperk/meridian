@@ -36,6 +36,24 @@ const MODE_HINTS = {
   draft: "What do you need to say to your co-parent?",
 };
 
+const STARTERS = {
+  guidance: [
+    "My co-parent won't follow the schedule",
+    "How do I handle a disagreement about rules?",
+    "My kids seem stressed after transitions",
+  ],
+  decree: [
+    "What does my decree say about holidays?",
+    "Explain the custody schedule",
+    "What are the rules around relocation?",
+  ],
+  draft: [
+    "Request a schedule change",
+    "Respond to a difficult message",
+    "Propose a holiday arrangement",
+  ],
+};
+
 // --- Icons (inline SVG for zero dependencies) ---
 const IconUpload = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -86,6 +104,7 @@ export default function Meridian() {
   const [loading, setLoading] = useState(false);
   const [decreeText, setDecreeText] = useState("");
   const [decreeFileName, setDecreeFileName] = useState("");
+  const [decreePages, setDecreePages] = useState(0);
   const videoRef = useRef(null);
 
   const enterApp = () => {
@@ -154,6 +173,7 @@ export default function Meridian() {
   const extractPdfText = async (file) => {
     const buffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    setDecreePages(pdf.numPages);
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
@@ -184,9 +204,9 @@ export default function Meridian() {
     setUploading(false);
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || loading) return;
-    const userMsg = input.trim();
+  const handleSend = async (overrideMsg) => {
+    const userMsg = (overrideMsg || input).trim();
+    if (!userMsg || loading) return;
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "24px";
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
@@ -219,16 +239,58 @@ export default function Meridian() {
           messages: history,
         }),
       });
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || "Something went wrong. Please try again.";
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+
+      if (!res.ok) {
+        throw new Error("API error");
+      }
+
+      // Stream the response
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      let buffer = "";
+
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setLoading(false);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+              fullText += parsed.delta.text;
+              setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: fullText };
+                return updated;
+              });
+            }
+          } catch { /* skip non-JSON lines */ }
+        }
+      }
+
+      if (!fullText) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." };
+          return updated;
+        });
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Connection error. Please try again." },
       ]);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleKeyDown = (e) => {
@@ -385,21 +447,78 @@ export default function Meridian() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 40px 20px;
+          padding: 24px 0;
           text-align: center;
         }
-        .m-empty-title {
-          font-size: 22px;
-          font-weight: 600;
-          letter-spacing: -0.4px;
-          color: #1A1A1A;
-          margin-bottom: 8px;
+        .m-welcome {
+          animation: m-fade-up 0.4s ease both;
         }
-        .m-empty-body {
-          font-size: 15px;
+        .m-welcome-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 16px;
+          background: linear-gradient(135deg, #F0EEFF 0%, #E8F4FD 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          color: #8B7CF6;
+        }
+        .m-welcome-title {
+          font-size: 18px;
+          font-weight: 600;
+          letter-spacing: -0.3px;
+          color: #1A1A1A;
+          margin-bottom: 6px;
+        }
+        .m-welcome-sub {
+          font-size: 14px;
           line-height: 1.5;
           color: #999;
-          max-width: 280px;
+          max-width: 260px;
+          margin: 0 auto 24px;
+        }
+        .m-starters {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          width: 100%;
+          animation: m-fade-up 0.4s ease 0.1s both;
+        }
+        .m-starter {
+          padding: 12px 16px;
+          background: #FAFAFA;
+          border: 1px solid #F0F0F0;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 400;
+          font-family: inherit;
+          color: #555;
+          cursor: pointer;
+          text-align: left;
+          transition: background 0.15s, border-color 0.15s, color 0.15s;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .m-starter:hover {
+          background: #F5F5F5;
+          border-color: #E5E5E5;
+          color: #333;
+        }
+        .m-starter:active { transform: scale(0.99); }
+        .m-starter-arrow {
+          margin-left: auto;
+          color: #CCC;
+          flex-shrink: 0;
+        }
+        /* Mode transition */
+        .m-modes-content {
+          animation: m-mode-fade 0.25s ease both;
+        }
+        @keyframes m-mode-fade {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         /* --- Messages --- */
@@ -990,13 +1109,14 @@ export default function Meridian() {
           {decreeFileName ? (
             <button className="m-decree-chip" data-loaded="true">
               {uploading ? <span style={{ fontSize: "12px" }}>Loading…</span> : <IconCheck />}
-              <span>{decreeFileName}</span>
+              <span>{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span>
               <span
                 className="m-decree-remove"
                 onClick={(e) => {
                   e.stopPropagation();
                   setDecreeText("");
                   setDecreeFileName("");
+                  setDecreePages(0);
                 }}
                 title="Remove decree"
               >
@@ -1020,7 +1140,31 @@ export default function Meridian() {
           {/* Empty state or messages */}
           {!hasConversation ? (
             <div className="m-empty">
-              <div className="m-empty-title">{MODE_HINTS[mode]}</div>
+              <div className="m-modes-content" key={mode}>
+                <div className="m-welcome">
+                  <div className="m-welcome-icon">
+                    {mode === "guidance" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>}
+                    {mode === "decree" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
+                    {mode === "draft" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
+                  </div>
+                  <div className="m-welcome-title">
+                    {mode === "guidance" && "What's going on?"}
+                    {mode === "decree" && "Ask about your decree"}
+                    {mode === "draft" && "Draft a message"}
+                  </div>
+                  <div className="m-welcome-sub">{MODE_HINTS[mode]}</div>
+                </div>
+                <div className="m-starters">
+                  {STARTERS[mode].map((s) => (
+                    <button key={s} className="m-starter" onClick={() => handleSend(s)}>
+                      {s}
+                      <span className="m-starter-arrow">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="m-messages">
