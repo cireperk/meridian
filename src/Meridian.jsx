@@ -77,6 +77,8 @@ export default function Meridian() {
   const [splashFading, setSplashFading] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [videoFading, setVideoFading] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   const [mode, setMode] = useState("guidance");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -96,6 +98,16 @@ export default function Meridian() {
   const dismissVideo = () => {
     setVideoFading(true);
     setTimeout(() => setShowVideo(false), 800);
+  };
+
+  const handleVideoTimeUpdate = () => {
+    const v = videoRef.current;
+    if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100);
+  };
+
+  const handleVideoEnded = () => {
+    setVideoProgress(100);
+    setVideoEnded(true);
   };
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
@@ -698,12 +710,12 @@ export default function Meridian() {
           position: fixed;
           inset: 0;
           z-index: 90;
-          background: #000;
+          background: #0A0A0A;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          animation: m-video-in 0.6s ease both;
+          animation: m-video-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
           transition: opacity 0.8s ease;
         }
         .m-video-overlay[data-fading="true"] {
@@ -714,33 +726,133 @@ export default function Meridian() {
           from { opacity: 0; }
           to { opacity: 1; }
         }
+
+        /* Ambient glow behind video */
+        .m-video-bg {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          opacity: 0;
+          animation: m-ambient-in 1.5s ease 0.3s forwards;
+        }
+        .m-video-glow {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+        }
+        .m-video-glow-1 {
+          width: 500px;
+          height: 500px;
+          top: 10%;
+          left: -10%;
+          background: rgba(139, 92, 246, 0.12);
+          animation: m-drift-1 14s ease-in-out infinite;
+        }
+        .m-video-glow-2 {
+          width: 400px;
+          height: 400px;
+          bottom: 5%;
+          right: -10%;
+          background: rgba(99, 102, 241, 0.1);
+          animation: m-drift-2 12s ease-in-out infinite;
+        }
+
+        .m-video-frame {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 24px;
+          max-width: 440px;
+          width: 90%;
+          opacity: 0;
+          transform: translateY(12px) scale(0.97);
+          animation: m-video-frame-in 0.7s cubic-bezier(0.25, 0.1, 0, 1) 0.4s forwards;
+        }
+        @keyframes m-video-frame-in {
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .m-video-label {
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.35);
+          font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        .m-video-card {
+          width: 100%;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #111;
+          box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+          position: relative;
+        }
+
         .m-video {
           width: 100%;
-          max-width: 480px;
-          max-height: 80vh;
+          display: block;
           border-radius: 0;
           object-fit: contain;
+          background: #111;
         }
-        .m-video-skip {
+
+        /* Progress bar */
+        .m-video-progress {
           position: absolute;
-          top: 20px;
-          right: 20px;
-          padding: 8px 18px;
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: rgba(255, 255, 255, 0.08);
+        }
+        .m-video-progress-bar {
+          height: 100%;
+          background: rgba(255, 255, 255, 0.5);
+          transition: width 0.3s linear;
+          border-radius: 0 2px 2px 0;
+        }
+
+        .m-video-skip {
+          padding: 10px 24px;
+          background: none;
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 100px;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.4);
           font-size: 13px;
           font-weight: 500;
           font-family: inherit;
           cursor: pointer;
-          transition: background 0.2s, color 0.2s;
-          z-index: 2;
+          transition: color 0.2s, border-color 0.2s;
+          letter-spacing: 0.2px;
         }
         .m-video-skip:hover {
-          background: rgba(255, 255, 255, 0.25);
-          color: #fff;
+          border-color: rgba(255, 255, 255, 0.25);
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .m-video-continue {
+          padding: 14px 40px;
+          background: #fff;
+          border: none;
+          border-radius: 100px;
+          color: #1A1A1A;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          letter-spacing: -0.1px;
+          opacity: 0;
+          transform: translateY(8px);
+          animation: m-video-frame-in 0.5s cubic-bezier(0.25, 0.1, 0, 1) 0.1s forwards;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .m-video-continue:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 30px rgba(255, 255, 255, 0.1);
         }
       `}</style>
 
@@ -771,15 +883,34 @@ export default function Meridian() {
 
       {showVideo && (
         <div className="m-video-overlay" data-fading={videoFading}>
-          <button className="m-video-skip" onClick={dismissVideo}>Skip</button>
-          <video
-            ref={videoRef}
-            className="m-video"
-            src="/welcome.mp4"
-            autoPlay
-            playsInline
-            onEnded={dismissVideo}
-          />
+          <div className="m-video-bg">
+            <div className="m-video-glow m-video-glow-1" />
+            <div className="m-video-glow m-video-glow-2" />
+          </div>
+          <div className="m-video-frame">
+            <div className="m-video-label">A message from the founder</div>
+            <div className="m-video-card">
+              <video
+                ref={videoRef}
+                className="m-video"
+                src="/welcome.mp4"
+                autoPlay
+                playsInline
+                onTimeUpdate={handleVideoTimeUpdate}
+                onEnded={handleVideoEnded}
+              />
+              <div className="m-video-progress">
+                <div className="m-video-progress-bar" style={{ width: `${videoProgress}%` }} />
+              </div>
+            </div>
+            {videoEnded ? (
+              <button className="m-video-continue" onClick={dismissVideo}>
+                Continue
+              </button>
+            ) : (
+              <button className="m-video-skip" onClick={dismissVideo}>Skip intro</button>
+            )}
+          </div>
         </div>
       )}
 
