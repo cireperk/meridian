@@ -73,12 +73,19 @@ const IconNew = () => (
 );
 
 export default function Meridian() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
   const [mode, setMode] = useState("guidance");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [decreeText, setDecreeText] = useState("");
   const [decreeFileName, setDecreeFileName] = useState("");
+
+  const enterApp = () => {
+    setSplashFading(true);
+    setTimeout(() => setShowSplash(false), 600);
+  };
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
@@ -192,7 +199,7 @@ export default function Meridian() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { height: 100%; }
-        body { background: #FAFAFA; -webkit-font-smoothing: antialiased; }
+        body { background: #FAFAFA; -webkit-font-smoothing: antialiased; overflow: hidden; }
 
         .m-app {
           height: 100vh;
@@ -462,7 +469,106 @@ export default function Meridian() {
           text-align: center;
           margin-top: 10px;
         }
+
+        /* --- Splash --- */
+        .m-splash {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #fff;
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .m-splash[data-fading="true"] {
+          opacity: 0;
+          transform: scale(1.02);
+          pointer-events: none;
+        }
+        .m-splash-inner {
+          max-width: 340px;
+          text-align: center;
+          padding: 0 32px;
+          animation: m-fade-up 1s ease both;
+        }
+        .m-splash-orb {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 30% 30%, #E8F0FE, #D4E4FA);
+          margin: 0 auto 32px;
+          animation: m-breathe 4s ease-in-out infinite;
+        }
+        .m-splash-title {
+          font-size: 28px;
+          font-weight: 600;
+          letter-spacing: -0.5px;
+          color: #1A1A1A;
+          margin-bottom: 16px;
+          line-height: 1.2;
+        }
+        .m-splash-body {
+          font-size: 16px;
+          line-height: 1.65;
+          color: #888;
+          margin-bottom: 40px;
+        }
+        .m-splash-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 14px 32px;
+          background: #1A1A1A;
+          color: #fff;
+          border: none;
+          border-radius: 14px;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.15s;
+          letter-spacing: -0.1px;
+        }
+        .m-splash-cta:hover { background: #333; }
+        .m-splash-cta:active { transform: scale(0.97); }
+        .m-splash-footer {
+          font-size: 11px;
+          color: #CCC;
+          margin-top: 24px;
+        }
+        @keyframes m-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.08); opacity: 1; }
+        }
+        @keyframes m-fade-up {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
+
+      {showSplash && (
+        <div className="m-splash" data-fading={splashFading}>
+          <div className="m-splash-inner">
+            <div className="m-splash-orb" />
+            <h1 className="m-splash-title">You don't have to<br />figure this out alone.</h1>
+            <p className="m-splash-body">
+              Meridian helps you navigate co-parenting with clarity —
+              understand your decree, handle tough moments, and communicate
+              with calm confidence.
+            </p>
+            <button className="m-splash-cta" onClick={enterApp}>
+              Get started
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+            <div className="m-splash-footer">Private and confidential. Not legal advice.</div>
+          </div>
+        </div>
+      )}
 
       <div className="m-app">
         {/* Header */}
