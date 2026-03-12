@@ -707,43 +707,60 @@ export default function Meridian() {
           pointer-events: none;
         }
 
-        /* Ambient background glow */
+        /* Fluid water background */
         .m-splash-bg {
           position: absolute;
-          inset: 0;
+          inset: -40%;
           overflow: hidden;
           opacity: 0;
-          animation: m-ambient-in 2s ease 0.2s forwards;
+          animation: m-ambient-in 3s ease 0.2s forwards;
+          filter: url(#m-water-filter);
         }
         .m-splash-glow {
           position: absolute;
           border-radius: 50%;
-          filter: blur(80px);
+          filter: blur(60px);
+          will-change: transform;
         }
         .m-splash-glow-1 {
-          width: 400px;
-          height: 400px;
-          top: -10%;
-          right: -20%;
-          background: rgba(199, 210, 254, 0.5);
-          animation: m-drift-1 12s ease-in-out infinite;
+          width: 55%;
+          height: 55%;
+          top: 10%;
+          right: 5%;
+          background: radial-gradient(circle, rgba(199, 210, 254, 0.6) 0%, rgba(199, 210, 254, 0) 70%);
+          animation: m-water-1 18s ease-in-out infinite;
         }
         .m-splash-glow-2 {
-          width: 350px;
-          height: 350px;
-          bottom: -5%;
-          left: -15%;
-          background: rgba(221, 214, 254, 0.4);
-          animation: m-drift-2 14s ease-in-out infinite;
+          width: 50%;
+          height: 50%;
+          bottom: 5%;
+          left: 0%;
+          background: radial-gradient(circle, rgba(221, 214, 254, 0.5) 0%, rgba(221, 214, 254, 0) 70%);
+          animation: m-water-2 22s ease-in-out infinite;
         }
         .m-splash-glow-3 {
-          width: 250px;
-          height: 250px;
-          top: 40%;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(186, 230, 253, 0.3);
-          animation: m-drift-3 10s ease-in-out infinite;
+          width: 45%;
+          height: 45%;
+          top: 35%;
+          left: 30%;
+          background: radial-gradient(circle, rgba(186, 230, 253, 0.45) 0%, rgba(186, 230, 253, 0) 70%);
+          animation: m-water-3 16s ease-in-out infinite;
+        }
+        .m-splash-glow-4 {
+          width: 40%;
+          height: 40%;
+          top: 15%;
+          left: 10%;
+          background: radial-gradient(circle, rgba(196, 181, 253, 0.35) 0%, rgba(196, 181, 253, 0) 70%);
+          animation: m-water-4 20s ease-in-out infinite;
+        }
+        .m-splash-glow-5 {
+          width: 35%;
+          height: 35%;
+          bottom: 20%;
+          right: 15%;
+          background: radial-gradient(circle, rgba(165, 214, 243, 0.4) 0%, rgba(165, 214, 243, 0) 70%);
+          animation: m-water-5 24s ease-in-out infinite;
         }
 
         .m-splash-content {
@@ -915,17 +932,39 @@ export default function Meridian() {
         @keyframes m-ambient-in {
           to { opacity: 1; }
         }
-        @keyframes m-drift-1 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(-30px, 20px); }
+        @keyframes m-water-1 {
+          0% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(-60px, 40px) scale(1.08); }
+          50% { transform: translate(-20px, 80px) scale(0.95); }
+          75% { transform: translate(40px, 30px) scale(1.05); }
+          100% { transform: translate(0, 0) scale(1); }
         }
-        @keyframes m-drift-2 {
-          0%, 100% { transform: translate(0, 0); }
-          50% { transform: translate(25px, -15px); }
+        @keyframes m-water-2 {
+          0% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(50px, -30px) scale(1.1); }
+          50% { transform: translate(80px, 20px) scale(0.92); }
+          75% { transform: translate(20px, -50px) scale(1.06); }
+          100% { transform: translate(0, 0) scale(1); }
         }
-        @keyframes m-drift-3 {
-          0%, 100% { transform: translate(-50%, 0); }
-          50% { transform: translate(-50%, -20px); }
+        @keyframes m-water-3 {
+          0% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(-40px, -50px) scale(1.12); }
+          66% { transform: translate(50px, 30px) scale(0.9); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes m-water-4 {
+          0% { transform: translate(0, 0) scale(1); }
+          20% { transform: translate(30px, 60px) scale(1.05); }
+          40% { transform: translate(70px, 20px) scale(0.95); }
+          60% { transform: translate(40px, -40px) scale(1.1); }
+          80% { transform: translate(-20px, -20px) scale(0.98); }
+          100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes m-water-5 {
+          0% { transform: translate(0, 0) scale(1); }
+          30% { transform: translate(-50px, 40px) scale(1.08); }
+          60% { transform: translate(30px, -60px) scale(0.94); }
+          100% { transform: translate(0, 0) scale(1); }
         }
 
         /* --- Video view (inside splash) --- */
@@ -1122,10 +1161,22 @@ export default function Meridian() {
 
       {showSplash && (
         <div className="m-splash" data-fading={splashFading}>
+          <svg width="0" height="0" style={{ position: "absolute" }}>
+            <defs>
+              <filter id="m-water-filter">
+                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.006" numOctaves="3" seed="2" result="noise">
+                  <animate attributeName="baseFrequency" dur="30s" values="0.008 0.006;0.012 0.009;0.006 0.008;0.008 0.006" repeatCount="indefinite" />
+                </feTurbulence>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </defs>
+          </svg>
           <div className="m-splash-bg">
             <div className="m-splash-glow m-splash-glow-1" />
             <div className="m-splash-glow m-splash-glow-2" />
             <div className="m-splash-glow m-splash-glow-3" />
+            <div className="m-splash-glow m-splash-glow-4" />
+            <div className="m-splash-glow m-splash-glow-5" />
           </div>
           <div className="m-splash-content">
             {splashView === "text" ? (
