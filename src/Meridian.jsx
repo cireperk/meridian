@@ -167,6 +167,7 @@ export default function Meridian() {
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes("access_token=")) {
+      localStorage.removeItem("m_oauth_pending");
       const params = new URLSearchParams(hash.slice(1));
       const token = params.get("access_token");
       if (token) {
@@ -191,6 +192,9 @@ export default function Meridian() {
           }
         }).catch(() => {});
       }
+    } else {
+      // No OAuth callback — clear stale pending flag
+      localStorage.removeItem("m_oauth_pending");
     }
   }, []);
 
@@ -256,6 +260,7 @@ export default function Meridian() {
   };
 
   const handleGoogleLogin = () => {
+    localStorage.setItem("m_oauth_pending", "1");
     window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}`;
   };
 
@@ -268,9 +273,11 @@ export default function Meridian() {
 
   // --- App state ---
   const [showSplash, setShowSplash] = useState(() => {
-    // Skip splash if returning from OAuth callback
+    // Skip splash if returning from OAuth or already have a session
     if (window.location.hash.includes("access_token=")) return false;
-    try { return !localStorage.getItem("m_session"); } catch { return true; }
+    if (localStorage.getItem("m_oauth_pending")) return false;
+    if (localStorage.getItem("m_session")) return false;
+    return true;
   });
   const [splashFading, setSplashFading] = useState(false);
   const [splashView, setSplashView] = useState("text"); // "text" | "video"
