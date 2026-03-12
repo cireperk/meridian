@@ -38,6 +38,9 @@ const authSignUp = (email, password) =>
 const authSignIn = (email, password) =>
   sbFetch("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
 
+const authRefreshToken = (refreshToken) =>
+  sbFetch("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: refreshToken } });
+
 const dbSelect = (table, query, token) =>
   sbFetch(`/rest/v1/${table}?${query}`, { token });
 
@@ -161,17 +164,28 @@ export default function Meridian() {
   const [authLoading, setAuthLoading] = useState(false);
 
 
+  // Auto-refresh expired tokens on mount
+  useEffect(() => {
+    if (!session?.refresh_token) return;
+    authRefreshToken(session.refresh_token).then((data) => {
+      if (data?.access_token) {
+        const s = { ...session, token: data.access_token, refresh_token: data.refresh_token };
+        setSession(s);
+        localStorage.setItem("m_session", JSON.stringify(s));
+      }
+    }).catch(() => {});
+  }, []); // eslint-disable-line
+
   const handleSignUp = async () => {
     setAuthError("");
     setAuthLoading(true);
     try {
       const data = await authSignUp(authEmail, authPassword);
       if (data?.access_token) {
-        const s = { token: data.access_token, user: { id: data.user.id, email: authEmail, name: "" } };
+        const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } };
         setSession(s);
         setAuthView("onboarding");
       } else if (data?.id) {
-        // Email confirmation required
         setAuthError("Check your email for a confirmation link.");
       }
     } catch (err) {
@@ -192,7 +206,7 @@ export default function Meridian() {
         const profiles = await dbSelect("profiles", `id=eq.${data.user.id}&select=name`, token);
         if (profiles?.length) name = profiles[0].name;
       } catch {}
-      const s = { token, user: { id: data.user.id, email: authEmail, name } };
+      const s = { token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } };
       setSession(s);
       localStorage.setItem("m_session", JSON.stringify(s));
     } catch (err) {
