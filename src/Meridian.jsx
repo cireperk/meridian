@@ -78,6 +78,8 @@ export default function Meridian() {
   const [splashView, setSplashView] = useState("text"); // "text" | "video"
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
+  const [videoPaused, setVideoPaused] = useState(false);
+  const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [mode, setMode] = useState("guidance");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -96,15 +98,30 @@ export default function Meridian() {
     setSplashView("video");
     setVideoEnded(false);
     setVideoProgress(0);
+    setVideoPaused(false);
     setTimeout(() => {
       const v = videoRef.current;
       if (v) { v.currentTime = 0; v.play().catch(() => {}); }
-    }, 400); // wait for crossfade to mostly finish
+    }, 400);
   };
 
   const closeVideo = () => {
     if (videoRef.current) videoRef.current.pause();
     setSplashView("text");
+  };
+
+  const togglePlayPause = () => {
+    const v = videoRef.current;
+    if (!v || videoEnded) return;
+    if (v.paused) {
+      v.play().catch(() => {});
+      setVideoPaused(false);
+    } else {
+      v.pause();
+      setVideoPaused(true);
+    }
+    setShowPauseIcon(true);
+    setTimeout(() => setShowPauseIcon(false), 800);
   };
 
   const handleVideoTimeUpdate = () => {
@@ -699,23 +716,31 @@ export default function Meridian() {
         }
 
         .m-splash-video-link {
-          margin-top: 20px;
-          padding: 0;
-          background: none;
-          border: none;
+          margin-top: 16px;
+          padding: 10px 20px;
+          background: rgba(0, 0, 0, 0.03);
+          border: 1px solid #E0E0E0;
+          border-radius: 100px;
           font-size: 13px;
           font-weight: 500;
           font-family: inherit;
-          color: #BCBCBC;
+          color: #777;
           cursor: pointer;
           opacity: 0;
           animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
-          transition: color 0.2s;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
-        .m-splash-video-link:hover { color: #888; }
+        .m-splash-video-link:hover {
+          background: rgba(0, 0, 0, 0.06);
+          border-color: #CCC;
+          color: #555;
+        }
+        .m-splash-video-link:active {
+          transform: scale(0.98);
+        }
 
         .m-splash-footer {
           font-size: 11px;
@@ -745,21 +770,56 @@ export default function Meridian() {
           50% { transform: translate(-50%, -20px); }
         }
 
-        /* --- Video card (inside splash) --- */
+        /* --- Video view (inside splash) --- */
+        .m-sv-header {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          margin-bottom: 20px;
+        }
+        .m-sv-back {
+          position: absolute;
+          left: 0;
+          padding: 8px 14px 8px 8px;
+          background: rgba(0, 0, 0, 0.04);
+          border: 1px solid #E8E8E8;
+          border-radius: 100px;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #888;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+        }
+        .m-sv-back:hover { background: rgba(0, 0, 0, 0.07); color: #555; }
+        .m-sv-label {
+          font-size: 11px;
+          font-weight: 500;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          color: #BCBCBC;
+        }
         .m-sv-card {
           width: 100%;
-          border-radius: 16px;
+          border-radius: 14px;
           overflow: hidden;
-          background: #F0F0F0;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+          background: #E8E8E8;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
           position: relative;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
+          cursor: pointer;
         }
         .m-sv-video {
           width: 100%;
+          max-height: calc(100vh - 280px);
           display: block;
           object-fit: contain;
-          background: #F0F0F0;
+          background: #E8E8E8;
         }
         .m-sv-progress {
           position: absolute;
@@ -774,31 +834,48 @@ export default function Meridian() {
           background: #2A2A2A;
           transition: width 0.3s linear;
           border-radius: 0 2px 2px 0;
-          opacity: 0.4;
+          opacity: 0.35;
         }
-        .m-sv-label {
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          color: #BCBCBC;
-          margin-bottom: 16px;
-        }
-        .m-sv-back {
-          padding: 0;
-          background: none;
-          border: none;
-          font-size: 13px;
-          font-weight: 500;
-          font-family: inherit;
-          color: #BCBCBC;
-          cursor: pointer;
-          transition: color 0.2s;
-          display: inline-flex;
+
+        /* Tap-to-pause overlay */
+        .m-sv-play-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
           align-items: center;
-          gap: 5px;
+          justify-content: center;
+          pointer-events: none;
         }
-        .m-sv-back:hover { color: #888; }
+        .m-sv-play-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          opacity: 0;
+          transform: scale(0.8);
+          transition: opacity 0.2s, transform 0.2s;
+        }
+        .m-sv-play-icon[data-visible="true"] {
+          opacity: 1;
+          transform: scale(1);
+        }
+        /* Persistent pause state indicator */
+        .m-sv-paused-indicator {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+          background: rgba(0, 0, 0, 0.15);
+        }
+        .m-sv-paused-indicator svg {
+          opacity: 0.7;
+        }
       `}</style>
 
       {showSplash && (
@@ -831,8 +908,14 @@ export default function Meridian() {
               </div>
             ) : (
               <div className="m-splash-inner" key="video">
-                <div className="m-sv-label">A message from our founder</div>
-                <div className="m-sv-card">
+                <div className="m-sv-header">
+                  <button className="m-sv-back" onClick={closeVideo}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                    Back
+                  </button>
+                  <div className="m-sv-label">From our founder</div>
+                </div>
+                <div className="m-sv-card" onClick={togglePlayPause}>
                   <video
                     ref={videoRef}
                     className="m-sv-video"
@@ -844,13 +927,25 @@ export default function Meridian() {
                   <div className="m-sv-progress">
                     <div className="m-sv-progress-bar" style={{ width: `${videoProgress}%` }} />
                   </div>
+                  {/* Tap feedback icon */}
+                  <div className="m-sv-play-overlay">
+                    <div className="m-sv-play-icon" data-visible={showPauseIcon}>
+                      {videoPaused ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                      ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                      )}
+                    </div>
+                  </div>
+                  {/* Persistent paused state */}
+                  {videoPaused && !showPauseIcon && (
+                    <div className="m-sv-paused-indicator">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                    </div>
+                  )}
                 </div>
                 <button className="m-splash-cta" style={{ opacity: 1, animation: "none" }} onClick={enterApp}>
                   {videoEnded ? "Get Started" : "Begin"}
-                </button>
-                <button className="m-sv-back" onClick={closeVideo}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                  Back
                 </button>
               </div>
             )}
