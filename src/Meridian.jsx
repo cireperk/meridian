@@ -162,6 +162,7 @@ export default function Meridian() {
   const [authName, setAuthName] = useState("");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
 
   // Auto-refresh expired tokens on mount
@@ -1533,6 +1534,64 @@ export default function Meridian() {
           text-underline-offset: 2px;
         }
         .m-auth-switch button:hover { color: #555; }
+        .m-confirm-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          background: rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          animation: m-fade-in 0.15s ease;
+        }
+        .m-confirm-card {
+          background: #fff;
+          border-radius: 16px;
+          padding: 28px 24px 20px;
+          max-width: 300px;
+          width: 100%;
+          text-align: center;
+          font-family: 'Inter', -apple-system, sans-serif;
+          animation: m-fade-up 0.2s ease;
+        }
+        .m-confirm-title {
+          font-size: 17px;
+          font-weight: 600;
+          color: #1A1A1A;
+          margin-bottom: 6px;
+        }
+        .m-confirm-sub {
+          font-size: 14px;
+          color: #888;
+          margin-bottom: 24px;
+          line-height: 1.4;
+        }
+        .m-confirm-actions {
+          display: flex;
+          gap: 10px;
+        }
+        .m-confirm-actions button {
+          flex: 1;
+          padding: 12px;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          border: none;
+          transition: opacity 0.15s;
+        }
+        .m-confirm-cancel {
+          background: #F5F5F5;
+          color: #1A1A1A;
+        }
+        .m-confirm-cancel:hover { opacity: 0.8; }
+        .m-confirm-danger {
+          background: #1A1A1A;
+          color: #fff;
+        }
+        .m-confirm-danger:hover { opacity: 0.85; }
       `}</style>
 
       {/* SVG filter for water background — shared by splash + auth */}
@@ -1718,7 +1777,7 @@ export default function Meridian() {
             {session?.user?.name && (
               <button
                 className="m-icon-btn"
-                onClick={() => { if (confirm("Sign out?")) handleSignOut(); }}
+                onClick={() => setShowSignOutConfirm(true)}
                 title={`Signed in as ${session.user.name}`}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1910,6 +1969,19 @@ export default function Meridian() {
         </div>
       )}
       </>
+      )}
+
+      {showSignOutConfirm && (
+        <div className="m-confirm-overlay" onClick={() => setShowSignOutConfirm(false)}>
+          <div className="m-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="m-confirm-title">Sign out?</div>
+            <div className="m-confirm-sub">You'll need to sign back in to continue your conversations.</div>
+            <div className="m-confirm-actions">
+              <button className="m-confirm-cancel" onClick={() => setShowSignOutConfirm(false)}>Cancel</button>
+              <button className="m-confirm-danger" onClick={() => { setShowSignOutConfirm(false); handleSignOut(); }}>Sign Out</button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
