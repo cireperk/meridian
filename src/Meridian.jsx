@@ -32,11 +32,19 @@ const sbFetch = async (path, { method = "GET", body, token } = {}) => {
   return text ? JSON.parse(text) : null;
 };
 
-const authSignUp = (email, password) =>
-  sbFetch("/auth/v1/signup", { method: "POST", body: { email, password } });
+const authServerCall = async (action, email, password) => {
+  const res = await fetch("/api/auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Auth failed");
+  return data;
+};
 
-const authSignIn = (email, password) =>
-  sbFetch("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
+const authSignUp = (email, password) => authServerCall("signup", email, password);
+const authSignIn = (email, password) => authServerCall("signin", email, password);
 
 const authRefreshToken = (refreshToken) =>
   sbFetch("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: refreshToken } });
