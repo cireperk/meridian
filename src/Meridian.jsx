@@ -1,4 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).href;
 
 const SYSTEM_PROMPT = `You are Meridian, a calm and grounding AI companion for divorced parents navigating co-parenting. You help users understand their divorce decree, handle conflict situations, and draft neutral, child-focused communications.
 
@@ -89,13 +95,39 @@ export default function Meridian() {
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
   }, []);
 
-  const handleFileUpload = (e) => {
+  const [uploading, setUploading] = useState(false);
+
+  const extractPdfText = async (file) => {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map((item) => item.str).join(" "));
+    }
+    return pages.join("\n\n");
+  };
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setDecreeFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (ev) => setDecreeText(ev.target.result);
-    reader.readAsText(file);
+    setUploading(true);
+    try {
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        const text = await extractPdfText(file);
+        setDecreeText(text);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => setDecreeText(ev.target.result);
+        reader.readAsText(file);
+      }
+    } catch {
+      setDecreeText("");
+      setDecreeFileName("");
+    }
+    setUploading(false);
   };
 
   const handleSend = async () => {
@@ -468,7 +500,7 @@ export default function Meridian() {
           {/* Decree upload — minimal chip */}
           {decreeFileName ? (
             <button className="m-decree-chip" data-loaded="true">
-              <IconCheck />
+              {uploading ? <span style={{ fontSize: "12px" }}>Loading…</span> : <IconCheck />}
               <span>{decreeFileName}</span>
               <span
                 className="m-decree-remove"
@@ -491,7 +523,7 @@ export default function Meridian() {
           <input
             ref={fileRef}
             type="file"
-            accept=".txt,.md"
+            accept=".txt,.md,.pdf"
             style={{ display: "none" }}
             onChange={handleFileUpload}
           />
