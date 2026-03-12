@@ -105,6 +105,10 @@ export default function Meridian() {
   const [decreeText, setDecreeText] = useState("");
   const [decreeFileName, setDecreeFileName] = useState("");
   const [decreePages, setDecreePages] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
   const videoRef = useRef(null);
 
   const enterApp = () => {
@@ -189,19 +193,27 @@ export default function Meridian() {
     setDecreeFileName(file.name);
     setUploading(true);
     try {
+      let text;
       if (file.name.toLowerCase().endsWith(".pdf")) {
-        const text = await extractPdfText(file);
-        setDecreeText(text);
+        text = await extractPdfText(file);
       } else {
-        const reader = new FileReader();
-        reader.onload = (ev) => setDecreeText(ev.target.result);
-        reader.readAsText(file);
+        text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = () => reject(new Error("Failed to read file"));
+          reader.readAsText(file);
+        });
       }
-    } catch {
+      setDecreeText(text);
+    } catch (err) {
+      console.error("Decree upload failed:", err);
       setDecreeText("");
       setDecreeFileName("");
+      setDecreePages(0);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
-    setUploading(false);
   };
 
   const handleSend = async (overrideMsg) => {
@@ -297,6 +309,29 @@ export default function Meridian() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim() || feedbackSending) return;
+    setFeedbackSending(true);
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: feedbackText.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setFeedbackSent(true);
+      setTimeout(() => {
+        setShowFeedback(false);
+        setFeedbackText("");
+        setFeedbackSent(false);
+      }, 1800);
+    } catch {
+      alert("Failed to send feedback. Please try again.");
+    } finally {
+      setFeedbackSending(false);
     }
   };
 
@@ -981,6 +1016,90 @@ export default function Meridian() {
         .m-sv-paused-indicator svg {
           opacity: 0.7;
         }
+
+        /* --- Feedback modal --- */
+        .m-fb-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          background: rgba(0, 0, 0, 0.3);
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          animation: m-fb-fade-in 0.2s ease;
+        }
+        @keyframes m-fb-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .m-fb-sheet {
+          width: 100%;
+          max-width: 480px;
+          background: #fff;
+          border-radius: 20px 20px 0 0;
+          padding: 12px 24px 32px;
+          animation: m-fb-slide-up 0.3s cubic-bezier(0.25, 0.1, 0, 1);
+        }
+        @keyframes m-fb-slide-up {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .m-fb-handle {
+          width: 36px;
+          height: 4px;
+          border-radius: 2px;
+          background: #E0E0E0;
+          margin: 0 auto 20px;
+        }
+        .m-fb-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1A1A1A;
+          margin-bottom: 4px;
+        }
+        .m-fb-sub {
+          font-size: 14px;
+          color: #999;
+          margin-bottom: 16px;
+        }
+        .m-fb-input {
+          width: 100%;
+          border: 1px solid #E5E5E5;
+          border-radius: 12px;
+          padding: 12px 14px;
+          font-size: 15px;
+          font-family: inherit;
+          color: #1A1A1A;
+          resize: none;
+          outline: none;
+          transition: border-color 0.15s;
+          background: #FAFAFA;
+        }
+        .m-fb-input:focus { border-color: #BCBCBC; }
+        .m-fb-input::placeholder { color: #CCC; }
+        .m-fb-submit {
+          width: 100%;
+          margin-top: 12px;
+          padding: 14px;
+          background: #1A1A1A;
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .m-fb-submit:hover { background: #333; }
+        .m-fb-submit:disabled { background: #E5E5E5; color: #BCBCBC; cursor: default; }
+        .m-fb-sent {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 24px 0;
+          animation: m-fade-up 0.3s ease both;
+        }
       `}</style>
 
       {showSplash && (
@@ -1063,6 +1182,15 @@ export default function Meridian() {
         <header className="m-header">
           <span className="m-wordmark">Meridian</span>
           <div className="m-header-actions">
+            <button
+              className="m-icon-btn"
+              onClick={() => setShowFeedback(true)}
+              title="Send feedback"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
             {hasConversation && (
               <button
                 className="m-icon-btn"
@@ -1201,6 +1329,42 @@ export default function Meridian() {
           </div>
         </div>
       </div>
+
+      {/* Feedback modal */}
+      {showFeedback && (
+        <div className="m-fb-overlay" onClick={() => !feedbackSending && setShowFeedback(false)}>
+          <div className="m-fb-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="m-fb-handle" />
+            {feedbackSent ? (
+              <div className="m-fb-sent">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span style={{ marginTop: 12, fontSize: 16, fontWeight: 600, color: "#1A1A1A" }}>Thank you!</span>
+                <span style={{ fontSize: 14, color: "#999" }}>Your feedback helps us improve.</span>
+              </div>
+            ) : (
+              <>
+                <div className="m-fb-title">Send Feedback</div>
+                <div className="m-fb-sub">Tell us what's working, what's not, or what you'd love to see.</div>
+                <textarea
+                  className="m-fb-input"
+                  placeholder="Your feedback..."
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  rows={4}
+                  autoFocus
+                />
+                <button
+                  className="m-fb-submit"
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim() || feedbackSending}
+                >
+                  {feedbackSending ? "Sending..." : "Submit Feedback"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
