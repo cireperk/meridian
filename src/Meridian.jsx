@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import { marked } from "marked";
+
+marked.setOptions({ breaks: true, gfm: true });
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.mjs",
@@ -91,7 +94,9 @@ const IconNew = () => (
 );
 
 export default function Meridian() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    try { return !JSON.parse(localStorage.getItem("m_messages"))?.length; } catch { return true; }
+  });
   const [splashFading, setSplashFading] = useState(false);
   const [splashView, setSplashView] = useState("text"); // "text" | "video"
   const [videoProgress, setVideoProgress] = useState(0);
@@ -99,12 +104,17 @@ export default function Meridian() {
   const [videoPaused, setVideoPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [mode, setMode] = useState("guidance");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("m_messages")) || []; } catch { return []; }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [decreeText, setDecreeText] = useState("");
-  const [decreeFileName, setDecreeFileName] = useState("");
-  const [decreePages, setDecreePages] = useState(0);
+  const [decreeText, setDecreeText] = useState(() => localStorage.getItem("m_decree_text") || "");
+  const [decreeFileName, setDecreeFileName] = useState(() => localStorage.getItem("m_decree_name") || "");
+  const [decreePages, setDecreePages] = useState(() => {
+    try { return parseInt(localStorage.getItem("m_decree_pages")) || 0; } catch { return 0; }
+  });
+  const [copied, setCopied] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -163,6 +173,28 @@ export default function Meridian() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Persist messages
+  useEffect(() => {
+    localStorage.setItem("m_messages", JSON.stringify(messages));
+  }, [messages]);
+
+  // Persist decree
+  useEffect(() => {
+    if (decreeText) localStorage.setItem("m_decree_text", decreeText);
+    else localStorage.removeItem("m_decree_text");
+    if (decreeFileName) localStorage.setItem("m_decree_name", decreeFileName);
+    else localStorage.removeItem("m_decree_name");
+    if (decreePages) localStorage.setItem("m_decree_pages", String(decreePages));
+    else localStorage.removeItem("m_decree_pages");
+  }, [decreeText, decreeFileName, decreePages]);
+
+  const copyToClipboard = (text, idx) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  };
 
   // Auto-resize textarea
   const resizeTextarea = useCallback(() => {
@@ -588,6 +620,72 @@ export default function Meridian() {
           color: #374151;
           padding: 4px 0;
         }
+
+        /* --- Markdown inside assistant bubbles --- */
+        .m-md { white-space: normal; }
+        .m-md p { margin-bottom: 10px; }
+        .m-md p:last-child { margin-bottom: 0; }
+        .m-md strong { font-weight: 600; color: #1A1A1A; }
+        .m-md em { font-style: italic; }
+        .m-md ul, .m-md ol { margin: 8px 0; padding-left: 20px; }
+        .m-md li { margin-bottom: 4px; }
+        .m-md h1, .m-md h2, .m-md h3 {
+          font-weight: 600;
+          color: #1A1A1A;
+          margin: 14px 0 6px;
+          line-height: 1.3;
+        }
+        .m-md h1 { font-size: 17px; }
+        .m-md h2 { font-size: 16px; }
+        .m-md h3 { font-size: 15px; }
+        .m-md code {
+          background: #F5F5F5;
+          padding: 2px 5px;
+          border-radius: 4px;
+          font-size: 13px;
+          font-family: 'SF Mono', 'Menlo', monospace;
+        }
+        .m-md pre {
+          background: #F5F5F5;
+          padding: 12px;
+          border-radius: 8px;
+          overflow-x: auto;
+          margin: 8px 0;
+        }
+        .m-md pre code {
+          background: none;
+          padding: 0;
+        }
+        .m-md blockquote {
+          border-left: 3px solid #E5E5E5;
+          padding-left: 12px;
+          color: #777;
+          margin: 8px 0;
+        }
+        .m-md hr {
+          border: none;
+          border-top: 1px solid #F0F0F0;
+          margin: 12px 0;
+        }
+
+        /* --- Copy button --- */
+        .m-copy-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border: none;
+          background: none;
+          color: #BCBCBC;
+          font-size: 11px;
+          font-family: inherit;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: color 0.15s, background 0.15s;
+          margin-top: 2px;
+        }
+        .m-copy-btn:hover { color: #888; background: #F5F5F5; }
 
         /* --- Typing dots --- */
         .m-typing {
@@ -1254,7 +1352,7 @@ export default function Meridian() {
             {hasConversation && (
               <button
                 className="m-icon-btn"
-                onClick={() => setMessages([])}
+                onClick={() => { setMessages([]); localStorage.removeItem("m_messages"); }}
                 title="New conversation"
               >
                 <IconNew />
@@ -1344,7 +1442,22 @@ export default function Meridian() {
             <div className="m-messages">
               {messages.map((msg, i) => (
                 <div key={i} className="m-msg" data-role={msg.role}>
-                  <div className="m-bubble">{msg.content}</div>
+                  {msg.role === "assistant" ? (
+                    <>
+                      <div className="m-bubble m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
+                      {msg.content && (
+                        <button className="m-copy-btn" onClick={() => copyToClipboard(msg.content, i)}>
+                          {copied === i ? (
+                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
+                          ) : (
+                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="m-bubble">{msg.content}</div>
+                  )}
                 </div>
               ))}
               {loading && (
