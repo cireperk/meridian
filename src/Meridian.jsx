@@ -84,7 +84,7 @@ export default function Meridian() {
 
   const enterApp = () => {
     setSplashFading(true);
-    setTimeout(() => setShowSplash(false), 600);
+    setTimeout(() => setShowSplash(false), 900);
   };
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
@@ -479,93 +479,185 @@ export default function Meridian() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: #fff;
-          transition: opacity 0.6s ease, transform 0.6s ease;
+          background: #FDFCFB;
+          overflow: hidden;
+          transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .m-splash[data-fading="true"] {
           opacity: 0;
-          transform: scale(1.02);
           pointer-events: none;
         }
-        .m-splash-inner {
-          max-width: 340px;
-          text-align: center;
-          padding: 0 32px;
-          animation: m-fade-up 1s ease both;
+
+        /* Ambient background glow */
+        .m-splash-bg {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          opacity: 0;
+          animation: m-ambient-in 2s ease 0.2s forwards;
         }
-        .m-splash-orb {
-          width: 64px;
-          height: 64px;
+        .m-splash-glow {
+          position: absolute;
           border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, #E8F0FE, #D4E4FA);
-          margin: 0 auto 32px;
-          animation: m-breathe 4s ease-in-out infinite;
+          filter: blur(80px);
         }
-        .m-splash-title {
-          font-size: 28px;
+        .m-splash-glow-1 {
+          width: 400px;
+          height: 400px;
+          top: -10%;
+          right: -20%;
+          background: rgba(199, 210, 254, 0.5);
+          animation: m-drift-1 12s ease-in-out infinite;
+        }
+        .m-splash-glow-2 {
+          width: 350px;
+          height: 350px;
+          bottom: -5%;
+          left: -15%;
+          background: rgba(221, 214, 254, 0.4);
+          animation: m-drift-2 14s ease-in-out infinite;
+        }
+        .m-splash-glow-3 {
+          width: 250px;
+          height: 250px;
+          top: 40%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(186, 230, 253, 0.3);
+          animation: m-drift-3 10s ease-in-out infinite;
+        }
+
+        .m-splash-content {
+          position: relative;
+          z-index: 1;
+          max-width: 380px;
+          padding: 0 40px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+
+        /* Wordmark */
+        .m-splash-mark {
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          color: #BCBCBC;
+          margin-bottom: 48px;
+          opacity: 0;
+          animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 0.4s forwards;
+        }
+
+        /* Headline — each line staggers */
+        .m-splash-h {
+          font-size: 32px;
           font-weight: 600;
-          letter-spacing: -0.5px;
-          color: #1A1A1A;
-          margin-bottom: 16px;
+          letter-spacing: -0.8px;
           line-height: 1.2;
+          color: #1A1A1A;
+          margin-bottom: 20px;
         }
-        .m-splash-body {
+        .m-splash-line {
+          display: block;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .m-splash-line:nth-child(1) {
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 0.7s forwards;
+        }
+        .m-splash-line:nth-child(2) {
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 0.9s forwards;
+        }
+
+        .m-splash-sub {
           font-size: 16px;
-          line-height: 1.65;
-          color: #888;
-          margin-bottom: 40px;
+          line-height: 1.7;
+          color: #999;
+          margin-bottom: 48px;
+          opacity: 0;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.2s forwards;
         }
+
+        /* CTA */
         .m-splash-cta {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
-          padding: 14px 32px;
+          justify-content: center;
+          padding: 16px 40px;
           background: #1A1A1A;
           color: #fff;
           border: none;
-          border-radius: 14px;
+          border-radius: 100px;
           font-size: 15px;
           font-weight: 500;
           font-family: inherit;
           cursor: pointer;
-          transition: background 0.2s, transform 0.15s;
           letter-spacing: -0.1px;
+          opacity: 0;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.5s forwards;
+          transition: transform 0.3s cubic-bezier(0.25, 0.1, 0, 1), box-shadow 0.3s ease;
         }
-        .m-splash-cta:hover { background: #333; }
-        .m-splash-cta:active { transform: scale(0.97); }
+        .m-splash-cta:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        .m-splash-cta:active {
+          transform: translateY(0) scale(0.98);
+          box-shadow: none;
+        }
+
         .m-splash-footer {
           font-size: 11px;
-          color: #CCC;
-          margin-top: 24px;
+          color: #D4D4D4;
+          margin-top: 32px;
+          opacity: 0;
+          animation: m-reveal 0.9s cubic-bezier(0.25, 0.1, 0, 1) 1.8s forwards;
+          letter-spacing: 0.2px;
         }
-        @keyframes m-breathe {
-          0%, 100% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.08); opacity: 1; }
-        }
-        @keyframes m-fade-up {
-          from { opacity: 0; transform: translateY(16px); }
+
+        @keyframes m-reveal {
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes m-ambient-in {
+          to { opacity: 1; }
+        }
+        @keyframes m-drift-1 {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(-30px, 20px); }
+        }
+        @keyframes m-drift-2 {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(25px, -15px); }
+        }
+        @keyframes m-drift-3 {
+          0%, 100% { transform: translate(-50%, 0); }
+          50% { transform: translate(-50%, -20px); }
         }
       `}</style>
 
       {showSplash && (
         <div className="m-splash" data-fading={splashFading}>
-          <div className="m-splash-inner">
-            <div className="m-splash-orb" />
-            <h1 className="m-splash-title">You don't have to<br />figure this out alone.</h1>
-            <p className="m-splash-body">
-              Meridian helps you navigate co-parenting with clarity —
-              understand your decree, handle tough moments, and communicate
-              with calm confidence.
+          <div className="m-splash-bg">
+            <div className="m-splash-glow m-splash-glow-1" />
+            <div className="m-splash-glow m-splash-glow-2" />
+            <div className="m-splash-glow m-splash-glow-3" />
+          </div>
+          <div className="m-splash-content">
+            <div className="m-splash-mark">Meridian</div>
+            <h1 className="m-splash-h">
+              <span className="m-splash-line">Finally, someone</span>
+              <span className="m-splash-line">in your corner.</span>
+            </h1>
+            <p className="m-splash-sub">
+              Navigate co-parenting with clarity, calm,<br />
+              and the confidence to move forward.
             </p>
             <button className="m-splash-cta" onClick={enterApp}>
-              Get started
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
+              Begin
             </button>
-            <div className="m-splash-footer">Private and confidential. Not legal advice.</div>
+            <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
           </div>
         </div>
       )}
