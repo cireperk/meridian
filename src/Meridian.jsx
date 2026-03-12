@@ -89,13 +89,24 @@ export default function Meridian() {
 
   const enterApp = () => {
     setSplashFading(true);
+    setTimeout(() => setShowSplash(false), 900);
+  };
+
+  const openVideo = () => {
+    setShowVideo(true);
+    setVideoEnded(false);
+    setVideoProgress(0);
+    setVideoFading(false);
+    // Explicitly play after mount
     setTimeout(() => {
-      setShowSplash(false);
-      setShowVideo(true);
-    }, 900);
+      const v = videoRef.current;
+      if (v) { v.currentTime = 0; v.play().catch(() => {}); }
+    }, 100);
   };
 
   const dismissVideo = () => {
+    const v = videoRef.current;
+    if (v) { v.pause(); }
     setVideoFading(true);
     setTimeout(() => setShowVideo(false), 800);
   };
@@ -593,13 +604,13 @@ export default function Meridian() {
           clip-path: inset(0 100% 0 0);
           opacity: 0;
         }
-        /* Line 1: starts at 0.8s, takes 2s to write */
+        /* Line 1: starts at 0.5s, takes 1.2s to write */
         .m-splash-line:nth-child(1) .m-splash-line-text {
-          animation: m-write-in 2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.8s forwards;
+          animation: m-write-in 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s forwards;
         }
-        /* Line 2: starts after line 1 finishes + a brief pause */
+        /* Line 2: starts right after line 1 + brief pause */
         .m-splash-line:nth-child(2) .m-splash-line-text {
-          animation: m-write-in 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) 3.0s forwards;
+          animation: m-write-in 1s cubic-bezier(0.22, 0.61, 0.36, 1) 1.9s forwards;
         }
         @keyframes m-write-in {
           0% {
@@ -625,12 +636,12 @@ export default function Meridian() {
           left: 0;
         }
         .m-splash-line:nth-child(1)::after {
-          animation: m-pen-move 2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.8s forwards,
-                     m-cursor-fade 0.4s ease 2.8s forwards;
+          animation: m-pen-move 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s forwards,
+                     m-cursor-fade 0.3s ease 1.7s forwards;
         }
         .m-splash-line:nth-child(2)::after {
-          animation: m-pen-move 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) 3.0s forwards,
-                     m-cursor-fade 0.4s ease 4.8s forwards;
+          animation: m-pen-move 1s cubic-bezier(0.22, 0.61, 0.36, 1) 1.9s forwards,
+                     m-cursor-fade 0.3s ease 2.9s forwards;
         }
         @keyframes m-pen-move {
           0% { opacity: 1; left: 0%; }
@@ -646,7 +657,7 @@ export default function Meridian() {
           color: #999;
           margin-bottom: 48px;
           opacity: 0;
-          animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 5.2s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.2s forwards;
         }
 
         /* CTA */
@@ -665,7 +676,7 @@ export default function Meridian() {
           cursor: pointer;
           letter-spacing: -0.1px;
           opacity: 0;
-          animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 5.8s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 3.6s forwards;
           transition: transform 0.3s cubic-bezier(0.25, 0.1, 0, 1), box-shadow 0.3s ease;
         }
         .m-splash-cta:hover {
@@ -677,12 +688,31 @@ export default function Meridian() {
           box-shadow: none;
         }
 
+        .m-splash-video-link {
+          margin-top: 20px;
+          padding: 0;
+          background: none;
+          border: none;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #BCBCBC;
+          cursor: pointer;
+          opacity: 0;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
+          transition: color 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .m-splash-video-link:hover { color: #888; }
+
         .m-splash-footer {
           font-size: 11px;
           color: #D4D4D4;
           margin-top: 32px;
           opacity: 0;
-          animation: m-reveal 1s cubic-bezier(0.25, 0.1, 0, 1) 6.2s forwards;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.4s forwards;
           letter-spacing: 0.2px;
         }
 
@@ -816,43 +846,26 @@ export default function Meridian() {
           border-radius: 0 2px 2px 0;
         }
 
-        .m-video-skip {
-          padding: 10px 24px;
-          background: none;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 100px;
-          color: rgba(255, 255, 255, 0.4);
-          font-size: 13px;
-          font-weight: 500;
-          font-family: inherit;
+        .m-video-close {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          z-index: 2;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 50%;
+          color: rgba(255, 255, 255, 0.5);
           cursor: pointer;
-          transition: color 0.2s, border-color 0.2s;
-          letter-spacing: 0.2px;
+          transition: background 0.2s, color 0.2s;
         }
-        .m-video-skip:hover {
-          border-color: rgba(255, 255, 255, 0.25);
-          color: rgba(255, 255, 255, 0.7);
-        }
-
-        .m-video-continue {
-          padding: 14px 40px;
-          background: #fff;
-          border: none;
-          border-radius: 100px;
-          color: #1A1A1A;
-          font-size: 15px;
-          font-weight: 500;
-          font-family: inherit;
-          cursor: pointer;
-          letter-spacing: -0.1px;
-          opacity: 0;
-          transform: translateY(8px);
-          animation: m-video-frame-in 0.5s cubic-bezier(0.25, 0.1, 0, 1) 0.1s forwards;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .m-video-continue:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 30px rgba(255, 255, 255, 0.1);
+        .m-video-close:hover {
+          background: rgba(255, 255, 255, 0.15);
+          color: rgba(255, 255, 255, 0.8);
         }
       `}</style>
 
@@ -876,6 +889,10 @@ export default function Meridian() {
             <button className="m-splash-cta" onClick={enterApp}>
               Begin
             </button>
+            <button className="m-splash-video-link" onClick={openVideo}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+              Watch a message from our founder
+            </button>
             <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
           </div>
         </div>
@@ -887,6 +904,9 @@ export default function Meridian() {
             <div className="m-video-glow m-video-glow-1" />
             <div className="m-video-glow m-video-glow-2" />
           </div>
+          <button className="m-video-close" onClick={dismissVideo} aria-label="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
           <div className="m-video-frame">
             <div className="m-video-label">A message from the founder</div>
             <div className="m-video-card">
@@ -894,7 +914,6 @@ export default function Meridian() {
                 ref={videoRef}
                 className="m-video"
                 src="/welcome.mp4"
-                autoPlay
                 playsInline
                 onTimeUpdate={handleVideoTimeUpdate}
                 onEnded={handleVideoEnded}
@@ -903,13 +922,6 @@ export default function Meridian() {
                 <div className="m-video-progress-bar" style={{ width: `${videoProgress}%` }} />
               </div>
             </div>
-            {videoEnded ? (
-              <button className="m-video-continue" onClick={dismissVideo}>
-                Continue
-              </button>
-            ) : (
-              <button className="m-video-skip" onClick={dismissVideo}>Skip intro</button>
-            )}
           </div>
         </div>
       )}
