@@ -669,7 +669,25 @@ export default function Meridian() {
           color: #CCC;
           text-align: center;
           margin-top: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0;
         }
+        .m-disclaimer-sep {
+          margin: 0 6px;
+        }
+        .m-feedback-link {
+          background: none;
+          border: none;
+          font-size: 11px;
+          font-family: inherit;
+          color: #BCBCBC;
+          cursor: pointer;
+          padding: 0;
+          transition: color 0.15s;
+        }
+        .m-feedback-link:hover { color: #999; }
 
         /* --- Splash --- */
         .m-splash {
@@ -1182,15 +1200,6 @@ export default function Meridian() {
         <header className="m-header">
           <span className="m-wordmark">Meridian</span>
           <div className="m-header-actions">
-            <button
-              className="m-icon-btn"
-              onClick={() => setShowFeedback(true)}
-              title="Send feedback"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </button>
             {hasConversation && (
               <button
                 className="m-icon-btn"
@@ -1326,6 +1335,8 @@ export default function Meridian() {
           </div>
           <div className="m-disclaimer">
             Not legal advice — always consult an attorney.
+            <span className="m-disclaimer-sep">·</span>
+            <button className="m-feedback-link" onClick={() => setShowFeedback(true)}>Feedback?</button>
           </div>
         </div>
       </div>
