@@ -1704,8 +1704,8 @@ export default function Meridian() {
             {session?.user?.name && (
               <button
                 className="m-icon-btn"
-                onClick={handleSignOut}
-                title={`Signed in as ${session.user.name} — tap to sign out`}
+                onClick={() => { if (confirm("Sign out?")) handleSignOut(); }}
+                title={`Signed in as ${session.user.name}`}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
