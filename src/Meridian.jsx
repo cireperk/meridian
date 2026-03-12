@@ -163,11 +163,16 @@ export default function Meridian() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
+  const [debugInfo, setDebugInfo] = useState("");
+
   // Check for OAuth callback (hash token or PKCE code)
   useEffect(() => {
     const hash = window.location.hash;
     const queryParams = new URLSearchParams(window.location.search);
     const code = queryParams.get("code");
+    const pending = localStorage.getItem("m_oauth_pending");
+    const verifier = localStorage.getItem("m_code_verifier");
+    setDebugInfo(`hash: ${hash.slice(0, 80) || "(none)"} | code: ${code || "(none)"} | pending: ${pending} | verifier: ${verifier ? "yes" : "no"} | url: ${window.location.href.slice(0, 120)}`);
 
     const processOAuthUser = async (token) => {
       window.history.replaceState(null, "", window.location.pathname);
@@ -1616,6 +1621,9 @@ export default function Meridian() {
         }
         .m-auth-switch button:hover { color: #555; }
       `}</style>
+
+      {/* DEBUG — remove after fixing OAuth */}
+      {debugInfo && <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 99999, background: "#000", color: "#0f0", fontSize: "11px", padding: "8px", wordBreak: "break-all", fontFamily: "monospace" }}>{debugInfo}</div>}
 
       {/* Splash shows first, then auth gate, then app */}
       {showSplash ? (
