@@ -227,6 +227,7 @@ export default function Meridian() {
     localStorage.removeItem("m_session");
     localStorage.removeItem("m_messages");
     setMessages([]);
+    setAuthView("login");
   };
 
   // --- App state ---
@@ -1395,16 +1396,30 @@ export default function Meridian() {
 
         /* --- Auth screen --- */
         .m-auth {
-          height: 100vh;
+          position: fixed;
+          inset: 0;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          max-width: 400px;
-          margin: 0 auto;
           padding: 24px;
           font-family: 'Inter', -apple-system, sans-serif;
           animation: m-fade-up 0.4s ease both;
+          background: #FDFCFB;
+          overflow: hidden;
+        }
+        .m-auth-inner {
+          position: relative;
+          z-index: 1;
+          max-width: 400px;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .m-auth .m-splash-bg {
+          opacity: 1;
+          animation: none;
         }
         .m-auth-mark {
           font-size: 13px;
@@ -1506,19 +1521,21 @@ export default function Meridian() {
         .m-auth-switch button:hover { color: #555; }
       `}</style>
 
+      {/* SVG filter for water background — shared by splash + auth */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <filter id="m-water-filter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.006" numOctaves="3" seed="2" result="noise">
+              <animate attributeName="baseFrequency" dur="30s" values="0.008 0.006;0.012 0.009;0.006 0.008;0.008 0.006" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
+
       {/* Splash shows first, then auth gate, then app */}
       {showSplash ? (
         <div className="m-splash" data-fading={splashFading}>
-          <svg width="0" height="0" style={{ position: "absolute" }}>
-            <defs>
-              <filter id="m-water-filter">
-                <feTurbulence type="fractalNoise" baseFrequency="0.008 0.006" numOctaves="3" seed="2" result="noise">
-                  <animate attributeName="baseFrequency" dur="30s" values="0.008 0.006;0.012 0.009;0.006 0.008;0.008 0.006" repeatCount="indefinite" />
-                </feTurbulence>
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </defs>
-          </svg>
           <div className="m-splash-bg">
             <div className="m-splash-glow m-splash-glow-1" />
             <div className="m-splash-glow m-splash-glow-2" />
@@ -1594,6 +1611,14 @@ export default function Meridian() {
         </div>
       ) : SUPABASE_URL && !session?.user?.name ? (
         <div className="m-auth">
+          <div className="m-splash-bg">
+            <div className="m-splash-glow m-splash-glow-1" />
+            <div className="m-splash-glow m-splash-glow-2" />
+            <div className="m-splash-glow m-splash-glow-3" />
+            <div className="m-splash-glow m-splash-glow-4" />
+            <div className="m-splash-glow m-splash-glow-5" />
+          </div>
+          <div className="m-auth-inner">
           <div className="m-auth-mark">Meridian</div>
           {authView === "onboarding" ? (
             <>
@@ -1658,6 +1683,7 @@ export default function Meridian() {
               </div>
             </>
           )}
+          </div>
         </div>
       ) : (
       <>
