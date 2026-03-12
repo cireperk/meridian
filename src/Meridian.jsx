@@ -38,9 +38,6 @@ const authSignUp = (email, password) =>
 const authSignIn = (email, password) =>
   sbFetch("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
 
-const authGetUser = (token) =>
-  sbFetch("/auth/v1/user", { token });
-
 const dbSelect = (table, query, token) =>
   sbFetch(`/rest/v1/${table}?${query}`, { token });
 
@@ -163,84 +160,6 @@ export default function Meridian() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  const [debugInfo, setDebugInfo] = useState("");
-
-  // Check for OAuth callback (hash token or PKCE code)
-  useEffect(() => {
-    const hash = window.location.hash;
-    const queryParams = new URLSearchParams(window.location.search);
-    const code = queryParams.get("code");
-    const pending = localStorage.getItem("m_oauth_pending");
-    const verifier = localStorage.getItem("m_code_verifier");
-    setDebugInfo(`hash: ${hash.slice(0, 80) || "(none)"} | code: ${code || "(none)"} | pending: ${pending} | verifier: ${verifier ? "yes" : "no"} | url: ${window.location.href.slice(0, 120)}`);
-
-    const processOAuthUser = async (token) => {
-      window.history.replaceState(null, "", window.location.pathname);
-      try {
-        const user = await authGetUser(token);
-        // For Google OAuth, use the Google name directly if available
-        const googleName = user.user_metadata?.full_name || user.user_metadata?.name || "";
-        try {
-          const profiles = await dbSelect("profiles", `id=eq.${user.id}&select=*`, token);
-          if (profiles?.length) {
-            const s = { token, user: { id: user.id, email: user.email, name: profiles[0].name } };
-            setSession(s);
-            localStorage.setItem("m_session", JSON.stringify(s));
-          } else if (googleName) {
-            // Auto-create profile with Google name
-            await sbFetch("/rest/v1/profiles", {
-              method: "POST",
-              body: { id: user.id, name: googleName, email: user.email },
-              token,
-            });
-            const s = { token, user: { id: user.id, email: user.email, name: googleName } };
-            setSession(s);
-            localStorage.setItem("m_session", JSON.stringify(s));
-          } else {
-            setSession({ token, user: { id: user.id, email: user.email, name: "" } });
-            setAuthView("onboarding");
-          }
-        } catch {
-          if (googleName) {
-            const s = { token, user: { id: user.id, email: user.email, name: googleName } };
-            setSession(s);
-            localStorage.setItem("m_session", JSON.stringify(s));
-          } else {
-            setSession({ token, user: { id: user.id, email: user.email, name: "" } });
-            setAuthView("onboarding");
-          }
-        }
-      } catch (err) {
-        console.error("OAuth error:", err);
-        localStorage.removeItem("m_oauth_pending");
-      }
-    };
-
-    if (hash.includes("access_token=")) {
-      localStorage.removeItem("m_oauth_pending");
-      const params = new URLSearchParams(hash.slice(1));
-      const token = params.get("access_token");
-      if (token) processOAuthUser(token);
-    } else if (code) {
-      // PKCE flow — exchange code for token
-      localStorage.removeItem("m_oauth_pending");
-      const codeVerifier = localStorage.getItem("m_code_verifier") || "";
-      localStorage.removeItem("m_code_verifier");
-      fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
-        method: "POST",
-        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ auth_code: code, code_verifier: codeVerifier }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data?.access_token) processOAuthUser(data.access_token);
-          else console.error("PKCE token response:", data);
-        })
-        .catch((err) => console.error("PKCE exchange error:", err));
-    } else {
-      localStorage.removeItem("m_oauth_pending");
-    }
-  }, []);
 
   const handleSignUp = async () => {
     setAuthError("");
@@ -303,11 +222,6 @@ export default function Meridian() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    localStorage.setItem("m_oauth_pending", "1");
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}`;
-  };
-
   const handleSignOut = () => {
     setSession(null);
     localStorage.removeItem("m_session");
@@ -317,10 +231,6 @@ export default function Meridian() {
 
   // --- App state ---
   const [showSplash, setShowSplash] = useState(() => {
-    // Skip splash if returning from OAuth or already have a session
-    if (window.location.hash.includes("access_token=")) return false;
-    if (new URLSearchParams(window.location.search).has("code")) return false;
-    if (localStorage.getItem("m_oauth_pending")) return false;
     if (localStorage.getItem("m_session")) return false;
     return true;
   });
@@ -1569,24 +1479,6 @@ export default function Meridian() {
           height: 1px;
           background: #F0F0F0;
         }
-        .m-auth-google {
-          width: 100%;
-          padding: 14px;
-          background: #fff;
-          border: 1px solid #E5E5E5;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 500;
-          font-family: inherit;
-          color: #555;
-          cursor: pointer;
-          transition: background 0.15s, border-color 0.15s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-        }
-        .m-auth-google:hover { background: #FAFAFA; border-color: #DDD; }
         .m-auth-error {
           color: #DC2626;
           font-size: 13px;
@@ -1613,9 +1505,6 @@ export default function Meridian() {
         }
         .m-auth-switch button:hover { color: #555; }
       `}</style>
-
-      {/* DEBUG — remove after fixing OAuth */}
-      {debugInfo && <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 99999, background: "#000", color: "#0f0", fontSize: "11px", padding: "8px", wordBreak: "break-all", fontFamily: "monospace" }}>{debugInfo}</div>}
 
       {/* Splash shows first, then auth gate, then app */}
       {showSplash ? (
@@ -1758,11 +1647,6 @@ export default function Meridian() {
                   disabled={!authEmail || !authPassword || authLoading}
                 >
                   {authLoading ? "Loading..." : authView === "login" ? "Sign In" : "Create Account"}
-                </button>
-                <div className="m-auth-divider">or</div>
-                <button className="m-auth-google" onClick={handleGoogleLogin}>
-                  <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                  Continue with Google
                 </button>
               </div>
               <div className="m-auth-switch">
