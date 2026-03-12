@@ -9,6 +9,64 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).href;
 
+// --- Supabase raw fetch helpers ---
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const sbFetch = async (path, { method = "GET", body, token } = {}) => {
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${SUPABASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.msg || err.error_description || err.message || res.statusText);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+};
+
+const authSignUp = (email, password) =>
+  sbFetch("/auth/v1/signup", { method: "POST", body: { email, password } });
+
+const authSignIn = (email, password) =>
+  sbFetch("/auth/v1/token?grant_type=password", { method: "POST", body: { email, password } });
+
+const authGetUser = (token) =>
+  sbFetch("/auth/v1/user", { token });
+
+const dbSelect = (table, query, token) =>
+  sbFetch(`/rest/v1/${table}?${query}`, { token });
+
+const dbUpsert = (table, body, token) =>
+  sbFetch(`/rest/v1/${table}`, {
+    method: "POST",
+    body,
+    token,
+  });
+
+// Patch headers need Prefer: return=representation
+const dbUpdate = async (table, query, body, token) => {
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation",
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+  return res.json();
+};
+
 const SYSTEM_PROMPT = `You are Meridian, a calm and grounding AI companion for divorced parents navigating co-parenting. You help users understand their divorce decree, handle conflict situations, and draft neutral, child-focused communications.
 
 IMPORTANT RULES:
@@ -94,6 +152,121 @@ const IconNew = () => (
 );
 
 export default function Meridian() {
+  // --- Auth state ---
+  const [session, setSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("m_session")); } catch { return null; }
+  });
+  const [authView, setAuthView] = useState("login"); // "login" | "signup" | "onboarding"
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Check for OAuth callback (hash token)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get("access_token");
+      if (token) {
+        window.history.replaceState(null, "", window.location.pathname);
+        authGetUser(token).then(async (user) => {
+          // Check if profile exists
+          try {
+            const profiles = await dbSelect("profiles", `id=eq.${user.id}&select=*`, token);
+            if (profiles?.length) {
+              const s = { token, user: { id: user.id, email: user.email, name: profiles[0].name } };
+              setSession(s);
+              localStorage.setItem("m_session", JSON.stringify(s));
+            } else {
+              // New OAuth user — needs onboarding
+              setSession({ token, user: { id: user.id, email: user.email, name: "" } });
+              setAuthView("onboarding");
+            }
+          } catch {
+            const s = { token, user: { id: user.id, email: user.email, name: user.user_metadata?.full_name || "" } };
+            setSession(s);
+            localStorage.setItem("m_session", JSON.stringify(s));
+          }
+        }).catch(() => {});
+      }
+    }
+  }, []);
+
+  const handleSignUp = async () => {
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      const data = await authSignUp(authEmail, authPassword);
+      if (data?.access_token) {
+        const s = { token: data.access_token, user: { id: data.user.id, email: authEmail, name: "" } };
+        setSession(s);
+        setAuthView("onboarding");
+      } else if (data?.id) {
+        // Email confirmation required
+        setAuthError("Check your email for a confirmation link.");
+      }
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      const data = await authSignIn(authEmail, authPassword);
+      const token = data.access_token;
+      let name = "";
+      try {
+        const profiles = await dbSelect("profiles", `id=eq.${data.user.id}&select=name`, token);
+        if (profiles?.length) name = profiles[0].name;
+      } catch {}
+      const s = { token, user: { id: data.user.id, email: authEmail, name } };
+      setSession(s);
+      localStorage.setItem("m_session", JSON.stringify(s));
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleOnboarding = async () => {
+    if (!authName.trim()) return;
+    setAuthLoading(true);
+    try {
+      await sbFetch("/rest/v1/profiles", {
+        method: "POST",
+        body: { id: session.user.id, name: authName.trim(), email: session.user.email },
+        token: session.token,
+      });
+      const s = { ...session, user: { ...session.user, name: authName.trim() } };
+      setSession(s);
+      localStorage.setItem("m_session", JSON.stringify(s));
+      setAuthView("login");
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}`;
+  };
+
+  const handleSignOut = () => {
+    setSession(null);
+    localStorage.removeItem("m_session");
+    localStorage.removeItem("m_messages");
+    setMessages([]);
+  };
+
+  // --- App state ---
   const [showSplash, setShowSplash] = useState(() => {
     try { return !JSON.parse(localStorage.getItem("m_messages"))?.length; } catch { return true; }
   });
@@ -1255,7 +1428,213 @@ export default function Meridian() {
           padding: 24px 0;
           animation: m-fade-up 0.3s ease both;
         }
+
+        /* --- Auth screen --- */
+        .m-auth {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          max-width: 400px;
+          margin: 0 auto;
+          padding: 24px;
+          font-family: 'Inter', -apple-system, sans-serif;
+          animation: m-fade-up 0.4s ease both;
+        }
+        .m-auth-mark {
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          color: #BCBCBC;
+          margin-bottom: 32px;
+        }
+        .m-auth-title {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 28px;
+          font-weight: 500;
+          font-style: italic;
+          color: #2A2A2A;
+          margin-bottom: 8px;
+          text-align: center;
+        }
+        .m-auth-sub {
+          font-size: 14px;
+          color: #999;
+          margin-bottom: 32px;
+          text-align: center;
+        }
+        .m-auth-form {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .m-auth-input {
+          width: 100%;
+          padding: 14px 16px;
+          border: 1px solid #E5E5E5;
+          border-radius: 12px;
+          font-size: 15px;
+          font-family: inherit;
+          color: #1A1A1A;
+          background: #FAFAFA;
+          outline: none;
+          transition: border-color 0.15s;
+        }
+        .m-auth-input:focus { border-color: #BCBCBC; }
+        .m-auth-input::placeholder { color: #CCC; }
+        .m-auth-btn {
+          width: 100%;
+          padding: 14px;
+          background: #1A1A1A;
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .m-auth-btn:hover { background: #333; }
+        .m-auth-btn:disabled { background: #E5E5E5; color: #BCBCBC; cursor: default; }
+        .m-auth-divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: #CCC;
+          font-size: 12px;
+          margin: 4px 0;
+        }
+        .m-auth-divider::before,
+        .m-auth-divider::after {
+          content: "";
+          flex: 1;
+          height: 1px;
+          background: #F0F0F0;
+        }
+        .m-auth-google {
+          width: 100%;
+          padding: 14px;
+          background: #fff;
+          border: 1px solid #E5E5E5;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #555;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        .m-auth-google:hover { background: #FAFAFA; border-color: #DDD; }
+        .m-auth-error {
+          color: #DC2626;
+          font-size: 13px;
+          text-align: center;
+          padding: 8px;
+          background: #FEF2F2;
+          border-radius: 8px;
+        }
+        .m-auth-switch {
+          margin-top: 20px;
+          font-size: 13px;
+          color: #999;
+        }
+        .m-auth-switch button {
+          background: none;
+          border: none;
+          color: #1A1A1A;
+          font-weight: 500;
+          font-family: inherit;
+          font-size: 13px;
+          cursor: pointer;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .m-auth-switch button:hover { color: #555; }
       `}</style>
+
+      {/* Auth gate */}
+      {SUPABASE_URL && !session?.user?.name ? (
+        <div className="m-auth">
+          <div className="m-auth-mark">Meridian</div>
+          {authView === "onboarding" ? (
+            <>
+              <div className="m-auth-title">One more step</div>
+              <div className="m-auth-sub">What should we call you?</div>
+              <div className="m-auth-form">
+                <input
+                  className="m-auth-input"
+                  type="text"
+                  placeholder="Your first name"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleOnboarding()}
+                  autoFocus
+                />
+                {authError && <div className="m-auth-error">{authError}</div>}
+                <button className="m-auth-btn" onClick={handleOnboarding} disabled={!authName.trim() || authLoading}>
+                  {authLoading ? "Saving..." : "Continue"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="m-auth-title">
+                {authView === "login" ? "Welcome back" : "Create your account"}
+              </div>
+              <div className="m-auth-sub">
+                {authView === "login" ? "Sign in to pick up where you left off." : "Your conversations stay private and secure."}
+              </div>
+              <div className="m-auth-form">
+                <input
+                  className="m-auth-input"
+                  type="email"
+                  placeholder="Email address"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  autoFocus
+                />
+                <input
+                  className="m-auth-input"
+                  type="password"
+                  placeholder="Password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (authView === "login" ? handleSignIn() : handleSignUp())}
+                />
+                {authError && <div className="m-auth-error">{authError}</div>}
+                <button
+                  className="m-auth-btn"
+                  onClick={authView === "login" ? handleSignIn : handleSignUp}
+                  disabled={!authEmail || !authPassword || authLoading}
+                >
+                  {authLoading ? "Loading..." : authView === "login" ? "Sign In" : "Create Account"}
+                </button>
+                <div className="m-auth-divider">or</div>
+                <button className="m-auth-google" onClick={handleGoogleLogin}>
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+              <div className="m-auth-switch">
+                {authView === "login" ? (
+                  <>Don't have an account? <button onClick={() => { setAuthView("signup"); setAuthError(""); }}>Sign up</button></>
+                ) : (
+                  <>Already have an account? <button onClick={() => { setAuthView("login"); setAuthError(""); }}>Sign in</button></>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+      <>
 
       {showSplash && (
         <div className="m-splash" data-fading={splashFading}>
@@ -1356,6 +1735,18 @@ export default function Meridian() {
                 title="New conversation"
               >
                 <IconNew />
+              </button>
+            )}
+            {session?.user?.name && (
+              <button
+                className="m-icon-btn"
+                onClick={handleSignOut}
+                title={`Signed in as ${session.user.name} — tap to sign out`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
               </button>
             )}
           </div>
@@ -1539,6 +1930,8 @@ export default function Meridian() {
             )}
           </div>
         </div>
+      )}
+      </>
       )}
     </>
   );
