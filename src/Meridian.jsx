@@ -173,10 +173,22 @@ export default function Meridian() {
       window.history.replaceState(null, "", window.location.pathname);
       try {
         const user = await authGetUser(token);
+        // For Google OAuth, use the Google name directly if available
+        const googleName = user.user_metadata?.full_name || user.user_metadata?.name || "";
         try {
           const profiles = await dbSelect("profiles", `id=eq.${user.id}&select=*`, token);
           if (profiles?.length) {
             const s = { token, user: { id: user.id, email: user.email, name: profiles[0].name } };
+            setSession(s);
+            localStorage.setItem("m_session", JSON.stringify(s));
+          } else if (googleName) {
+            // Auto-create profile with Google name
+            await sbFetch("/rest/v1/profiles", {
+              method: "POST",
+              body: { id: user.id, name: googleName, email: user.email },
+              token,
+            });
+            const s = { token, user: { id: user.id, email: user.email, name: googleName } };
             setSession(s);
             localStorage.setItem("m_session", JSON.stringify(s));
           } else {
@@ -184,14 +196,18 @@ export default function Meridian() {
             setAuthView("onboarding");
           }
         } catch {
-          const name = user.user_metadata?.full_name || "";
-          const s = { token, user: { id: user.id, email: user.email, name } };
-          setSession(s);
-          if (name) localStorage.setItem("m_session", JSON.stringify(s));
-          else setAuthView("onboarding");
+          if (googleName) {
+            const s = { token, user: { id: user.id, email: user.email, name: googleName } };
+            setSession(s);
+            localStorage.setItem("m_session", JSON.stringify(s));
+          } else {
+            setSession({ token, user: { id: user.id, email: user.email, name: "" } });
+            setAuthView("onboarding");
+          }
         }
       } catch (err) {
         console.error("OAuth error:", err);
+        localStorage.removeItem("m_oauth_pending");
       }
     };
 
@@ -203,13 +219,19 @@ export default function Meridian() {
     } else if (code) {
       // PKCE flow — exchange code for token
       localStorage.removeItem("m_oauth_pending");
-      const codeVerifier = localStorage.getItem("m_code_verifier");
-      sbFetch("/auth/v1/token?grant_type=pkce", {
+      const codeVerifier = localStorage.getItem("m_code_verifier") || "";
+      localStorage.removeItem("m_code_verifier");
+      fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
         method: "POST",
-        body: { auth_code: code, code_verifier: codeVerifier || "" },
-      }).then((data) => {
-        if (data?.access_token) processOAuthUser(data.access_token);
-      }).catch((err) => console.error("PKCE exchange error:", err));
+        headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ auth_code: code, code_verifier: codeVerifier }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.access_token) processOAuthUser(data.access_token);
+          else console.error("PKCE token response:", data);
+        })
+        .catch((err) => console.error("PKCE exchange error:", err));
     } else {
       localStorage.removeItem("m_oauth_pending");
     }
@@ -276,9 +298,17 @@ export default function Meridian() {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
+    // PKCE flow: generate code_verifier + code_challenge
+    const verifier = crypto.randomUUID() + crypto.randomUUID();
+    localStorage.setItem("m_code_verifier", verifier);
     localStorage.setItem("m_oauth_pending", "1");
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}&flow_type=implicit`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}&code_challenge=${challenge}&code_challenge_method=s256`;
   };
 
   const handleSignOut = () => {
