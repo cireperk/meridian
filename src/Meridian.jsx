@@ -163,37 +163,54 @@ export default function Meridian() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Check for OAuth callback (hash token)
+  // Check for OAuth callback (hash token or PKCE code)
   useEffect(() => {
     const hash = window.location.hash;
+    const queryParams = new URLSearchParams(window.location.search);
+    const code = queryParams.get("code");
+
+    const processOAuthUser = async (token) => {
+      window.history.replaceState(null, "", window.location.pathname);
+      try {
+        const user = await authGetUser(token);
+        try {
+          const profiles = await dbSelect("profiles", `id=eq.${user.id}&select=*`, token);
+          if (profiles?.length) {
+            const s = { token, user: { id: user.id, email: user.email, name: profiles[0].name } };
+            setSession(s);
+            localStorage.setItem("m_session", JSON.stringify(s));
+          } else {
+            setSession({ token, user: { id: user.id, email: user.email, name: "" } });
+            setAuthView("onboarding");
+          }
+        } catch {
+          const name = user.user_metadata?.full_name || "";
+          const s = { token, user: { id: user.id, email: user.email, name } };
+          setSession(s);
+          if (name) localStorage.setItem("m_session", JSON.stringify(s));
+          else setAuthView("onboarding");
+        }
+      } catch (err) {
+        console.error("OAuth error:", err);
+      }
+    };
+
     if (hash.includes("access_token=")) {
       localStorage.removeItem("m_oauth_pending");
       const params = new URLSearchParams(hash.slice(1));
       const token = params.get("access_token");
-      if (token) {
-        window.history.replaceState(null, "", window.location.pathname);
-        authGetUser(token).then(async (user) => {
-          // Check if profile exists
-          try {
-            const profiles = await dbSelect("profiles", `id=eq.${user.id}&select=*`, token);
-            if (profiles?.length) {
-              const s = { token, user: { id: user.id, email: user.email, name: profiles[0].name } };
-              setSession(s);
-              localStorage.setItem("m_session", JSON.stringify(s));
-            } else {
-              // New OAuth user — needs onboarding
-              setSession({ token, user: { id: user.id, email: user.email, name: "" } });
-              setAuthView("onboarding");
-            }
-          } catch {
-            const s = { token, user: { id: user.id, email: user.email, name: user.user_metadata?.full_name || "" } };
-            setSession(s);
-            localStorage.setItem("m_session", JSON.stringify(s));
-          }
-        }).catch(() => {});
-      }
+      if (token) processOAuthUser(token);
+    } else if (code) {
+      // PKCE flow — exchange code for token
+      localStorage.removeItem("m_oauth_pending");
+      const codeVerifier = localStorage.getItem("m_code_verifier");
+      sbFetch("/auth/v1/token?grant_type=pkce", {
+        method: "POST",
+        body: { auth_code: code, code_verifier: codeVerifier || "" },
+      }).then((data) => {
+        if (data?.access_token) processOAuthUser(data.access_token);
+      }).catch((err) => console.error("PKCE exchange error:", err));
     } else {
-      // No OAuth callback — clear stale pending flag
       localStorage.removeItem("m_oauth_pending");
     }
   }, []);
@@ -261,7 +278,7 @@ export default function Meridian() {
 
   const handleGoogleLogin = () => {
     localStorage.setItem("m_oauth_pending", "1");
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}`;
+    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}&flow_type=implicit`;
   };
 
   const handleSignOut = () => {
@@ -275,6 +292,7 @@ export default function Meridian() {
   const [showSplash, setShowSplash] = useState(() => {
     // Skip splash if returning from OAuth or already have a session
     if (window.location.hash.includes("access_token=")) return false;
+    if (new URLSearchParams(window.location.search).has("code")) return false;
     if (localStorage.getItem("m_oauth_pending")) return false;
     if (localStorage.getItem("m_session")) return false;
     return true;
