@@ -156,7 +156,7 @@ export default function Meridian() {
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem("m_session")); } catch { return null; }
   });
-  const [authView, setAuthView] = useState("login"); // "login" | "signup" | "onboarding"
+  const [authView, setAuthView] = useState("signup"); // "login" | "signup" | "onboarding"
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
