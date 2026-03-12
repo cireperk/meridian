@@ -75,16 +75,27 @@ const IconNew = () => (
 export default function Meridian() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoFading, setVideoFading] = useState(false);
   const [mode, setMode] = useState("guidance");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [decreeText, setDecreeText] = useState("");
   const [decreeFileName, setDecreeFileName] = useState("");
+  const videoRef = useRef(null);
 
   const enterApp = () => {
     setSplashFading(true);
-    setTimeout(() => setShowSplash(false), 900);
+    setTimeout(() => {
+      setShowSplash(false);
+      setShowVideo(true);
+    }, 900);
+  };
+
+  const dismissVideo = () => {
+    setVideoFading(true);
+    setTimeout(() => setShowVideo(false), 800);
   };
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
@@ -199,7 +210,7 @@ export default function Meridian() {
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body, #root { height: 100%; }
-        body { background: #FAFAFA; -webkit-font-smoothing: antialiased; overflow: hidden; }
+        body { background: #FAFAFA; -webkit-font-smoothing: antialiased; }
 
         .m-app {
           height: 100vh;
@@ -681,6 +692,56 @@ export default function Meridian() {
           0%, 100% { transform: translate(-50%, 0); }
           50% { transform: translate(-50%, -20px); }
         }
+
+        /* --- Video intro --- */
+        .m-video-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 90;
+          background: #000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          animation: m-video-in 0.6s ease both;
+          transition: opacity 0.8s ease;
+        }
+        .m-video-overlay[data-fading="true"] {
+          opacity: 0;
+          pointer-events: none;
+        }
+        @keyframes m-video-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .m-video {
+          width: 100%;
+          max-width: 480px;
+          max-height: 80vh;
+          border-radius: 0;
+          object-fit: contain;
+        }
+        .m-video-skip {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          padding: 8px 18px;
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 100px;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+          z-index: 2;
+        }
+        .m-video-skip:hover {
+          background: rgba(255, 255, 255, 0.25);
+          color: #fff;
+        }
       `}</style>
 
       {showSplash && (
@@ -705,6 +766,20 @@ export default function Meridian() {
             </button>
             <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
           </div>
+        </div>
+      )}
+
+      {showVideo && (
+        <div className="m-video-overlay" data-fading={videoFading}>
+          <button className="m-video-skip" onClick={dismissVideo}>Skip</button>
+          <video
+            ref={videoRef}
+            className="m-video"
+            src="/welcome.mp4"
+            autoPlay
+            playsInline
+            onEnded={dismissVideo}
+          />
         </div>
       )}
 
