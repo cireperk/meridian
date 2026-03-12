@@ -693,12 +693,12 @@ export default function Meridian() {
           <div className="m-splash-content">
             <div className="m-splash-mark">Meridian</div>
             <h1 className="m-splash-h">
-              <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
-              <span className="m-splash-line"><span className="m-splash-line-text">in your corner.</span></span>
+              <span className="m-splash-line"><span className="m-splash-line-text">Divorce can be hard.</span></span>
+              <span className="m-splash-line"><span className="m-splash-line-text">Co-parenting can be harder.</span></span>
             </h1>
             <p className="m-splash-sub">
-              Navigate co-parenting with clarity, calm,<br />
-              and the confidence to move forward.
+              We'll help you navigate it with<br />
+              clarity, calm, and confidence.
             </p>
             <button className="m-splash-cta" onClick={enterApp}>
               Begin
@@ -775,10 +775,7 @@ export default function Meridian() {
           {/* Empty state or messages */}
           {!hasConversation ? (
             <div className="m-empty">
-              <div className="m-empty-title">{MODE_HINTS[mode].split(".")[0]}.</div>
-              <div className="m-empty-body">
-                {MODE_HINTS[mode]}
-              </div>
+              <div className="m-empty-title">{MODE_HINTS[mode]}</div>
             </div>
           ) : (
             <div className="m-messages">
