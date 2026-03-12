@@ -569,35 +569,17 @@ export default function Meridian() {
           text-align: center;
         }
 
-        /* Crossfade layers inside splash */
-        .m-splash-text-layer,
-        .m-splash-video-layer {
+        /* Splash inner layer (text or video) */
+        .m-splash-inner {
           display: flex;
           flex-direction: column;
           align-items: center;
-          transition: opacity 0.5s ease, transform 0.5s ease;
-        }
-        .m-splash-text-layer {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .m-splash-text-layer[data-hidden="true"] {
-          opacity: 0;
-          transform: translateY(-10px);
-          pointer-events: none;
-          position: absolute;
-        }
-        .m-splash-video-layer {
-          opacity: 0;
-          transform: translateY(16px);
-          pointer-events: none;
           width: 100%;
+          animation: m-fade-up 0.5s ease both;
         }
-        .m-splash-video-layer[data-visible="true"] {
-          opacity: 1;
-          transform: translateY(0);
-          pointer-events: auto;
-          position: relative;
+        @keyframes m-fade-up {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         /* Wordmark */
@@ -827,51 +809,51 @@ export default function Meridian() {
             <div className="m-splash-glow m-splash-glow-3" />
           </div>
           <div className="m-splash-content">
-            {/* Text layer — default splash */}
-            <div className="m-splash-text-layer" data-hidden={splashView === "video"}>
-              <div className="m-splash-mark">Meridian</div>
-              <h1 className="m-splash-h">
-                <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
-                <span className="m-splash-line"><span className="m-splash-line-text">on your side.</span></span>
-              </h1>
-              <p className="m-splash-sub">
-                Divorce is hard. Co-parenting is hard.<br />
-                We'll help you through it with calm, and clarity.
-              </p>
-              <button className="m-splash-cta" onClick={enterApp}>
-                Begin
-              </button>
-              <button className="m-splash-video-link" onClick={openVideo}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                Watch a message from our founder
-              </button>
-              <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
-            </div>
-
-            {/* Video layer — replaces text when active */}
-            <div className="m-splash-video-layer" data-visible={splashView === "video"}>
-              <div className="m-sv-label">A message from our founder</div>
-              <div className="m-sv-card">
-                <video
-                  ref={videoRef}
-                  className="m-sv-video"
-                  src="/welcome.mp4"
-                  playsInline
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  onEnded={handleVideoEnded}
-                />
-                <div className="m-sv-progress">
-                  <div className="m-sv-progress-bar" style={{ width: `${videoProgress}%` }} />
-                </div>
+            {splashView === "text" ? (
+              <div className="m-splash-inner" key="text">
+                <div className="m-splash-mark">Meridian</div>
+                <h1 className="m-splash-h">
+                  <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
+                  <span className="m-splash-line"><span className="m-splash-line-text">on your side.</span></span>
+                </h1>
+                <p className="m-splash-sub">
+                  Divorce is hard. Co-parenting is hard.<br />
+                  We'll help you through it with calm, and clarity.
+                </p>
+                <button className="m-splash-cta" onClick={enterApp}>
+                  Begin
+                </button>
+                <button className="m-splash-video-link" onClick={openVideo}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                  Watch a message from our founder
+                </button>
+                <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
               </div>
-              <button className="m-splash-cta" onClick={enterApp}>
-                {videoEnded ? "Get Started" : "Begin"}
-              </button>
-              <button className="m-sv-back" onClick={closeVideo}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                Back
-              </button>
-            </div>
+            ) : (
+              <div className="m-splash-inner" key="video">
+                <div className="m-sv-label">A message from our founder</div>
+                <div className="m-sv-card">
+                  <video
+                    ref={videoRef}
+                    className="m-sv-video"
+                    src="/welcome.mp4"
+                    playsInline
+                    onTimeUpdate={handleVideoTimeUpdate}
+                    onEnded={handleVideoEnded}
+                  />
+                  <div className="m-sv-progress">
+                    <div className="m-sv-progress-bar" style={{ width: `${videoProgress}%` }} />
+                  </div>
+                </div>
+                <button className="m-splash-cta" style={{ opacity: 1, animation: "none" }} onClick={enterApp}>
+                  {videoEnded ? "Get Started" : "Begin"}
+                </button>
+                <button className="m-sv-back" onClick={closeVideo}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                  Back
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
