@@ -75,10 +75,9 @@ const IconNew = () => (
 export default function Meridian() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashFading, setSplashFading] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
-  const [videoFading, setVideoFading] = useState(false);
-  const [videoEnded, setVideoEnded] = useState(false);
+  const [splashView, setSplashView] = useState("text"); // "text" | "video"
   const [videoProgress, setVideoProgress] = useState(0);
+  const [videoEnded, setVideoEnded] = useState(false);
   const [mode, setMode] = useState("guidance");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -88,27 +87,24 @@ export default function Meridian() {
   const videoRef = useRef(null);
 
   const enterApp = () => {
+    if (videoRef.current) videoRef.current.pause();
     setSplashFading(true);
     setTimeout(() => setShowSplash(false), 900);
   };
 
   const openVideo = () => {
-    setShowVideo(true);
+    setSplashView("video");
     setVideoEnded(false);
     setVideoProgress(0);
-    setVideoFading(false);
-    // Explicitly play after mount
     setTimeout(() => {
       const v = videoRef.current;
       if (v) { v.currentTime = 0; v.play().catch(() => {}); }
-    }, 100);
+    }, 400); // wait for crossfade to mostly finish
   };
 
-  const dismissVideo = () => {
-    const v = videoRef.current;
-    if (v) { v.pause(); }
-    setVideoFading(true);
-    setTimeout(() => setShowVideo(false), 800);
+  const closeVideo = () => {
+    if (videoRef.current) videoRef.current.pause();
+    setSplashView("text");
   };
 
   const handleVideoTimeUpdate = () => {
@@ -564,12 +560,44 @@ export default function Meridian() {
         .m-splash-content {
           position: relative;
           z-index: 1;
-          max-width: 380px;
-          padding: 0 40px;
+          max-width: 420px;
+          width: 100%;
+          padding: 0 32px;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
+        }
+
+        /* Crossfade layers inside splash */
+        .m-splash-text-layer,
+        .m-splash-video-layer {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .m-splash-text-layer {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .m-splash-text-layer[data-hidden="true"] {
+          opacity: 0;
+          transform: translateY(-10px);
+          pointer-events: none;
+          position: absolute;
+        }
+        .m-splash-video-layer {
+          opacity: 0;
+          transform: translateY(16px);
+          pointer-events: none;
+          width: 100%;
+        }
+        .m-splash-video-layer[data-visible="true"] {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+          position: relative;
         }
 
         /* Wordmark */
@@ -735,138 +763,60 @@ export default function Meridian() {
           50% { transform: translate(-50%, -20px); }
         }
 
-        /* --- Video intro --- */
-        .m-video-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 90;
-          background: #0A0A0A;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          animation: m-video-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
-          transition: opacity 0.8s ease;
-        }
-        .m-video-overlay[data-fading="true"] {
-          opacity: 0;
-          pointer-events: none;
-        }
-        @keyframes m-video-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        /* Ambient glow behind video */
-        .m-video-bg {
-          position: absolute;
-          inset: 0;
-          overflow: hidden;
-          opacity: 0;
-          animation: m-ambient-in 1.5s ease 0.3s forwards;
-        }
-        .m-video-glow {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(100px);
-        }
-        .m-video-glow-1 {
-          width: 500px;
-          height: 500px;
-          top: 10%;
-          left: -10%;
-          background: rgba(139, 92, 246, 0.12);
-          animation: m-drift-1 14s ease-in-out infinite;
-        }
-        .m-video-glow-2 {
-          width: 400px;
-          height: 400px;
-          bottom: 5%;
-          right: -10%;
-          background: rgba(99, 102, 241, 0.1);
-          animation: m-drift-2 12s ease-in-out infinite;
-        }
-
-        .m-video-frame {
-          position: relative;
-          z-index: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 24px;
-          max-width: 440px;
-          width: 90%;
-          opacity: 0;
-          transform: translateY(12px) scale(0.97);
-          animation: m-video-frame-in 0.7s cubic-bezier(0.25, 0.1, 0, 1) 0.4s forwards;
-        }
-        @keyframes m-video-frame-in {
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .m-video-label {
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.35);
-          font-family: 'Inter', -apple-system, sans-serif;
-        }
-
-        .m-video-card {
+        /* --- Video card (inside splash) --- */
+        .m-sv-card {
           width: 100%;
           border-radius: 16px;
           overflow: hidden;
-          background: #111;
-          box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+          background: #F0F0F0;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
           position: relative;
+          margin-bottom: 24px;
         }
-
-        .m-video {
+        .m-sv-video {
           width: 100%;
           display: block;
-          border-radius: 0;
           object-fit: contain;
-          background: #111;
+          background: #F0F0F0;
         }
-
-        /* Progress bar */
-        .m-video-progress {
+        .m-sv-progress {
           position: absolute;
           bottom: 0;
           left: 0;
           right: 0;
           height: 3px;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.06);
         }
-        .m-video-progress-bar {
+        .m-sv-progress-bar {
           height: 100%;
-          background: rgba(255, 255, 255, 0.5);
+          background: #2A2A2A;
           transition: width 0.3s linear;
           border-radius: 0 2px 2px 0;
+          opacity: 0.4;
         }
-
-        .m-video-close {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          z-index: 2;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 50%;
-          color: rgba(255, 255, 255, 0.5);
+        .m-sv-label {
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: #BCBCBC;
+          margin-bottom: 16px;
+        }
+        .m-sv-back {
+          padding: 0;
+          background: none;
+          border: none;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #BCBCBC;
           cursor: pointer;
-          transition: background 0.2s, color 0.2s;
+          transition: color 0.2s;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
         }
-        .m-video-close:hover {
-          background: rgba(255, 255, 255, 0.15);
-          color: rgba(255, 255, 255, 0.8);
-        }
+        .m-sv-back:hover { color: #888; }
       `}</style>
 
       {showSplash && (
@@ -877,50 +827,50 @@ export default function Meridian() {
             <div className="m-splash-glow m-splash-glow-3" />
           </div>
           <div className="m-splash-content">
-            <div className="m-splash-mark">Meridian</div>
-            <h1 className="m-splash-h">
-              <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
-              <span className="m-splash-line"><span className="m-splash-line-text">on your side.</span></span>
-            </h1>
-            <p className="m-splash-sub">
-              Divorce is hard. Co-parenting is hard.<br />
-              We'll help you through it with calm, and clarity.
-            </p>
-            <button className="m-splash-cta" onClick={enterApp}>
-              Begin
-            </button>
-            <button className="m-splash-video-link" onClick={openVideo}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-              Watch a message from our founder
-            </button>
-            <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
-          </div>
-        </div>
-      )}
+            {/* Text layer — default splash */}
+            <div className="m-splash-text-layer" data-hidden={splashView === "video"}>
+              <div className="m-splash-mark">Meridian</div>
+              <h1 className="m-splash-h">
+                <span className="m-splash-line"><span className="m-splash-line-text">Finally, someone</span></span>
+                <span className="m-splash-line"><span className="m-splash-line-text">on your side.</span></span>
+              </h1>
+              <p className="m-splash-sub">
+                Divorce is hard. Co-parenting is hard.<br />
+                We'll help you through it with calm, and clarity.
+              </p>
+              <button className="m-splash-cta" onClick={enterApp}>
+                Begin
+              </button>
+              <button className="m-splash-video-link" onClick={openVideo}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                Watch a message from our founder
+              </button>
+              <div className="m-splash-footer">Private. Confidential. Not legal advice.</div>
+            </div>
 
-      {showVideo && (
-        <div className="m-video-overlay" data-fading={videoFading}>
-          <div className="m-video-bg">
-            <div className="m-video-glow m-video-glow-1" />
-            <div className="m-video-glow m-video-glow-2" />
-          </div>
-          <button className="m-video-close" onClick={dismissVideo} aria-label="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
-          <div className="m-video-frame">
-            <div className="m-video-label">A message from the founder</div>
-            <div className="m-video-card">
-              <video
-                ref={videoRef}
-                className="m-video"
-                src="/welcome.mp4"
-                playsInline
-                onTimeUpdate={handleVideoTimeUpdate}
-                onEnded={handleVideoEnded}
-              />
-              <div className="m-video-progress">
-                <div className="m-video-progress-bar" style={{ width: `${videoProgress}%` }} />
+            {/* Video layer — replaces text when active */}
+            <div className="m-splash-video-layer" data-visible={splashView === "video"}>
+              <div className="m-sv-label">A message from our founder</div>
+              <div className="m-sv-card">
+                <video
+                  ref={videoRef}
+                  className="m-sv-video"
+                  src="/welcome.mp4"
+                  playsInline
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  onEnded={handleVideoEnded}
+                />
+                <div className="m-sv-progress">
+                  <div className="m-sv-progress-bar" style={{ width: `${videoProgress}%` }} />
+                </div>
               </div>
+              <button className="m-splash-cta" onClick={enterApp}>
+                {videoEnded ? "Get Started" : "Begin"}
+              </button>
+              <button className="m-sv-back" onClick={closeVideo}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                Back
+              </button>
             </div>
           </div>
         </div>
