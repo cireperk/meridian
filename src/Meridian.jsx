@@ -834,8 +834,15 @@ export default function Meridian() {
         .m-splash-footer {
           position: absolute;
           bottom: 36px;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 0;
+          right: 0;
+          display: flex;
+          justify-content: center;
+          z-index: 2;
+          opacity: 0;
+          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
+        }
+        .m-splash-footer span {
           padding: 8px 18px;
           background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(12px);
@@ -846,10 +853,7 @@ export default function Meridian() {
           font-weight: 500;
           color: #BCBCBC;
           white-space: nowrap;
-          opacity: 0;
-          animation: m-reveal 0.8s cubic-bezier(0.25, 0.1, 0, 1) 4.0s forwards;
           letter-spacing: 0.2px;
-          z-index: 2;
         }
 
         @keyframes m-reveal {
@@ -1050,7 +1054,7 @@ export default function Meridian() {
               </div>
             )}
           </div>
-          <div className="m-splash-footer">Private · Confidential · Not legal advice</div>
+          <div className="m-splash-footer"><span>Private · Confidential · Not legal advice</span></div>
         </div>
       )}
 
