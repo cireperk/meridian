@@ -3,60 +3,44 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { feedback } = req.body;
+  const { feedback, userId, email } = req.body;
   if (!feedback || !feedback.trim()) {
     return res.status(400).json({ error: "Feedback is required" });
   }
 
-  const jiraEmail = process.env.JIRA_EMAIL;
-  const jiraToken = process.env.JIRA_API_TOKEN;
-  const jiraBaseUrl = process.env.JIRA_BASE_URL; // e.g. https://yourorg.atlassian.net
-  const jiraProjectKey = process.env.JIRA_PROJECT_KEY || "MER";
+  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!jiraEmail || !jiraToken || !jiraBaseUrl) {
-    // Fallback: log it (visible in Vercel function logs)
-    console.log("[FEEDBACK]", new Date().toISOString(), feedback.trim());
-    return res.status(200).json({ ok: true, method: "logged" });
-  }
-
-  try {
-    const auth = Buffer.from(`${jiraEmail}:${jiraToken}`).toString("base64");
-    const response = await fetch(`${jiraBaseUrl}/rest/api/3/issue`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fields: {
-          project: { key: jiraProjectKey },
-          summary: `User Feedback: ${feedback.trim().slice(0, 80)}`,
-          description: {
-            type: "doc",
-            version: 1,
-            content: [
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: feedback.trim() }],
-              },
-            ],
-          },
-          issuetype: { name: "Task" },
-          labels: ["customer-feedback", "meridian-app"],
+  if (SUPABASE_URL && SERVICE_ROLE_KEY) {
+    try {
+      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/feedback`, {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
         },
-      }),
-    });
+        body: JSON.stringify({
+          user_id: userId || null,
+          email: email || null,
+          message: feedback.trim(),
+        }),
+      });
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("Jira API error:", err);
-      return res.status(500).json({ error: "Failed to create ticket" });
+      if (sbRes.ok) {
+        return res.status(200).json({ ok: true });
+      }
+
+      // Table might not exist yet — fall through to log
+      const errText = await sbRes.text();
+      console.error("Supabase feedback insert error:", errText);
+    } catch (err) {
+      console.error("Supabase feedback error:", err);
     }
-
-    const data = await response.json();
-    return res.status(200).json({ ok: true, key: data.key });
-  } catch (err) {
-    console.error("Feedback error:", err);
-    return res.status(500).json({ error: "Failed to send feedback" });
   }
+
+  // Fallback: log to Vercel function logs
+  console.log("[FEEDBACK]", new Date().toISOString(), email || "anon", feedback.trim());
+  return res.status(200).json({ ok: true, method: "logged" });
 }

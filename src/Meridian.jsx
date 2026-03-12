@@ -512,7 +512,7 @@ export default function Meridian() {
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feedback: feedbackText.trim() }),
+        body: JSON.stringify({ feedback: feedbackText.trim(), userId: session?.user?.id, email: session?.user?.email }),
       });
       if (!res.ok) throw new Error("Failed");
       setFeedbackSent(true);
