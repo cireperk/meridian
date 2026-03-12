@@ -1560,83 +1560,8 @@ export default function Meridian() {
         .m-auth-switch button:hover { color: #555; }
       `}</style>
 
-      {/* Auth gate */}
-      {SUPABASE_URL && !session?.user?.name ? (
-        <div className="m-auth">
-          <div className="m-auth-mark">Meridian</div>
-          {authView === "onboarding" ? (
-            <>
-              <div className="m-auth-title">One more step</div>
-              <div className="m-auth-sub">What should we call you?</div>
-              <div className="m-auth-form">
-                <input
-                  className="m-auth-input"
-                  type="text"
-                  placeholder="Your first name"
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleOnboarding()}
-                  autoFocus
-                />
-                {authError && <div className="m-auth-error">{authError}</div>}
-                <button className="m-auth-btn" onClick={handleOnboarding} disabled={!authName.trim() || authLoading}>
-                  {authLoading ? "Saving..." : "Continue"}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="m-auth-title">
-                {authView === "login" ? "Welcome back" : "Create your account"}
-              </div>
-              <div className="m-auth-sub">
-                {authView === "login" ? "Sign in to pick up where you left off." : "Your conversations stay private and secure."}
-              </div>
-              <div className="m-auth-form">
-                <input
-                  className="m-auth-input"
-                  type="email"
-                  placeholder="Email address"
-                  value={authEmail}
-                  onChange={(e) => setAuthEmail(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  className="m-auth-input"
-                  type="password"
-                  placeholder="Password"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (authView === "login" ? handleSignIn() : handleSignUp())}
-                />
-                {authError && <div className="m-auth-error">{authError}</div>}
-                <button
-                  className="m-auth-btn"
-                  onClick={authView === "login" ? handleSignIn : handleSignUp}
-                  disabled={!authEmail || !authPassword || authLoading}
-                >
-                  {authLoading ? "Loading..." : authView === "login" ? "Sign In" : "Create Account"}
-                </button>
-                <div className="m-auth-divider">or</div>
-                <button className="m-auth-google" onClick={handleGoogleLogin}>
-                  <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                  Continue with Google
-                </button>
-              </div>
-              <div className="m-auth-switch">
-                {authView === "login" ? (
-                  <>Don't have an account? <button onClick={() => { setAuthView("signup"); setAuthError(""); }}>Sign up</button></>
-                ) : (
-                  <>Already have an account? <button onClick={() => { setAuthView("login"); setAuthError(""); }}>Sign in</button></>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      ) : (
-      <>
-
-      {showSplash && (
+      {/* Splash shows first, then auth gate, then app */}
+      {showSplash ? (
         <div className="m-splash" data-fading={splashFading}>
           <svg width="0" height="0" style={{ position: "absolute" }}>
             <defs>
@@ -1721,8 +1646,80 @@ export default function Meridian() {
           </div>
           <div className="m-splash-footer"><span>Private · Confidential · Not legal advice</span></div>
         </div>
-      )}
-
+      ) : SUPABASE_URL && !session?.user?.name ? (
+        <div className="m-auth">
+          <div className="m-auth-mark">Meridian</div>
+          {authView === "onboarding" ? (
+            <>
+              <div className="m-auth-title">One more step</div>
+              <div className="m-auth-sub">What should we call you?</div>
+              <div className="m-auth-form">
+                <input
+                  className="m-auth-input"
+                  type="text"
+                  placeholder="Your first name"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleOnboarding()}
+                  autoFocus
+                />
+                {authError && <div className="m-auth-error">{authError}</div>}
+                <button className="m-auth-btn" onClick={handleOnboarding} disabled={!authName.trim() || authLoading}>
+                  {authLoading ? "Saving..." : "Continue"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="m-auth-title">
+                {authView === "login" ? "Welcome back" : "Create your account"}
+              </div>
+              <div className="m-auth-sub">
+                {authView === "login" ? "Sign in to pick up where you left off." : "Your conversations stay private and secure."}
+              </div>
+              <div className="m-auth-form">
+                <input
+                  className="m-auth-input"
+                  type="email"
+                  placeholder="Email address"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  autoFocus
+                />
+                <input
+                  className="m-auth-input"
+                  type="password"
+                  placeholder="Password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (authView === "login" ? handleSignIn() : handleSignUp())}
+                />
+                {authError && <div className="m-auth-error">{authError}</div>}
+                <button
+                  className="m-auth-btn"
+                  onClick={authView === "login" ? handleSignIn : handleSignUp}
+                  disabled={!authEmail || !authPassword || authLoading}
+                >
+                  {authLoading ? "Loading..." : authView === "login" ? "Sign In" : "Create Account"}
+                </button>
+                <div className="m-auth-divider">or</div>
+                <button className="m-auth-google" onClick={handleGoogleLogin}>
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Continue with Google
+                </button>
+              </div>
+              <div className="m-auth-switch">
+                {authView === "login" ? (
+                  <>Don't have an account? <button onClick={() => { setAuthView("signup"); setAuthError(""); }}>Sign up</button></>
+                ) : (
+                  <>Already have an account? <button onClick={() => { setAuthView("login"); setAuthError(""); }}>Sign in</button></>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+      <>
       <div className="m-app">
         {/* Header */}
         <header className="m-header">
