@@ -182,8 +182,10 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => setShowSplash(false);
-  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setTimeout(() => { const v = videoRef.current; if (v) { v.currentTime = 0; v.play().catch(() => {}); } }, 100); };
+  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setTimeout(() => { const v = videoRef.current; if (v) { v.currentTime = 0; v.play().catch(() => {}); } }, 400); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
+  const [videoPaused, setVideoPaused] = useState(false);
+  const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
 
   // --- App state ---
   const [activeTab, setActiveTab] = useState<Tab>("chat");
@@ -294,66 +296,73 @@ export default function App() {
       {/* ==================== SPLASH ==================== */}
       <AnimatePresence mode="wait">
         {showSplash && (
-          <motion.div key="splash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-50 flex flex-col bg-white overflow-hidden">
+          <motion.div key="splash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.6 }} className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden">
+            {/* Soft ambient background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
+              <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
+            </div>
+
             {/* Skip */}
-            <motion.button initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }} onClick={enterApp} className="absolute top-6 right-6 text-sm text-slate-400 hover:text-slate-600 transition-colors z-20 px-3 py-1.5 rounded-lg hover:bg-slate-100/80">
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 0.6 }} onClick={enterApp} className="absolute top-6 right-6 text-xs text-slate-400 hover:text-slate-500 transition-colors z-20 px-3 py-1.5">
               Skip
             </motion.button>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-2xl mx-auto relative z-10">
+            <div className="flex-1 flex flex-col items-center justify-center px-8 max-w-xl mx-auto relative z-10">
               {/* Logo */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }} className="mb-12">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20" />
-                  <span className="text-3xl font-semibold tracking-tight text-slate-900">Meridian</span>
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="mb-16">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/15" />
+                  <span className="text-3xl font-semibold tracking-tight text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
                 </div>
               </motion.div>
 
               {/* Headline */}
-              <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }} className="text-5xl sm:text-6xl font-semibold tracking-tight text-slate-900 text-center mb-6 leading-[1.1]">
+              <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="text-4xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-5 leading-[1.15]">
                 Navigate divorce<br />
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">with calm and clarity</span>
+                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">with calm and clarity</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }} className="text-lg text-slate-600 text-center mb-12 max-w-xl leading-relaxed">
-                Your companion through separation and beyond. Get guidance, understand your decree, and access resources designed for clarity.
+              <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="text-base text-slate-500 text-center mb-14 max-w-sm leading-relaxed">
+                A gentle companion for the journey ahead. Guidance, resources, and clarity — whenever you need it.
               </motion.p>
 
-              {/* Feature cards */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, ease: "easeOut" }} className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl mb-12">
+              {/* Feature cards — softer, more minimal */}
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col sm:flex-row gap-3.5 w-full max-w-md mb-14">
                 {[
-                  { icon: MessageSquare, title: "AI Guidance", desc: "Navigate situations with calm support" },
-                  { icon: BookOpen, title: "Resources", desc: "Expert articles and practical tools" },
-                  { icon: FileText, title: "Decree Help", desc: "Understand your legal documents" },
-                ].map((card) => (
-                  <div key={card.title} className="group relative overflow-hidden bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 hover:-translate-y-1">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <card.icon className="w-6 h-6 text-emerald-600 mb-3 relative z-10" />
-                    <h3 className="font-semibold text-slate-900 mb-1 relative z-10">{card.title}</h3>
-                    <p className="text-sm text-slate-600 relative z-10">{card.desc}</p>
-                  </div>
+                  { icon: MessageSquare, title: "Guidance", desc: "Thoughtful support when it matters" },
+                  { icon: BookOpen, title: "Resources", desc: "Articles and tools for clarity" },
+                  { icon: FileText, title: "Decree Help", desc: "Your documents, in plain English" },
+                ].map((card, idx) => (
+                  <motion.div key={card.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 + idx * 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-5 text-center">
+                    <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2.5" strokeWidth={1.5} />
+                    <h3 className="text-sm font-medium text-slate-800 mb-1">{card.title}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">{card.desc}</p>
+                  </motion.div>
                 ))}
               </motion.div>
 
               {/* CTAs */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.6, ease: "easeOut" }} className="flex flex-col sm:flex-row items-center gap-4">
-                <Button size="lg" onClick={enterApp} className="w-full sm:w-auto h-12 px-8 text-base bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-5 w-full max-w-xs">
+                <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                   Get Started
                 </Button>
-                <button onClick={openVideo} className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors group px-4 py-2 rounded-lg hover:bg-slate-100/80">
-                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  Watch introduction
+                <button onClick={openVideo} className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-slate-600 transition-all duration-300 group">
+                  <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
+                    <Play className="w-3 h-3 ml-0.5 group-hover:text-emerald-600 transition-colors" />
+                  </div>
+                  Watch a message from our founder
                 </button>
               </motion.div>
             </div>
 
             {/* Trust footer */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2, duration: 0.5 }} className="pb-8 text-center relative z-10">
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-sm">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                <span className="text-xs text-slate-700 font-medium">Private & Confidential</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-xs text-slate-500">Not legal advice</span>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 0.8 }} className="pb-10 text-center relative z-10">
+              <div className="inline-flex items-center gap-2 text-xs text-slate-400">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                <span>Private & confidential</span>
+                <span className="text-slate-300">·</span>
+                <span>Not legal advice</span>
               </div>
             </motion.div>
           </motion.div>
@@ -363,15 +372,22 @@ export default function App() {
       {/* ==================== VIDEO OVERLAY ==================== */}
       <AnimatePresence>
         {showVideo && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[60] bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-6" onClick={dismissVideo}>
-            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/10 rounded-full text-white/70 hover:text-white transition-all" onClick={dismissVideo}><X className="w-5 h-5" /></motion.button>
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.4, ease: "easeOut" }} className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-              <div className="text-xs font-medium tracking-widest uppercase text-white/40 text-center mb-4">A message from the founder</div>
-              <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6" onClick={dismissVideo}>
+            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: 0.2 }} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300" onClick={dismissVideo}><X className="w-5 h-5" /></motion.button>
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
+              <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
                 <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
                   <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${videoProgress}%` }} transition={{ duration: 0.2 }} />
                 </div>
+                {videoPaused && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
+                      <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -380,29 +396,29 @@ export default function App() {
 
       {/* ==================== AUTH ==================== */}
       {SUPABASE_URL && (!session?.user?.name || authView.startsWith("onboard-")) && !showSplash ? (
-        <div className="fixed inset-0 flex flex-col items-center justify-center px-6 bg-white overflow-hidden z-40">
-          <motion.div className="max-w-[400px] w-full flex flex-col items-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-            <div className="flex items-center gap-2.5 mb-10">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm" />
-              <span className="text-lg font-semibold tracking-tight text-slate-900">Meridian</span>
+        <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/10 to-white overflow-hidden z-40">
+          <motion.div className="max-w-[380px] w-full flex flex-col items-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
+            <div className="flex items-center gap-2.5 mb-12">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/10" />
+              <span className="text-xl font-semibold text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
             </div>
 
             <AnimatePresence mode="wait">
               {authView === "onboarding" ? (
                 <motion.div key="name" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2 text-center">One more step</h2>
-                  <p className="text-sm text-slate-500 mb-8 text-center">What should we call you?</p>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">One more step</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">What should we call you?</p>
                   <div className="w-full flex flex-col gap-3">
                     <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Your first name" value={authName} onChange={(e) => setAuthName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleOnboarding()} autoFocus />
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">{authLoading ? "Saving..." : "Continue"}</Button>
+                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">{authLoading ? "Saving..." : "Continue"}</Button>
                   </div>
                 </motion.div>
               ) : authView === "onboard-modes" ? (
                 <motion.div key="modes" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-emerald-600" : "bg-slate-200")} />)}</div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2 text-center">Three ways to help</h2>
-                  <p className="text-sm text-slate-500 mb-6 text-center">Meridian works in three modes, each designed for a different moment.</p>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Three ways to help</h2>
+                  <p className="text-sm text-slate-400 mb-6 text-center">Each designed for a different moment in your journey.</p>
                   <div className="w-full flex flex-col gap-3 mb-6">
                     {[{ icon: MessageSquare, name: "Guidance", hint: "Talk through conflicts, boundaries, and tough co-parenting moments." }, { icon: FileText, name: "Decree Q&A", hint: "Upload your decree and ask questions in plain English." }, { icon: Sparkles, name: "Draft", hint: "Get help writing calm, neutral messages to your co-parent." }].map((m) => (
                       <div key={m.name} className="flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60">
@@ -411,13 +427,13 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                  <Button onClick={() => setAuthView("onboard-decree")} className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">Continue</Button>
+                  <Button onClick={() => setAuthView("onboard-decree")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Continue</Button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i <= 1 ? "bg-emerald-600" : "bg-slate-200", i === 0 && "cursor-pointer")} onClick={i === 0 ? () => setAuthView("onboard-modes") : undefined} />)}</div>
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5"><FileText size={28} className="text-white" /></div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2 text-center">Upload your decree</h2>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
                   <p className="text-sm text-slate-500 mb-6 text-center leading-relaxed">If you have your divorce decree handy, you can upload it now. You can always add it later.</p>
                   {decreeFileName ? (
                     <div className="w-full py-8 px-6 border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700"><Check size={24} /><span className="text-sm font-medium">{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span></div>
@@ -426,25 +442,25 @@ export default function App() {
                       <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload PDF or text file</span><span className="text-xs text-slate-400">.pdf, .txt, or .md</span>
                     </button>
                   )}
-                  <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">{decreeFileName ? "Continue" : "Skip for now"}</Button>
+                  <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">{decreeFileName ? "Continue" : "Skip for now"}</Button>
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full bg-emerald-600", i < 2 && "cursor-pointer")} onClick={i === 0 ? () => setAuthView("onboard-modes") : i === 1 ? () => setAuthView("onboard-decree") : undefined} />)}</div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-4 text-center">Just so you know</h2>
-                  <p className="text-sm text-slate-500 mb-3 text-center leading-relaxed max-w-[300px]">Meridian is your companion through this — not a lawyer and not a therapist. Think of it as a calm, thoughtful friend who's always in your corner.</p>
-                  <p className="text-sm text-slate-500 mb-8 text-center leading-relaxed max-w-[300px]">For real legal decisions, loop in your attorney. For everything else, we're here.</p>
-                  <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25">Let's go{firstName ? `, ${firstName}` : ""}</Button>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-4 text-center">Just so you know</h2>
+                  <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Think of Meridian as a calm, thoughtful friend — always in your corner, always here to listen.</p>
+                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're here.</p>
+                  <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Let's go{firstName ? `, ${firstName}` : ""}</Button>
                 </motion.div>
               ) : (
                 <motion.div key="auth" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-2 text-center">Welcome to Meridian</h2>
-                  <p className="text-sm text-slate-500 mb-8 text-center">Sign in or create an account to continue.</p>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome back</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">Sign in to continue your journey.</p>
                   <div className="w-full flex flex-col gap-3">
                     <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="email" placeholder="Email address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} autoFocus />
                     <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAuth()} />
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 disabled:opacity-40">{authLoading ? "Loading..." : "Continue"}</Button>
+                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Loading..." : "Continue"}</Button>
                   </div>
                 </motion.div>
               )}
@@ -457,10 +473,10 @@ export default function App() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-dvh flex flex-col max-w-3xl mx-auto bg-white">
 
             {/* Header */}
-            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-xl sticky top-0 z-20">
+            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white/90 backdrop-blur-xl sticky top-0 z-20">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm" />
-                <span className="text-lg font-semibold tracking-tight text-slate-900">Meridian</span>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/10" />
+                <span className="text-xl font-semibold text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
               </div>
               <AnimatePresence>
                 {activeTab === "chat" && hasConversation && (
@@ -498,18 +514,17 @@ export default function App() {
                     {/* Messages */}
                     <AnimatePresence mode="popLayout">
                       {!hasConversation ? (
-                        <motion.div key="empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }} className="flex flex-col items-center justify-center text-center py-12">
-                          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mb-6 shadow-sm">
-                            <MessageSquare className="w-8 h-8 text-emerald-600" />
-                          </div>
-                          <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-3">What's on your mind?</h2>
-                          <p className="text-base text-slate-500 max-w-md leading-relaxed mb-8">Share what you're navigating, and I'll help you find clarity with calm and grounded guidance.</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
-                            {QUICK_ACTIONS.map((action) => { const Icon = action.icon; return (
-                              <motion.button key={action.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => handleQuickAction(action.id)} className="flex items-center gap-3 px-4 py-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-emerald-300 hover:bg-emerald-50/30 transition-all text-left group">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center group-hover:from-emerald-100 group-hover:to-teal-50 transition-all"><Icon className="w-4 h-4 text-slate-600 group-hover:text-emerald-600 transition-colors" /></div>
-                                <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">{action.label}</span>
-                                <ChevronRight className="w-4 h-4 text-slate-400 ml-auto group-hover:text-emerald-600 transition-colors" />
+                        <motion.div key="empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center justify-center text-center py-16">
+                          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-8">
+                            <MessageSquare className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
+                          </motion.div>
+                          <h2 className="text-xl font-light tracking-tight text-slate-700 mb-2">What's on your mind?</h2>
+                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-10">Take a breath. Share what you're navigating, and we'll work through it together.</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
+                            {QUICK_ACTIONS.map((action, idx) => { const Icon = action.icon; return (
+                              <motion.button key={action.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + idx * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }} onClick={() => handleQuickAction(action.id)} className="flex items-center gap-3 px-4 py-3.5 bg-white/80 border border-slate-100 rounded-2xl hover:border-emerald-200 hover:bg-emerald-50/20 transition-all duration-300 text-left group">
+                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors duration-300"><Icon className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors duration-300" strokeWidth={1.5} /></div>
+                                <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">{action.label}</span>
                               </motion.button>
                             ); })}
                           </div>
@@ -517,15 +532,15 @@ export default function App() {
                       ) : (
                         <div className="space-y-6">
                           {messages.map((msg: any, i: number) => (
-                            <motion.div key={i} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, ease: "easeOut" }} className={cn("flex flex-col gap-1", msg.role === "user" ? "items-end" : "items-start")}>
+                            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className={cn("flex flex-col gap-1", msg.role === "user" ? "items-end" : "items-start")}>
                               {msg.role === "user" ? (
-                                <div className="max-w-[85%] rounded-2xl text-[15px] leading-relaxed bg-gradient-to-br from-slate-900 to-slate-800 text-white px-5 py-3.5 shadow-lg shadow-slate-900/10 whitespace-pre-wrap">{msg.content}</div>
+                                <div className="max-w-[85%] rounded-2xl rounded-br-md text-[15px] leading-relaxed bg-gradient-to-br from-slate-800 to-slate-700 text-white/95 px-5 py-3.5 shadow-md shadow-slate-800/10 whitespace-pre-wrap">{msg.content}</div>
                               ) : (
                                 <>
-                                  <div className="max-w-[85%] rounded-2xl text-[15px] leading-relaxed bg-white border border-slate-200/60 text-slate-700 px-5 py-3.5 shadow-sm m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
+                                  <div className="max-w-[85%] rounded-2xl rounded-bl-md text-[15px] leading-relaxed bg-white border border-slate-100 text-slate-600 px-5 py-4 shadow-sm m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
                                   {msg.content && (
-                                    <button onClick={() => copyToClipboard(msg.content, i)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-300 hover:text-slate-500 hover:bg-slate-50 rounded-md transition-all mt-0.5">
-                                      {copied === i ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
+                                    <button onClick={() => copyToClipboard(msg.content, i)} className="flex items-center gap-1 px-2 py-0.5 text-[11px] text-slate-300 hover:text-slate-500 rounded transition-all mt-0.5">
+                                      {copied === i ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
                                     </button>
                                   )}
                                 </>
@@ -533,10 +548,10 @@ export default function App() {
                             </motion.div>
                           ))}
                           {loading && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-                              <div className="bg-white border border-slate-200/60 rounded-2xl px-5 py-3.5 shadow-sm">
+                            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex justify-start">
+                              <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm">
                                 <div className="flex gap-1.5">
-                                  {[0, 0.2, 0.4].map((d) => <motion.div key={d} animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1, repeat: Infinity, delay: d }} className="w-2 h-2 rounded-full bg-slate-400" />)}
+                                  {[0, 0.15, 0.3].map((d) => <motion.div key={d} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.2, repeat: Infinity, delay: d, ease: "easeInOut" }} className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}
                                 </div>
                               </div>
                             </motion.div>
@@ -592,7 +607,7 @@ export default function App() {
                 {/* PROFILE */}
                 {activeTab === "profile" && (
                   <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-24">
-                    <h2 className="text-2xl font-semibold tracking-tight text-slate-900 mb-6">Profile</h2>
+                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">Profile</h2>
 
                     {/* Name */}
                     <div className="mb-6">
@@ -658,33 +673,34 @@ export default function App() {
 
             {/* Input - chat only */}
             {activeTab === "chat" && (
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-5 border-t border-slate-100 bg-white/80 backdrop-blur-xl sticky bottom-16">
-                <div className="flex items-end gap-3 bg-slate-50/80 rounded-2xl px-5 py-4 border border-slate-200/60 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all duration-200">
-                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-[15px] text-slate-900 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder="What's on your mind?" value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white/90 backdrop-blur-xl sticky bottom-16">
+                <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
+                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-[15px] text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder="What's on your mind?" value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
                   {streaming ? (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button size="sm" onClick={handleStop} className="rounded-xl bg-red-500 hover:bg-red-600 flex-shrink-0"><Square className="w-3 h-3" fill="currentColor" /></Button>
+                      <Button size="sm" onClick={handleStop} className="rounded-full w-9 h-9 bg-slate-700 hover:bg-slate-800 flex-shrink-0 p-0"><Square className="w-3 h-3" fill="currentColor" /></Button>
                     </motion.div>
                   ) : (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button size="sm" className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-sm flex-shrink-0" onClick={() => handleSend()} disabled={!input.trim() || loading}><Send className="w-4 h-4" /></Button>
+                      <Button size="sm" className="rounded-full w-9 h-9 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm shadow-emerald-500/15 flex-shrink-0 p-0" onClick={() => handleSend()} disabled={!input.trim() || loading}><Send className="w-4 h-4" /></Button>
                     </motion.div>
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 text-center mt-3 flex items-center justify-center gap-0">
-                  Not legal advice — always consult an attorney.
+                <div className="text-[10px] text-slate-300 text-center mt-2.5 flex items-center justify-center">
+                  Not legal advice
                   <span className="mx-1.5">·</span>
-                  <button onClick={() => setShowFeedback(true)} className="text-slate-400 hover:text-slate-600 transition-colors">Feedback?</button>
+                  <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-slate-500 transition-colors">Share feedback</button>
                 </div>
               </motion.div>
             )}
 
             {/* Bottom Nav */}
-            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100 bg-white/95 backdrop-blur-xl sticky bottom-0 z-10">
-              <div className="flex items-center justify-around px-6 py-3">
+            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white/95 backdrop-blur-xl sticky bottom-0 z-10">
+              <div className="flex items-center justify-around px-6 py-2.5 pb-3">
                 {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }, { id: "profile" as Tab, icon: User, label: "You" }]).map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-all", activeTab === tab.id ? "text-emerald-600" : "text-slate-400 hover:text-slate-600")}>
-                    <tab.icon className="w-5 h-5" /><span className="text-[11px] font-medium">{tab.label}</span>
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
+                    <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
+                    {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
                   </button>
                 ))}
               </div>
@@ -726,7 +742,7 @@ export default function App() {
                     <h3 className="text-lg font-semibold text-slate-800 mb-1">Send Feedback</h3>
                     <p className="text-sm text-slate-400 mb-4">Tell us what's working, what's not, or what you'd love to see.</p>
                     <textarea className="w-full border border-slate-200/60 rounded-xl px-4 py-3 text-sm text-slate-800 bg-slate-50/80 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none placeholder:text-slate-400" placeholder="Your feedback..." value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} rows={4} autoFocus />
-                    <Button onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending} className="w-full mt-3 h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/25 disabled:opacity-40">{feedbackSending ? "Sending..." : "Submit Feedback"}</Button>
+                    <Button onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending} className="w-full mt-3 h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{feedbackSending ? "Sending..." : "Submit Feedback"}</Button>
                   </>)}
                 </motion.div>
               </motion.div>
