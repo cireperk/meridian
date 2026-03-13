@@ -2305,7 +2305,7 @@ export default function Meridian() {
           </div>
           <div className="m-splash-footer"><span>Private · Confidential · Not legal advice</span></div>
         </div>
-      ) : SUPABASE_URL && !session?.user?.name ? (
+      ) : SUPABASE_URL && (!session?.user?.name || authView.startsWith("onboard-")) ? (
         <div className="m-auth">
           <div className="m-splash-bg">
             <div className="m-splash-glow m-splash-glow-1" />
