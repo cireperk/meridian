@@ -235,8 +235,10 @@ export default function Meridian() {
   const handleSignOut = () => {
     setSession(null);
     localStorage.removeItem("m_session");
+    localStorage.removeItem("m_conversations");
     localStorage.removeItem("m_messages");
-    setMessages([]);
+    setConversations([]);
+    setActiveConvId(null);
     setAuthView("main");
   };
 
@@ -252,9 +254,35 @@ export default function Meridian() {
   const [videoPaused, setVideoPaused] = useState(false);
   const [showPauseIcon, setShowPauseIcon] = useState(false);
   const [mode, setMode] = useState("guidance");
-  const [messages, setMessages] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("m_messages")) || []; } catch { return []; }
+  const [conversations, setConversations] = useState(() => {
+    try {
+      const convs = JSON.parse(localStorage.getItem("m_conversations"));
+      if (convs?.length) return convs;
+      // Migrate old flat messages
+      const old = JSON.parse(localStorage.getItem("m_messages"));
+      if (old?.length) {
+        const migrated = [{ id: "conv_0", title: old[0]?.content?.slice(0, 50) || "Conversation", mode: "guidance", messages: old, createdAt: new Date().toISOString() }];
+        localStorage.setItem("m_conversations", JSON.stringify(migrated));
+        localStorage.removeItem("m_messages");
+        return migrated;
+      }
+      return [];
+    } catch { return []; }
   });
+  const [activeConvId, setActiveConvId] = useState(() => {
+    try {
+      const convs = JSON.parse(localStorage.getItem("m_conversations"));
+      return convs?.length ? convs[0].id : null;
+    } catch { return null; }
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const activeConv = conversations.find((c) => c.id === activeConvId);
+  const messages = activeConv?.messages || [];
+  const setMessages = (fn) => {
+    setConversations((prev) =>
+      prev.map((c) => c.id === activeConvId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)
+    );
+  };
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [decreeText, setDecreeText] = useState(() => localStorage.getItem("m_decree_text") || "");
@@ -263,6 +291,9 @@ export default function Meridian() {
     try { return parseInt(localStorage.getItem("m_decree_pages")) || 0; } catch { return 0; }
   });
   const [copied, setCopied] = useState(null);
+  const [streaming, setStreaming] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const abortRef = useRef(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
@@ -322,10 +353,10 @@ export default function Meridian() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Persist messages
+  // Persist conversations
   useEffect(() => {
-    localStorage.setItem("m_messages", JSON.stringify(messages));
-  }, [messages]);
+    localStorage.setItem("m_conversations", JSON.stringify(conversations));
+  }, [conversations]);
 
   // Persist decree
   useEffect(() => {
@@ -340,7 +371,9 @@ export default function Meridian() {
   const copyToClipboard = (text, idx) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(idx);
+      setShowToast(true);
       setTimeout(() => setCopied(null), 1500);
+      setTimeout(() => setShowToast(false), 1500);
     });
   };
 
@@ -396,12 +429,30 @@ export default function Meridian() {
     }
   };
 
+  const handleStop = () => {
+    abortRef.current?.abort();
+    setStreaming(false);
+    setLoading(false);
+  };
+
   const handleSend = async (overrideMsg) => {
     const userMsg = (overrideMsg || input).trim();
-    if (!userMsg || loading) return;
+    if (!userMsg || loading || streaming) return;
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "24px";
-    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+
+    let convId = activeConvId;
+    if (!convId) {
+      convId = `conv_${Date.now()}`;
+      const newConv = { id: convId, title: userMsg.slice(0, 50), mode, messages: [], createdAt: new Date().toISOString() };
+      setConversations((prev) => [newConv, ...prev]);
+      setActiveConvId(convId);
+    }
+
+    // Add user message to the conversation
+    setConversations((prev) =>
+      prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c)
+    );
     setLoading(true);
 
     const modeContext = {
@@ -415,10 +466,21 @@ export default function Meridian() {
       : "\n\nNo decree uploaded yet. Remind the user they can upload their decree for more personalized guidance.";
 
     const systemWithContext = `${SYSTEM_PROMPT}\n\nCURRENT MODE: ${modeContext[mode]}${decreeContext}`;
-    const history = [...messages, { role: "user", content: userMsg }].map((m) => ({
+    // Build history from current messages + new user message
+    const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
+    const history = [...currentMsgs, { role: "user", content: userMsg }].map((m) => ({
       role: m.role,
       content: m.content,
     }));
+
+    const updateConvMessages = (fn) => {
+      setConversations((prev) =>
+        prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)
+      );
+    };
+
+    const abort = new AbortController();
+    abortRef.current = abort;
 
     try {
       const res = await fetch("/api/chat", {
@@ -430,58 +492,71 @@ export default function Meridian() {
           system: systemWithContext,
           messages: history,
         }),
+        signal: abort.signal,
       });
 
       if (!res.ok) {
         throw new Error("API error");
       }
 
-      // Stream the response
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
       let buffer = "";
 
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      updateConvMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       setLoading(false);
+      setStreaming(true);
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6);
-          if (data === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-              fullText += parsed.delta.text;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { role: "assistant", content: fullText };
-                return updated;
-              });
-            }
-          } catch { /* skip non-JSON lines */ }
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+                fullText += parsed.delta.text;
+                updateConvMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { role: "assistant", content: fullText };
+                  return updated;
+                });
+              }
+            } catch { /* skip non-JSON lines */ }
+          }
         }
+      } catch (e) {
+        if (e.name === "AbortError") {
+          setStreaming(false);
+          return;
+        }
+        throw e;
       }
 
+      setStreaming(false);
+
       if (!fullText) {
-        setMessages((prev) => {
+        updateConvMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." };
           return updated;
         });
       }
-    } catch {
-      setMessages((prev) => [
+    } catch (e) {
+      if (e.name === "AbortError") return;
+      updateConvMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Connection error. Please try again." },
       ]);
       setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -516,6 +591,14 @@ export default function Meridian() {
   };
 
   const hasConversation = messages.length > 0;
+
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  };
+  const firstName = session?.user?.name?.split(" ")[0] || "";
 
   return (
     <>
@@ -668,23 +751,14 @@ export default function Meridian() {
         .m-welcome {
           animation: m-fade-up 0.4s ease both;
         }
-        .m-welcome-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #F0EEFF 0%, #E8F4FD 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 16px;
-          color: #8B7CF6;
-        }
-        .m-welcome-title {
-          font-size: 18px;
-          font-weight: 600;
-          letter-spacing: -0.3px;
+        .m-welcome-greeting {
+          font-family: 'Playfair Display', serif;
+          font-size: 26px;
+          font-weight: 500;
+          font-style: italic;
+          letter-spacing: -0.5px;
           color: #1A1A1A;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
         }
         .m-welcome-sub {
           font-size: 14px;
@@ -747,6 +821,13 @@ export default function Meridian() {
           display: flex;
           flex-direction: column;
           gap: 2px;
+        }
+        .m-msg:last-child {
+          animation: m-msg-enter 0.3s cubic-bezier(0.25, 0.1, 0, 1) both;
+        }
+        @keyframes m-msg-enter {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .m-msg[data-role="user"] { align-items: flex-end; }
         .m-msg[data-role="assistant"] { align-items: flex-start; }
@@ -909,6 +990,26 @@ export default function Meridian() {
           cursor: default;
         }
         .m-send-btn:not(:disabled):hover { background: #333; }
+        .m-stop-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 12px;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          background: #DC2626;
+          color: #fff;
+          transition: background 0.15s;
+          animation: m-fade-in 0.15s ease;
+        }
+        .m-stop-btn:hover { background: #B91C1C; }
+        @keyframes m-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
 
         .m-disclaimer {
           font-size: 11px;
@@ -1555,6 +1656,114 @@ export default function Meridian() {
           color: #fff;
         }
         .m-confirm-danger:hover { opacity: 0.85; }
+        .m-history-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 50;
+          background: rgba(0,0,0,0.25);
+          animation: m-fade-in 0.15s ease;
+        }
+        .m-history {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 300px;
+          max-width: 85vw;
+          background: #fff;
+          z-index: 51;
+          display: flex;
+          flex-direction: column;
+          animation: m-slide-right 0.25s cubic-bezier(0.25, 0.1, 0, 1);
+          font-family: 'Inter', -apple-system, sans-serif;
+        }
+        @keyframes m-slide-right {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        .m-history-header {
+          padding: 20px 16px 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid #F0F0F0;
+        }
+        .m-history-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #1A1A1A;
+        }
+        .m-history-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 0;
+        }
+        .m-history-item {
+          padding: 12px 16px;
+          cursor: pointer;
+          border: none;
+          background: none;
+          width: 100%;
+          text-align: left;
+          font-family: inherit;
+          transition: background 0.1s;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .m-history-item:hover { background: #FAFAFA; }
+        .m-history-item[data-active="true"] { background: #F5F5F5; }
+        .m-history-item-title {
+          font-size: 14px;
+          font-weight: 500;
+          color: #1A1A1A;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .m-history-item-meta {
+          font-size: 12px;
+          color: #999;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .m-history-item-delete {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: #CCC;
+          cursor: pointer;
+          padding: 4px;
+          opacity: 0;
+          transition: opacity 0.15s, color 0.15s;
+        }
+        .m-history-item:hover .m-history-item-delete { opacity: 1; }
+        .m-history-item-delete:hover { color: #DC2626; }
+        .m-history-item { position: relative; padding-right: 36px; }
+        .m-toast {
+          position: fixed;
+          bottom: 100px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #1A1A1A;
+          color: #fff;
+          padding: 8px 20px;
+          border-radius: 100px;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: 'Inter', sans-serif;
+          z-index: 200;
+          pointer-events: none;
+          animation: m-toast-in 0.25s ease both;
+        }
+        @keyframes m-toast-in {
+          from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
       `}</style>
 
       {/* SVG filter for water background — shared by splash + auth */}
@@ -1717,15 +1926,24 @@ export default function Meridian() {
         <header className="m-header">
           <span className="m-wordmark">Meridian</span>
           <div className="m-header-actions">
-            {hasConversation && (
+            {conversations.length > 0 && (
               <button
                 className="m-icon-btn"
-                onClick={() => { setMessages([]); localStorage.removeItem("m_messages"); }}
-                title="New conversation"
+                onClick={() => setShowHistory(!showHistory)}
+                title="Conversation history"
               >
-                <IconNew />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
               </button>
             )}
+            <button
+              className="m-icon-btn"
+              onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setMode("guidance"); setShowHistory(false); }}
+              title="New conversation"
+            >
+              <IconNew />
+            </button>
             {session?.user?.name && (
               <button
                 className="m-icon-btn"
@@ -1794,16 +2012,7 @@ export default function Meridian() {
             <div className="m-empty">
               <div className="m-modes-content" key={mode}>
                 <div className="m-welcome">
-                  <div className="m-welcome-icon">
-                    {mode === "guidance" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>}
-                    {mode === "decree" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
-                    {mode === "draft" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
-                  </div>
-                  <div className="m-welcome-title">
-                    {mode === "guidance" && "What's going on?"}
-                    {mode === "decree" && "Ask about your decree"}
-                    {mode === "draft" && "Draft a message"}
-                  </div>
+                  <div className="m-welcome-greeting">{getGreeting()}{firstName ? `, ${firstName}` : ""}.</div>
                   <div className="m-welcome-sub">{MODE_HINTS[mode]}</div>
                 </div>
                 <div className="m-starters">
@@ -1869,13 +2078,19 @@ export default function Meridian() {
               onKeyDown={handleKeyDown}
               rows={1}
             />
-            <button
-              className="m-send-btn"
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-            >
-              <IconSend />
-            </button>
+            {streaming ? (
+              <button className="m-stop-btn" onClick={handleStop}>
+                <svg width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12" rx="2" fill="currentColor"/></svg>
+              </button>
+            ) : (
+              <button
+                className="m-send-btn"
+                onClick={() => handleSend()}
+                disabled={!input.trim() || loading}
+              >
+                <IconSend />
+              </button>
+            )}
           </div>
           <div className="m-disclaimer">
             Not legal advice — always consult an attorney.
@@ -1884,6 +2099,51 @@ export default function Meridian() {
           </div>
         </div>
       </div>
+
+      {/* History drawer */}
+      {showHistory && (
+        <>
+          <div className="m-history-overlay" onClick={() => setShowHistory(false)} />
+          <div className="m-history">
+            <div className="m-history-header">
+              <span className="m-history-title">Conversations</span>
+              <button className="m-icon-btn" onClick={() => setShowHistory(false)} style={{ width: 28, height: 28 }}>
+                <IconX />
+              </button>
+            </div>
+            <div className="m-history-list">
+              {conversations.map((c) => (
+                <button
+                  key={c.id}
+                  className="m-history-item"
+                  data-active={c.id === activeConvId}
+                  onClick={() => { setActiveConvId(c.id); setMode(c.mode || "guidance"); setShowHistory(false); }}
+                >
+                  <span className="m-history-item-title">{c.title || "New conversation"}</span>
+                  <span className="m-history-item-meta">
+                    <span>{c.mode || "guidance"}</span>
+                    <span>·</span>
+                    <span>{c.messages?.length || 0} messages</span>
+                  </span>
+                  <span
+                    className="m-history-item-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConversations((prev) => prev.filter((x) => x.id !== c.id));
+                      if (activeConvId === c.id) setActiveConvId(null);
+                    }}
+                  >
+                    <IconX />
+                  </span>
+                </button>
+              ))}
+              {conversations.length === 0 && (
+                <div style={{ padding: "24px 16px", textAlign: "center", color: "#CCC", fontSize: 13 }}>No conversations yet</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Feedback modal */}
       {showFeedback && (
@@ -1935,6 +2195,8 @@ export default function Meridian() {
           </div>
         </div>
       )}
+
+      {showToast && <div className="m-toast">Copied!</div>}
     </>
   );
 }
