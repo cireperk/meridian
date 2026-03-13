@@ -2165,6 +2165,8 @@ export default function Meridian() {
           transition: background 0.2s;
         }
         .m-onboard-dot[data-active="true"] { background: #1A1A1A; }
+        .m-onboard-dot[data-clickable="true"] { cursor: pointer; }
+        .m-onboard-dot[data-clickable="true"]:hover { background: #999; }
         .m-onboard-skip {
           background: none;
           border: none;
@@ -2379,7 +2381,7 @@ export default function Meridian() {
           ) : authView === "onboard-decree" ? (
             <div className="m-onboard-step" key="decree">
               <div className="m-onboard-dots">
-                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" data-active="true" data-clickable="true" onClick={() => setAuthView("onboard-modes")} />
                 <div className="m-onboard-dot" data-active="true" />
                 <div className="m-onboard-dot" />
               </div>
@@ -2414,8 +2416,8 @@ export default function Meridian() {
           ) : authView === "onboard-ready" ? (
             <div className="m-onboard-step" key="ready">
               <div className="m-onboard-dots">
-                <div className="m-onboard-dot" data-active="true" />
-                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" data-active="true" data-clickable="true" onClick={() => setAuthView("onboard-modes")} />
+                <div className="m-onboard-dot" data-active="true" data-clickable="true" onClick={() => setAuthView("onboard-decree")} />
                 <div className="m-onboard-dot" data-active="true" />
               </div>
               <div className="m-onboard-heading">Just so you know</div>
