@@ -185,14 +185,11 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => setShowSplash(false);
-  const openVideo = () => {
-    setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false);
-    // play() MUST be called synchronously in click handler to satisfy browser autoplay policy
-    const v = videoRef.current;
-    if (v) { v.currentTime = 0; v.play().catch(() => {}); }
-  };
+  const [videoMuted, setVideoMuted] = useState(true);
+  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); setVideoMuted(true); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
   const [videoPaused, setVideoPaused] = useState(false);
+  const unmuteVideo = (e: React.MouseEvent) => { e.stopPropagation(); const v = videoRef.current; if (v) { v.muted = false; setVideoMuted(false); } };
   const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
 
   // --- App state ---
@@ -373,32 +370,39 @@ export default function App() {
       </AnimatePresence>
 
       {/* ==================== VIDEO OVERLAY ==================== */}
-      {/* Video element is ALWAYS in the DOM so videoRef is available for play() in click handler */}
-      <div
-        className={cn(
-          "fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6 transition-all duration-300",
-          showVideo ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        )}
-        onClick={dismissVideo}
-      >
-        <button className={cn("absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300", showVideo ? "opacity-100 scale-100" : "opacity-0 scale-90")} onClick={dismissVideo}><X className="w-5 h-5" /></button>
-        <div className={cn("max-w-3xl w-full transition-all duration-500", showVideo ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-5")} onClick={(e) => e.stopPropagation()}>
-          <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
-          <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
-            <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline preload="auto" onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-              <div className="h-full bg-emerald-500 transition-all duration-200" style={{ width: `${videoProgress}%` }} />
-            </div>
-            {videoPaused && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
-                  <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-                </div>
+      {showVideo && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6" onClick={dismissVideo}>
+          <button className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300" onClick={dismissVideo}><X className="w-5 h-5" /></button>
+          <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
+            <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
+              <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline autoPlay muted onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+                <div className="h-full bg-emerald-500 transition-all duration-200" style={{ width: `${videoProgress}%` }} />
               </div>
-            )}
+              {videoPaused && !videoEnded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                  </div>
+                </div>
+              )}
+              {videoMuted && !videoPaused && (
+                <button className="absolute top-3 right-3 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5 hover:bg-black/80 transition-colors z-10" onClick={unmuteVideo}>
+                  🔇 Tap to unmute
+                </button>
+              )}
+              {videoEnded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <button className="px-5 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white text-sm font-medium hover:bg-white/20 transition-colors" onClick={(e) => { e.stopPropagation(); const v = videoRef.current; if (v) { v.currentTime = 0; setVideoEnded(false); setVideoProgress(0); v.play().catch(() => {}); } }}>
+                    Replay
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ==================== AUTH ==================== */}
       {SUPABASE_URL && (!session?.user?.name || authView.startsWith("onboard-")) && !showSplash ? (
