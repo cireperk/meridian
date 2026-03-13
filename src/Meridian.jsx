@@ -108,22 +108,51 @@ const MODE_HINTS = {
   draft: "What do you need to say to your co-parent?",
 };
 
-const STARTERS = {
+const ALL_STARTERS = {
   guidance: [
     "My co-parent won't follow the schedule",
     "How do I handle a disagreement about rules?",
     "My kids seem stressed after transitions",
+    "My ex is badmouthing me to the kids",
+    "We can't agree on school decisions",
+    "How do I set boundaries without conflict?",
+    "My co-parent keeps canceling their time",
+    "How do I handle a new partner being introduced?",
+    "Communication has completely broken down",
   ],
   decree: [
     "What does my decree say about holidays?",
     "Explain the custody schedule",
     "What are the rules around relocation?",
+    "Who decides about medical care?",
+    "What are the rules on travel with kids?",
+    "Can my decree be modified?",
+    "What does right of first refusal mean?",
+    "Who claims the kids on taxes?",
+    "What does my decree say about communication?",
   ],
   draft: [
     "Request a schedule change",
     "Respond to a difficult message",
     "Propose a holiday arrangement",
+    "Ask about a medical decision",
+    "Notify about a school event",
+    "Request make-up parenting time",
+    "Address a pickup/dropoff issue",
+    "Discuss summer plans",
+    "Respond to an unreasonable demand",
   ],
+};
+
+const pickStarters = (mode, count = 3) => {
+  const all = ALL_STARTERS[mode];
+  const seed = Math.floor(Date.now() / 3600000); // rotates hourly
+  const shuffled = [...all].sort((a, b) => {
+    const ha = ((seed * 31 + a.charCodeAt(0)) % 1000) / 1000;
+    const hb = ((seed * 31 + b.charCodeAt(0)) % 1000) / 1000;
+    return ha - hb;
+  });
+  return shuffled.slice(0, count);
 };
 
 // --- Icons (inline SVG for zero dependencies) ---
@@ -167,13 +196,16 @@ export default function Meridian() {
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem("m_session")); } catch { return null; }
   });
-  const [authView, setAuthView] = useState("main"); // "main" | "onboarding"
+  const [authView, setAuthView] = useState("main"); // "main" | "onboarding" | "onboard-modes" | "onboard-decree" | "onboard-ready"
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem("m_dark") === "1");
 
 
   // Auto-refresh expired tokens on mount
@@ -187,6 +219,22 @@ export default function Meridian() {
       }
     }).catch(() => {});
   }, []); // eslint-disable-line
+
+  // Dark mode
+  useEffect(() => {
+    document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
+    localStorage.setItem("m_dark", darkMode ? "1" : "0");
+  }, [darkMode]);
+
+  const handleUpdateName = async (newName) => {
+    if (!newName.trim() || !session?.token) return;
+    try {
+      await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token);
+      const s = { ...session, user: { ...session.user, name: newName.trim() } };
+      setSession(s);
+      localStorage.setItem("m_session", JSON.stringify(s));
+    } catch {}
+  };
 
   const handleAuth = async () => {
     setAuthError("");
@@ -230,12 +278,16 @@ export default function Meridian() {
       const s = { ...session, user: { ...session.user, name: authName.trim() } };
       setSession(s);
       localStorage.setItem("m_session", JSON.stringify(s));
-      setAuthView("main");
+      setAuthView("onboard-modes");
     } catch (err) {
       setAuthError(err.message);
     } finally {
       setAuthLoading(false);
     }
+  };
+
+  const finishOnboarding = () => {
+    setAuthView("main");
   };
 
   const handleSignOut = () => {
@@ -757,6 +809,22 @@ export default function Meridian() {
         .m-welcome {
           animation: m-fade-up 0.4s ease both;
         }
+        .m-welcome-icon-wrap {
+          width: 56px;
+          height: 56px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, #F0EEFF 0%, #E8F4FD 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 16px;
+          animation: m-icon-breathe 4s ease-in-out infinite;
+        }
+        .m-welcome-icon-svg { color: #8B7CF6; }
+        @keyframes m-icon-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.06); opacity: 1; }
+        }
         .m-welcome-greeting {
           font-family: 'Playfair Display', serif;
           font-size: 26px;
@@ -996,6 +1064,60 @@ export default function Meridian() {
           cursor: default;
         }
         .m-send-btn:not(:disabled):hover { background: #333; }
+        .m-draft-card {
+          background: #fff;
+          border: 1px solid #E5E5E5;
+          border-radius: 16px;
+          padding: 16px;
+          width: 100%;
+          animation: m-msg-enter 0.3s ease both;
+        }
+        .m-draft-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #999;
+          margin-bottom: 10px;
+        }
+        .m-draft-body {
+          font-size: 14px;
+          line-height: 1.6;
+          color: #1A1A1A;
+          white-space: pre-wrap;
+          padding: 12px 14px;
+          background: #FAFAFA;
+          border-radius: 10px;
+          border: 1px solid #F0F0F0;
+        }
+        .m-draft-actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 12px;
+        }
+        .m-draft-copy, .m-draft-refine {
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s;
+          border: none;
+        }
+        .m-draft-copy {
+          background: #F5F5F5;
+          color: #555;
+        }
+        .m-draft-copy:hover { background: #EDEDED; }
+        .m-draft-refine {
+          background: #1A1A1A;
+          color: #fff;
+        }
+        .m-draft-refine:hover { background: #333; }
         .m-stop-btn {
           width: 36px;
           height: 36px;
@@ -1750,6 +1872,103 @@ export default function Meridian() {
         .m-history-item:hover .m-history-item-delete { opacity: 1; }
         .m-history-item-delete:hover { color: #DC2626; }
         .m-history-item { position: relative; padding-right: 36px; }
+        /* Settings */
+        .m-settings-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 60;
+          background: rgba(0,0,0,0.25);
+          display: flex;
+          justify-content: flex-end;
+          animation: m-fade-in 0.15s ease;
+        }
+        .m-settings {
+          width: 320px;
+          max-width: 90vw;
+          height: 100%;
+          background: #fff;
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          animation: m-slide-left 0.25s cubic-bezier(0.25, 0.1, 0, 1);
+          font-family: 'Inter', -apple-system, sans-serif;
+          overflow-y: auto;
+        }
+        @keyframes m-slide-left {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .m-settings-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 24px;
+        }
+        .m-settings-title { font-size: 17px; font-weight: 600; color: #1A1A1A; }
+        .m-settings-section { margin-bottom: 20px; }
+        .m-settings-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #999; margin-bottom: 6px; }
+        .m-settings-value { font-size: 14px; color: #555; }
+        .m-settings-input {
+          width: 100%;
+          padding: 10px 12px;
+          border: 1px solid #E5E5E5;
+          border-radius: 10px;
+          font-size: 14px;
+          font-family: inherit;
+          outline: none;
+          transition: border-color 0.15s;
+        }
+        .m-settings-input:focus { border-color: #999; }
+        .m-settings-row { display: flex; align-items: center; gap: 10px; }
+        .m-settings-link {
+          background: none;
+          border: none;
+          color: #1A1A1A;
+          font-size: 14px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          padding: 0;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .m-settings-signout {
+          width: 100%;
+          padding: 12px;
+          background: none;
+          border: 1px solid #E5E5E5;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #DC2626;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .m-settings-signout:hover { background: #FEF2F2; }
+        .m-toggle {
+          width: 44px;
+          height: 24px;
+          border-radius: 12px;
+          background: #E5E5E5;
+          border: none;
+          cursor: pointer;
+          position: relative;
+          transition: background 0.2s;
+          flex-shrink: 0;
+        }
+        .m-toggle-on { background: #1A1A1A; }
+        .m-toggle-knob {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #fff;
+          transition: transform 0.2s;
+        }
+        .m-toggle-on .m-toggle-knob { transform: translateX(20px); }
         .m-toast {
           position: fixed;
           bottom: 100px;
@@ -1769,6 +1988,232 @@ export default function Meridian() {
         @keyframes m-toast-in {
           from { opacity: 0; transform: translateX(-50%) translateY(8px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* === DARK MODE === */
+        body[data-theme="dark"] { background: #0A0A0A; }
+        body[data-theme="dark"] .m-app { background: #0F0F0F; color: #E5E5E5; }
+        body[data-theme="dark"] .m-header { background: #0F0F0F; border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-wordmark { color: #E5E5E5; }
+        body[data-theme="dark"] .m-icon-btn { color: #666; }
+        body[data-theme="dark"] .m-icon-btn:hover { background: #1A1A1A; color: #999; }
+        body[data-theme="dark"] .m-modes { background: #0F0F0F; }
+        body[data-theme="dark"] .m-mode-btn { color: #666; }
+        body[data-theme="dark"] .m-mode-btn[data-active="true"] { background: #1A1A1A; color: #E5E5E5; }
+        body[data-theme="dark"] .m-mode-btn:hover:not([data-active="true"]) { color: #999; }
+        body[data-theme="dark"] .m-decree-chip { border-color: #333; color: #666; }
+        body[data-theme="dark"] .m-decree-chip:hover { border-color: #555; color: #999; }
+        body[data-theme="dark"] .m-decree-chip[data-loaded="true"] { border-color: #1A3A2A; background: #0F1F15; color: #4ADE80; }
+        body[data-theme="dark"] .m-decree-remove { background: rgba(255,255,255,0.08); color: #4ADE80; }
+        body[data-theme="dark"] .m-welcome-icon-wrap { background: linear-gradient(135deg, #1A1530 0%, #101820 100%); }
+        body[data-theme="dark"] .m-welcome-greeting { color: #E5E5E5; }
+        body[data-theme="dark"] .m-welcome-sub { color: #666; }
+        body[data-theme="dark"] .m-starter { background: #141414; border-color: #1F1F1F; color: #999; }
+        body[data-theme="dark"] .m-starter:hover { background: #1A1A1A; border-color: #2A2A2A; color: #CCC; }
+        body[data-theme="dark"] .m-starter-arrow { color: #444; }
+        body[data-theme="dark"] .m-msg[data-role="user"] .m-bubble { background: #E5E5E5; color: #0F0F0F; }
+        body[data-theme="dark"] .m-msg[data-role="assistant"] .m-bubble { color: #BCBCBC; }
+        body[data-theme="dark"] .m-md strong { color: #E5E5E5; }
+        body[data-theme="dark"] .m-md code { background: #1A1A1A; }
+        body[data-theme="dark"] .m-md pre { background: #1A1A1A; }
+        body[data-theme="dark"] .m-md blockquote { border-color: #333; color: #888; }
+        body[data-theme="dark"] .m-md hr { border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-md h1, body[data-theme="dark"] .m-md h2, body[data-theme="dark"] .m-md h3 { color: #E5E5E5; }
+        body[data-theme="dark"] .m-copy-btn { color: #555; }
+        body[data-theme="dark"] .m-copy-btn:hover { color: #888; background: #1A1A1A; }
+        body[data-theme="dark"] .m-typing-dot { background: #444; }
+        body[data-theme="dark"] .m-input-area { background: #0F0F0F; border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-input-row { background: #141414; }
+        body[data-theme="dark"] .m-input-row:focus-within { box-shadow: 0 0 0 2px rgba(255,255,255,0.06); }
+        body[data-theme="dark"] .m-textarea { color: #E5E5E5; }
+        body[data-theme="dark"] .m-textarea::placeholder { color: #555; }
+        body[data-theme="dark"] .m-send-btn { background: #E5E5E5; color: #0F0F0F; }
+        body[data-theme="dark"] .m-send-btn:disabled { background: #1F1F1F; color: #444; }
+        body[data-theme="dark"] .m-send-btn:not(:disabled):hover { background: #CCC; }
+        body[data-theme="dark"] .m-disclaimer { color: #444; }
+        body[data-theme="dark"] .m-feedback-link { color: #444; }
+        body[data-theme="dark"] .m-feedback-link:hover { color: #666; }
+        body[data-theme="dark"] .m-draft-card { background: #141414; border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-draft-label { color: #666; }
+        body[data-theme="dark"] .m-draft-body { color: #E5E5E5; background: #0F0F0F; border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-draft-copy { background: #1A1A1A; color: #999; }
+        body[data-theme="dark"] .m-draft-copy:hover { background: #222; }
+        body[data-theme="dark"] .m-draft-refine { background: #E5E5E5; color: #0F0F0F; }
+        body[data-theme="dark"] .m-draft-refine:hover { background: #CCC; }
+        body[data-theme="dark"] .m-history { background: #0F0F0F; }
+        body[data-theme="dark"] .m-history-header { border-color: #1F1F1F; }
+        body[data-theme="dark"] .m-history-title { color: #E5E5E5; }
+        body[data-theme="dark"] .m-history-item:hover { background: #141414; }
+        body[data-theme="dark"] .m-history-item[data-active="true"] { background: #1A1A1A; }
+        body[data-theme="dark"] .m-history-item-title { color: #E5E5E5; }
+        body[data-theme="dark"] .m-history-item-meta { color: #666; }
+        body[data-theme="dark"] .m-history-item-delete { color: #444; }
+        body[data-theme="dark"] .m-fb-sheet { background: #141414; }
+        body[data-theme="dark"] .m-fb-handle { background: #333; }
+        body[data-theme="dark"] .m-fb-title { color: #E5E5E5; }
+        body[data-theme="dark"] .m-fb-sub { color: #666; }
+        body[data-theme="dark"] .m-fb-input { background: #0F0F0F; border-color: #2A2A2A; color: #E5E5E5; }
+        body[data-theme="dark"] .m-fb-input:focus { border-color: #555; }
+        body[data-theme="dark"] .m-fb-input::placeholder { color: #444; }
+        body[data-theme="dark"] .m-fb-submit { background: #E5E5E5; color: #0F0F0F; }
+        body[data-theme="dark"] .m-fb-submit:hover { background: #CCC; }
+        body[data-theme="dark"] .m-fb-submit:disabled { background: #1F1F1F; color: #444; }
+        body[data-theme="dark"] .m-settings { background: #0F0F0F; }
+        body[data-theme="dark"] .m-settings-title { color: #E5E5E5; }
+        body[data-theme="dark"] .m-settings-label { color: #666; }
+        body[data-theme="dark"] .m-settings-value { color: #999; }
+        body[data-theme="dark"] .m-settings-input { background: #141414; border-color: #2A2A2A; color: #E5E5E5; }
+        body[data-theme="dark"] .m-settings-input:focus { border-color: #555; }
+        body[data-theme="dark"] .m-settings-link { color: #E5E5E5; }
+        body[data-theme="dark"] .m-settings-signout { border-color: #2A2A2A; }
+        body[data-theme="dark"] .m-settings-signout:hover { background: #1A1010; }
+        body[data-theme="dark"] .m-settings-section { border-color: #1F1F1F !important; }
+        body[data-theme="dark"] .m-toggle { background: #333; }
+        body[data-theme="dark"] .m-toggle-on { background: #E5E5E5; }
+        body[data-theme="dark"] .m-toggle-on .m-toggle-knob { background: #0F0F0F; }
+        body[data-theme="dark"] .m-confirm-card { background: #141414; }
+        body[data-theme="dark"] .m-confirm-title { color: #E5E5E5; }
+        body[data-theme="dark"] .m-confirm-sub { color: #888; }
+        body[data-theme="dark"] .m-confirm-cancel { background: #1F1F1F; color: #E5E5E5; }
+        body[data-theme="dark"] .m-confirm-danger { background: #E5E5E5; color: #0F0F0F; }
+        body[data-theme="dark"] .m-toast { background: #E5E5E5; color: #0F0F0F; }
+
+        /* Onboarding walkthrough */
+        .m-onboard-step {
+          width: 100%;
+          animation: m-fade-up 0.4s ease both;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .m-onboard-icon {
+          width: 64px;
+          height: 64px;
+          border-radius: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+        .m-onboard-icon svg { color: #fff; }
+        .m-onboard-heading {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 24px;
+          font-weight: 500;
+          font-style: italic;
+          color: #2A2A2A;
+          margin-bottom: 10px;
+          text-align: center;
+        }
+        .m-onboard-desc {
+          font-size: 15px;
+          line-height: 1.6;
+          color: #888;
+          text-align: center;
+          max-width: 300px;
+          margin-bottom: 28px;
+        }
+        .m-onboard-modes {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          width: 100%;
+          margin-bottom: 28px;
+        }
+        .m-onboard-mode-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+          padding: 16px;
+          border-radius: 14px;
+          border: 1px solid #F0F0F0;
+          background: #FAFAFA;
+          text-align: left;
+        }
+        .m-onboard-mode-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .m-onboard-mode-icon svg { color: #fff; }
+        .m-onboard-mode-info { flex: 1; }
+        .m-onboard-mode-name {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1A1A1A;
+          margin-bottom: 2px;
+        }
+        .m-onboard-mode-hint {
+          font-size: 13px;
+          color: #888;
+          line-height: 1.4;
+        }
+        .m-onboard-dots {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 20px;
+        }
+        .m-onboard-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #E0E0E0;
+          transition: background 0.2s;
+        }
+        .m-onboard-dot[data-active="true"] { background: #1A1A1A; }
+        .m-onboard-skip {
+          background: none;
+          border: none;
+          font-size: 13px;
+          font-weight: 500;
+          font-family: inherit;
+          color: #BCBCBC;
+          cursor: pointer;
+          padding: 8px 16px;
+          margin-top: 8px;
+          transition: color 0.15s;
+        }
+        .m-onboard-skip:hover { color: #888; }
+        .m-onboard-upload-area {
+          width: 100%;
+          padding: 32px 24px;
+          border: 2px dashed #E0E0E0;
+          border-radius: 16px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: border-color 0.2s, background 0.2s;
+          margin-bottom: 16px;
+          color: #999;
+        }
+        .m-onboard-upload-area:hover { border-color: #BCBCBC; background: #FAFAFA; }
+        .m-onboard-upload-hint {
+          font-size: 13px;
+          color: #BCBCBC;
+        }
+        .m-onboard-quote {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 20px;
+          font-style: italic;
+          color: #2A2A2A;
+          text-align: center;
+          line-height: 1.5;
+          max-width: 280px;
+          margin-bottom: 16px;
+        }
+        .m-onboard-note {
+          font-size: 14px;
+          color: #999;
+          text-align: center;
+          line-height: 1.5;
+          max-width: 300px;
+          margin-bottom: 32px;
         }
       `}</style>
 
@@ -1891,6 +2336,85 @@ export default function Meridian() {
                 </button>
               </div>
             </>
+          ) : authView === "onboard-modes" ? (
+            <div className="m-onboard-step" key="modes">
+              <div className="m-onboard-dots">
+                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" />
+                <div className="m-onboard-dot" />
+              </div>
+              <div className="m-onboard-heading">Three ways to help</div>
+              <div className="m-onboard-desc">Meridian works in three modes, each designed for a different moment.</div>
+              <div className="m-onboard-modes">
+                <div className="m-onboard-mode-card">
+                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #8B7CF6, #6D5DD3)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  </div>
+                  <div className="m-onboard-mode-info">
+                    <div className="m-onboard-mode-name">Guidance</div>
+                    <div className="m-onboard-mode-hint">Talk through conflicts, boundaries, and tough co-parenting moments.</div>
+                  </div>
+                </div>
+                <div className="m-onboard-mode-card">
+                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #60A5FA, #3B82F6)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  </div>
+                  <div className="m-onboard-mode-info">
+                    <div className="m-onboard-mode-name">Decree Q&A</div>
+                    <div className="m-onboard-mode-hint">Upload your decree and ask questions in plain English.</div>
+                  </div>
+                </div>
+                <div className="m-onboard-mode-card">
+                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  </div>
+                  <div className="m-onboard-mode-info">
+                    <div className="m-onboard-mode-name">Draft</div>
+                    <div className="m-onboard-mode-hint">Get help writing calm, neutral messages to your co-parent.</div>
+                  </div>
+                </div>
+              </div>
+              <button className="m-auth-btn" onClick={() => setAuthView("onboard-decree")}>Continue</button>
+            </div>
+          ) : authView === "onboard-decree" ? (
+            <div className="m-onboard-step" key="decree">
+              <div className="m-onboard-dots">
+                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" />
+              </div>
+              <div className="m-onboard-icon" style={{ background: "linear-gradient(135deg, #60A5FA, #818CF8)" }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div className="m-onboard-heading">Got your decree?</div>
+              <div className="m-onboard-desc">Upload your divorce decree and Meridian can answer questions about it in plain English. You can always do this later.</div>
+              <div className="m-onboard-upload-area" onClick={() => fileRef.current?.click()}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>Tap to upload PDF or text file</span>
+                <span className="m-onboard-upload-hint">.pdf, .txt, or .md</span>
+              </div>
+              <button className="m-auth-btn" onClick={() => setAuthView("onboard-ready")}>
+                {decreeFileName ? "Continue" : "Skip for now"}
+              </button>
+            </div>
+          ) : authView === "onboard-ready" ? (
+            <div className="m-onboard-step" key="ready">
+              <div className="m-onboard-dots">
+                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" data-active="true" />
+                <div className="m-onboard-dot" data-active="true" />
+              </div>
+              <div className="m-onboard-icon" style={{ background: "linear-gradient(135deg, #8B7CF6, #A78BFA)" }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+              <div className="m-onboard-quote">"I'm not a lawyer, but I'm always on your side."</div>
+              <div className="m-onboard-note">
+                Meridian is an AI companion — not legal counsel. For legal decisions, always consult your attorney. Everything else? We're here for you.
+              </div>
+              <button className="m-auth-btn" onClick={finishOnboarding}>
+                Let's go, {session?.user?.name?.split(" ")[0] || "friend"}
+              </button>
+            </div>
           ) : (
             <>
               <div className="m-auth-title">Welcome to Meridian</div>
@@ -1953,8 +2477,8 @@ export default function Meridian() {
             {session?.user?.name && (
               <button
                 className="m-icon-btn"
-                onClick={() => setShowSignOutConfirm(true)}
-                title={`Signed in as ${session.user.name}`}
+                onClick={() => { setEditName(session.user.name); setShowSettings(true); }}
+                title="Settings"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -2018,11 +2542,16 @@ export default function Meridian() {
             <div className="m-empty">
               <div className="m-modes-content" key={mode}>
                 <div className="m-welcome">
+                  <div className="m-welcome-icon-wrap">
+                    {mode === "guidance" && <svg className="m-welcome-icon-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>}
+                    {mode === "decree" && <svg className="m-welcome-icon-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
+                    {mode === "draft" && <svg className="m-welcome-icon-svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
+                  </div>
                   <div className="m-welcome-greeting">{getGreeting()}{firstName ? `, ${firstName}` : ""}.</div>
                   <div className="m-welcome-sub">{MODE_HINTS[mode]}</div>
                 </div>
                 <div className="m-starters">
-                  {STARTERS[mode].map((s) => (
+                  {pickStarters(mode).map((s) => (
                     <button key={s} className="m-starter" onClick={() => handleSend(s)}>
                       {s}
                       <span className="m-starter-arrow">
@@ -2038,18 +2567,37 @@ export default function Meridian() {
               {messages.map((msg, i) => (
                 <div key={i} className="m-msg" data-role={msg.role}>
                   {msg.role === "assistant" ? (
-                    <>
-                      <div className="m-bubble m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
-                      {msg.content && (
-                        <button className="m-copy-btn" onClick={() => copyToClipboard(msg.content, i)}>
-                          {copied === i ? (
-                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
-                          ) : (
-                            <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
-                          )}
-                        </button>
-                      )}
-                    </>
+                    mode === "draft" && msg.content && !streaming ? (
+                      <div className="m-draft-card">
+                        <div className="m-draft-label">Draft message</div>
+                        <div className="m-draft-body">{msg.content}</div>
+                        <div className="m-draft-actions">
+                          <button className="m-draft-copy" onClick={() => copyToClipboard(msg.content, i)}>
+                            {copied === i ? (
+                              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
+                            ) : (
+                              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
+                            )}
+                          </button>
+                          <button className="m-draft-refine" onClick={() => handleSend("Make this shorter and more direct")}>
+                            Refine
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="m-bubble m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
+                        {msg.content && (
+                          <button className="m-copy-btn" onClick={() => copyToClipboard(msg.content, i)}>
+                            {copied === i ? (
+                              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied</>
+                            ) : (
+                              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</>
+                            )}
+                          </button>
+                        )}
+                      </>
+                    )
                   ) : (
                     <div className="m-bubble">{msg.content}</div>
                   )}
@@ -2187,6 +2735,63 @@ export default function Meridian() {
         </div>
       )}
       </>
+      )}
+
+      {/* Settings panel */}
+      {showSettings && (
+        <div className="m-settings-overlay" onClick={() => setShowSettings(false)}>
+          <div className="m-settings" onClick={(e) => e.stopPropagation()}>
+            <div className="m-settings-header">
+              <span className="m-settings-title">Settings</span>
+              <button className="m-icon-btn" onClick={() => setShowSettings(false)} style={{ width: 28, height: 28 }}>
+                <IconX />
+              </button>
+            </div>
+
+            <div className="m-settings-section">
+              <div className="m-settings-label">Name</div>
+              <div className="m-settings-row">
+                <input
+                  className="m-settings-input"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); e.target.blur(); } }}
+                />
+              </div>
+            </div>
+
+            <div className="m-settings-section">
+              <div className="m-settings-label">Email</div>
+              <div className="m-settings-value">{session?.user?.email}</div>
+            </div>
+
+            <div className="m-settings-section">
+              <div className="m-settings-label">Decree</div>
+              {decreeFileName ? (
+                <div className="m-settings-row">
+                  <span className="m-settings-value" style={{ flex: 1 }}>{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span>
+                  <button className="m-settings-link" style={{ color: "#DC2626" }} onClick={() => { setDecreeText(""); setDecreeFileName(""); setDecreePages(0); }}>Remove</button>
+                </div>
+              ) : (
+                <button className="m-settings-link" onClick={() => { setShowSettings(false); fileRef.current?.click(); }}>Upload decree</button>
+              )}
+            </div>
+
+            <div className="m-settings-section">
+              <div className="m-settings-row">
+                <span className="m-settings-label" style={{ marginBottom: 0 }}>Dark mode</span>
+                <button className={`m-toggle ${darkMode ? "m-toggle-on" : ""}`} onClick={() => setDarkMode(!darkMode)}>
+                  <span className="m-toggle-knob" />
+                </button>
+              </div>
+            </div>
+
+            <div className="m-settings-section" style={{ marginTop: "auto", borderTop: "1px solid #F0F0F0", paddingTop: 16 }}>
+              <button className="m-settings-signout" onClick={() => { setShowSettings(false); setShowSignOutConfirm(true); }}>Sign Out</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showSignOutConfirm && (
