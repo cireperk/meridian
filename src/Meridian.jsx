@@ -32,19 +32,16 @@ const sbFetch = async (path, { method = "GET", body, token } = {}) => {
   return text ? JSON.parse(text) : null;
 };
 
-const authServerCall = async (action, email, password) => {
+const authSubmit = async (email, password) => {
   const res = await fetch("/api/auth", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action, email, password }),
+    body: JSON.stringify({ email, password }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Auth failed");
   return data;
 };
-
-const authSignUp = (email, password) => authServerCall("signup", email, password);
-const authSignIn = (email, password) => authServerCall("signin", email, password);
 
 const authRefreshToken = (refreshToken) =>
   sbFetch("/auth/v1/token?grant_type=refresh_token", { method: "POST", body: { refresh_token: refreshToken } });
@@ -164,7 +161,7 @@ export default function Meridian() {
   const [session, setSession] = useState(() => {
     try { return JSON.parse(localStorage.getItem("m_session")); } catch { return null; }
   });
-  const [authView, setAuthView] = useState("signup"); // "login" | "signup" | "onboarding"
+  const [authView, setAuthView] = useState("main"); // "main" | "onboarding"
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
@@ -185,39 +182,29 @@ export default function Meridian() {
     }).catch(() => {});
   }, []); // eslint-disable-line
 
-  const handleSignUp = async () => {
+  const handleAuth = async () => {
     setAuthError("");
     setAuthLoading(true);
     try {
-      const data = await authSignUp(authEmail, authPassword);
-      if (data?.access_token) {
-        const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } };
+      const data = await authSubmit(authEmail, authPassword);
+      const token = data.access_token;
+
+      if (data.isNew) {
+        // New user — go to onboarding
+        const s = { token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } };
         setSession(s);
         setAuthView("onboarding");
-      } else if (data?.id) {
-        setAuthError("Check your email for a confirmation link.");
+      } else {
+        // Existing user — fetch profile and sign in
+        let name = "";
+        try {
+          const profiles = await dbSelect("profiles", `id=eq.${data.user.id}&select=name`, token);
+          if (profiles?.length) name = profiles[0].name;
+        } catch {}
+        const s = { token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } };
+        setSession(s);
+        localStorage.setItem("m_session", JSON.stringify(s));
       }
-    } catch (err) {
-      setAuthError(err.message);
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleSignIn = async () => {
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      const data = await authSignIn(authEmail, authPassword);
-      const token = data.access_token;
-      let name = "";
-      try {
-        const profiles = await dbSelect("profiles", `id=eq.${data.user.id}&select=name`, token);
-        if (profiles?.length) name = profiles[0].name;
-      } catch {}
-      const s = { token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } };
-      setSession(s);
-      localStorage.setItem("m_session", JSON.stringify(s));
     } catch (err) {
       setAuthError(err.message);
     } finally {
@@ -237,7 +224,7 @@ export default function Meridian() {
       const s = { ...session, user: { ...session.user, name: authName.trim() } };
       setSession(s);
       localStorage.setItem("m_session", JSON.stringify(s));
-      setAuthView("login");
+      setAuthView("main");
     } catch (err) {
       setAuthError(err.message);
     } finally {
@@ -250,7 +237,7 @@ export default function Meridian() {
     localStorage.removeItem("m_session");
     localStorage.removeItem("m_messages");
     setMessages([]);
-    setAuthView("login");
+    setAuthView("main");
   };
 
   // --- App state ---
@@ -1502,21 +1489,6 @@ export default function Meridian() {
         }
         .m-auth-btn:hover { background: #333; }
         .m-auth-btn:disabled { background: #E5E5E5; color: #BCBCBC; cursor: default; }
-        .m-auth-divider {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          color: #CCC;
-          font-size: 12px;
-          margin: 4px 0;
-        }
-        .m-auth-divider::before,
-        .m-auth-divider::after {
-          content: "";
-          flex: 1;
-          height: 1px;
-          background: #F0F0F0;
-        }
         .m-auth-error {
           color: #DC2626;
           font-size: 13px;
@@ -1525,23 +1497,6 @@ export default function Meridian() {
           background: #FEF2F2;
           border-radius: 8px;
         }
-        .m-auth-switch {
-          margin-top: 20px;
-          font-size: 13px;
-          color: #999;
-        }
-        .m-auth-switch button {
-          background: none;
-          border: none;
-          color: #1A1A1A;
-          font-weight: 500;
-          font-family: inherit;
-          font-size: 13px;
-          cursor: pointer;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-        .m-auth-switch button:hover { color: #555; }
         .m-confirm-overlay {
           position: fixed;
           inset: 0;
@@ -1723,12 +1678,8 @@ export default function Meridian() {
             </>
           ) : (
             <>
-              <div className="m-auth-title">
-                {authView === "login" ? "Welcome back" : "Create your account"}
-              </div>
-              <div className="m-auth-sub">
-                {authView === "login" ? "Sign in to pick up where you left off." : "Your conversations stay private and secure."}
-              </div>
+              <div className="m-auth-title">Welcome to Meridian</div>
+              <div className="m-auth-sub">Sign in or create an account to continue.</div>
               <div className="m-auth-form">
                 <input
                   className="m-auth-input"
@@ -1744,23 +1695,16 @@ export default function Meridian() {
                   placeholder="Password"
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (authView === "login" ? handleSignIn() : handleSignUp())}
+                  onKeyDown={(e) => e.key === "Enter" && handleAuth()}
                 />
                 {authError && <div className="m-auth-error">{authError}</div>}
                 <button
                   className="m-auth-btn"
-                  onClick={authView === "login" ? handleSignIn : handleSignUp}
+                  onClick={handleAuth}
                   disabled={!authEmail || !authPassword || authLoading}
                 >
-                  {authLoading ? "Loading..." : authView === "login" ? "Sign In" : "Create Account"}
+                  {authLoading ? "Loading..." : "Continue"}
                 </button>
-              </div>
-              <div className="m-auth-switch">
-                {authView === "login" ? (
-                  <>Don't have an account? <button onClick={() => { setAuthView("signup"); setAuthError(""); }}>Sign up</button></>
-                ) : (
-                  <>Already have an account? <button onClick={() => { setAuthView("login"); setAuthError(""); }}>Sign in</button></>
-                )}
               </div>
             </>
           )}

@@ -16,53 +16,58 @@ export default async function handler(req, res) {
     "Content-Type": "application/json",
   };
 
-  const { action, email, password } = req.body;
+  const { email, password } = req.body;
 
-  if (action === "signup") {
-    // Create user via admin API — always confirmed
-    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: adminHeaders,
-      body: JSON.stringify({ email, password, email_confirm: true }),
-    });
-    const createData = await createRes.json();
-    if (!createRes.ok) {
-      return res.status(createRes.status).json({ error: createData.msg || createData.message || "Signup failed" });
-    }
-
-    // Explicitly set password via admin PUT (POST doesn't always persist it)
-    await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${createData.id}`, {
-      method: "PUT",
-      headers: adminHeaders,
-      body: JSON.stringify({ password }),
-    });
-
-    // Sign them in to get tokens
-    const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST",
-      headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const tokenData = await tokenRes.json();
-    if (!tokenRes.ok) {
-      return res.status(tokenRes.status).json({ error: tokenData.error_description || "Sign in after signup failed" });
-    }
-
-    return res.status(200).json(tokenData);
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
   }
 
-  if (action === "signin") {
-    const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: "POST",
-      headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+  // Try sign-in first
+  const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (tokenRes.ok) {
     const tokenData = await tokenRes.json();
-    if (!tokenRes.ok) {
-      return res.status(tokenRes.status).json({ error: tokenData.error_description || "Invalid credentials" });
-    }
-    return res.status(200).json(tokenData);
+    return res.status(200).json({ ...tokenData, isNew: false });
   }
 
-  return res.status(400).json({ error: "Invalid action" });
+  // Sign-in failed — try creating the user
+  const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ email, password, email_confirm: true }),
+  });
+  const createData = await createRes.json();
+
+  if (!createRes.ok) {
+    // User exists but wrong password
+    if (createData.msg?.includes("already") || createData.message?.includes("already")) {
+      return res.status(401).json({ error: "Incorrect password" });
+    }
+    return res.status(createRes.status).json({ error: createData.msg || createData.message || "Signup failed" });
+  }
+
+  // Explicitly set password (admin POST doesn't always persist it)
+  await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${createData.id}`, {
+    method: "PUT",
+    headers: adminHeaders,
+    body: JSON.stringify({ password }),
+  });
+
+  // Sign in the new user to get tokens
+  const newTokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const newTokenData = await newTokenRes.json();
+
+  if (!newTokenRes.ok) {
+    return res.status(newTokenRes.status).json({ error: newTokenData.error_description || "Auth failed" });
+  }
+
+  return res.status(200).json({ ...newTokenData, isNew: true });
 }
