@@ -185,7 +185,12 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => setShowSplash(false);
-  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); };
+  const openVideo = () => {
+    setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false);
+    // play() MUST be called synchronously in click handler to satisfy browser autoplay policy
+    const v = videoRef.current;
+    if (v) { v.currentTime = 0; v.play().catch(() => {}); }
+  };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
   const [videoPaused, setVideoPaused] = useState(false);
   const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
@@ -368,29 +373,32 @@ export default function App() {
       </AnimatePresence>
 
       {/* ==================== VIDEO OVERLAY ==================== */}
-      <AnimatePresence>
-        {showVideo && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6" onClick={dismissVideo}>
-            <motion.button initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: 0.2 }} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300" onClick={dismissVideo}><X className="w-5 h-5" /></motion.button>
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-              <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
-              <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
-                <video ref={(el) => { (videoRef as any).current = el; if (el) { el.play().catch(() => {}); } }} className="w-full block" src="/welcome.mp4" playsInline autoPlay onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-                  <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${videoProgress}%` }} transition={{ duration: 0.2 }} />
-                </div>
-                {videoPaused && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
-                      <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+      {/* Video element is ALWAYS in the DOM so videoRef is available for play() in click handler */}
+      <div
+        className={cn(
+          "fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6 transition-all duration-300",
+          showVideo ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
-      </AnimatePresence>
+        onClick={dismissVideo}
+      >
+        <button className={cn("absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300", showVideo ? "opacity-100 scale-100" : "opacity-0 scale-90")} onClick={dismissVideo}><X className="w-5 h-5" /></button>
+        <div className={cn("max-w-3xl w-full transition-all duration-500", showVideo ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-5")} onClick={(e) => e.stopPropagation()}>
+          <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
+          <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
+            <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline preload="auto" onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+              <div className="h-full bg-emerald-500 transition-all duration-200" style={{ width: `${videoProgress}%` }} />
+            </div>
+            {videoPaused && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div className="w-14 h-14 rounded-full bg-black/50 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ==================== AUTH ==================== */}
       {SUPABASE_URL && (!session?.user?.name || authView.startsWith("onboard-")) && !showSplash ? (
@@ -485,7 +493,7 @@ export default function App() {
       ) : !showSplash && (
         <>
           {/* ==================== MAIN APP ==================== */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-dvh flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
 
             {/* Header */}
             <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20">
@@ -504,7 +512,7 @@ export default function App() {
             </motion.header>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <AnimatePresence mode="wait">
                 {/* CHAT */}
                 {activeTab === "chat" && (

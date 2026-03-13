@@ -4,6 +4,9 @@
 @import 'tw-animate-css';
 @import './theme.css';
 
+/* Prevent body scroll on mobile — all scrolling happens inside app containers */
+html, body { height: 100%; overflow: hidden; }
+
 /* Scrollbar hide */
 .scrollbar-hide::-webkit-scrollbar { width: 0; height: 0; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
