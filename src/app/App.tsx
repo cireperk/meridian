@@ -324,7 +324,7 @@ export default function App() {
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="text-base text-slate-500 text-center mb-14 max-w-sm leading-relaxed">
-                A gentle companion for the journey ahead. Guidance, resources, and clarity — whenever you need it.
+                A thoughtful companion for the journey ahead. Guidance, resources, and clarity — whenever you need it.
               </motion.p>
 
               {/* Feature cards — softer, more minimal */}
