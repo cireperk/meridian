@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { marked } from "marked";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -138,6 +138,9 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [viewingArticle, setViewingArticle] = useState<{ title: string; topic: string; readTime: string } | null>(null);
+  const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
 
   useEffect(() => {
     if (!session?.refresh_token) return;
@@ -303,11 +306,6 @@ export default function App() {
               <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
             </div>
 
-            {/* Skip */}
-            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 0.6 }} onClick={enterApp} className="absolute top-6 right-6 text-xs text-slate-400 hover:text-slate-500 transition-colors z-20 px-3 py-1.5">
-              Skip
-            </motion.button>
-
             <div className="flex-1 flex flex-col items-center justify-center px-8 max-w-xl mx-auto relative z-10">
               {/* Logo */}
               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="mb-16">
@@ -416,25 +414,30 @@ export default function App() {
                 </motion.div>
               ) : authView === "onboard-modes" ? (
                 <motion.div key="modes" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-emerald-600" : "bg-slate-200")} />)}</div>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Three ways to help</h2>
-                  <p className="text-sm text-slate-400 mb-6 text-center">Each designed for a different moment in your journey.</p>
-                  <div className="w-full flex flex-col gap-3 mb-6">
-                    {[{ icon: MessageSquare, name: "Guidance", hint: "Talk through conflicts, boundaries, and tough co-parenting moments." }, { icon: FileText, name: "Decree Q&A", hint: "Upload your decree and ask questions in plain English." }, { icon: Sparkles, name: "Draft", hint: "Get help writing calm, neutral messages to your co-parent." }].map((m) => (
-                      <div key={m.name} className="flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0"><m.icon size={18} className="text-white" /></div>
-                        <div><div className="text-sm font-semibold text-slate-900 mb-0.5">{m.name}</div><div className="text-[13px] text-slate-500 leading-snug">{m.hint}</div></div>
-                      </div>
+                  <div className="text-xs text-slate-400 mb-6">Step 1 of 3</div>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Where are you in your journey?</h2>
+                  <p className="text-sm text-slate-400 mb-6 text-center">This helps us show you the most relevant resources.</p>
+                  <div className="w-full flex flex-col gap-2.5 mb-6">
+                    {[
+                      { id: "considering", label: "Considering divorce", desc: "Exploring options and thinking about next steps" },
+                      { id: "during", label: "Going through it now", desc: "Actively navigating the divorce process" },
+                      { id: "after", label: "Recently divorced", desc: "Adjusting to life after separation" },
+                      { id: "coparenting", label: "Focused on co-parenting", desc: "Building a healthy co-parenting relationship" },
+                    ].map((option) => (
+                      <button key={option.id} onClick={() => { setSelectedPhase(option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
+                        <div><div className="text-sm font-medium text-slate-800 mb-0.5">{option.label}</div><div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div></div>
+                      </button>
                     ))}
                   </div>
-                  <Button onClick={() => setAuthView("onboard-decree")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Continue</Button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full", i <= 1 ? "bg-emerald-600" : "bg-slate-200", i === 0 && "cursor-pointer")} onClick={i === 0 ? () => setAuthView("onboard-modes") : undefined} />)}</div>
+                  <button onClick={() => setAuthView("onboard-modes")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Step 2 of 3</button>
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-5"><FileText size={28} className="text-white" /></div>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
-                  <p className="text-sm text-slate-500 mb-6 text-center leading-relaxed">If you have your divorce decree handy, you can upload it now. You can always add it later.</p>
+                  <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed">This lets Meridian answer questions directly from your actual documents.</p>
+                  <p className="text-xs text-slate-400 mb-6 text-center">You can always add it later from your profile.</p>
                   {decreeFileName ? (
                     <div className="w-full py-8 px-6 border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700"><Check size={24} /><span className="text-sm font-medium">{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span></div>
                   ) : (
@@ -446,7 +449,7 @@ export default function App() {
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <div className="flex gap-1.5 mb-6">{[0,1,2].map(i => <div key={i} className={cn("w-1.5 h-1.5 rounded-full bg-emerald-600", i < 2 && "cursor-pointer")} onClick={i === 0 ? () => setAuthView("onboard-modes") : i === 1 ? () => setAuthView("onboard-decree") : undefined} />)}</div>
+                  <button onClick={() => setAuthView("onboard-decree")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Step 3 of 3</button>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-4 text-center">Just so you know</h2>
                   <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Think of Meridian as a calm, thoughtful friend — always in your corner, always here to listen.</p>
                   <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're here.</p>
@@ -454,14 +457,26 @@ export default function App() {
                 </motion.div>
               ) : (
                 <motion.div key="auth" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome back</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">Sign in to continue your journey.</p>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome to Meridian</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">Sign in or create an account to get started.</p>
                   <div className="w-full flex flex-col gap-3">
-                    <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="email" placeholder="Email address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} autoFocus />
-                    <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAuth()} />
+                    <div>
+                      <label htmlFor="auth-email" className="sr-only">Email address</label>
+                      <input id="auth-email" className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="email" placeholder="Email address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} autoFocus />
+                    </div>
+                    <div className="relative">
+                      <label htmlFor="auth-password" className="sr-only">Password</label>
+                      <input id="auth-password" className="w-full pl-4 pr-11 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type={showPassword ? "text" : "password"} placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAuth()} />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Loading..." : "Continue"}</Button>
+                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Continue" : "Continue"}</Button>
                   </div>
+                  <button onClick={() => setShowSplash(true)} className="mt-6 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                    <ArrowLeft className="w-3 h-3" /> Back to home
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -481,7 +496,7 @@ export default function App() {
               <AnimatePresence>
                 {activeTab === "chat" && hasConversation && (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Clock className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100" aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4 mr-1.5" />New chat</Button>
                   </motion.div>
                 )}
@@ -518,7 +533,7 @@ export default function App() {
                           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-8">
                             <MessageSquare className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
                           </motion.div>
-                          <h2 className="text-xl font-light tracking-tight text-slate-700 mb-2">What's on your mind?</h2>
+                          <h2 className="text-xl font-light tracking-tight text-slate-700 mb-2">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
                           <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-10">Take a breath. Share what you're navigating, and we'll work through it together.</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
                             {QUICK_ACTIONS.map((action, idx) => { const Icon = action.icon; return (
@@ -539,9 +554,17 @@ export default function App() {
                                 <>
                                   <div className="max-w-[85%] rounded-2xl rounded-bl-md text-[15px] leading-relaxed bg-white border border-slate-100 text-slate-600 px-5 py-4 shadow-sm m-md" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content || "") }} />
                                   {msg.content && (
-                                    <button onClick={() => copyToClipboard(msg.content, i)} className="flex items-center gap-1 px-2 py-0.5 text-[11px] text-slate-300 hover:text-slate-500 rounded transition-all mt-0.5">
-                                      {copied === i ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
-                                    </button>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <button onClick={() => copyToClipboard(msg.content, i)} className="flex items-center gap-1 px-2 py-0.5 text-[11px] text-slate-300 hover:text-slate-500 rounded transition-all">
+                                        {copied === i ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
+                                      </button>
+                                      <button onClick={() => setThumbs(p => ({ ...p, [i]: p[i] === "up" ? undefined as any : "up" }))} className={cn("p-1 rounded transition-all", thumbs[i] === "up" ? "text-emerald-500" : "text-slate-300 hover:text-slate-500")}>
+                                        <ThumbsUp size={10} />
+                                      </button>
+                                      <button onClick={() => setThumbs(p => ({ ...p, [i]: p[i] === "down" ? undefined as any : "down" }))} className={cn("p-1 rounded transition-all", thumbs[i] === "down" ? "text-red-400" : "text-slate-300 hover:text-slate-500")}>
+                                        <ThumbsDown size={10} />
+                                      </button>
+                                    </div>
                                   )}
                                 </>
                               )}
@@ -566,54 +589,80 @@ export default function App() {
                 {/* LEARN */}
                 {activeTab === "learn" && (
                   <motion.div key="learn" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <div className="mb-6 relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="text" placeholder="Search resources..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
-                    </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-6 px-6 scrollbar-hide">
-                      {JOURNEY_PHASES.map((phase) => (
-                        <button key={phase.id} onClick={() => setSelectedPhase(phase.id)} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-                          <span>{phase.emoji}</span><span>{phase.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {RESOURCE_TOPICS.map((topic) => { const Icon = topic.icon; return (
-                        <button key={topic.id} className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-600 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all">
-                          <Icon className="w-3.5 h-3.5" />{topic.label}
-                        </button>
-                      ); })}
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-4">{JOURNEY_PHASES.find((p) => p.id === selectedPhase)?.label}</h3>
-                      {(MOCK_RESOURCES[selectedPhase] || []).filter((r) => !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase())).map((resource, idx) => (
-                        <motion.button key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="w-full bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300 hover:shadow-md transition-all text-left group">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-slate-900 mb-1 group-hover:text-emerald-700 transition-colors">{resource.title}</h4>
-                              <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <span className="px-2 py-0.5 bg-slate-100 rounded-md">{RESOURCE_TOPICS.find((t) => t.id === resource.topic)?.label}</span>
-                                <span>•</span><span>{resource.readTime}</span>
-                              </div>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors flex-shrink-0" />
+                    <AnimatePresence mode="wait">
+                      {viewingArticle ? (
+                        <motion.div key="article" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                          <button onClick={() => setViewingArticle(null)} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6"><ArrowLeft className="w-4 h-4" /> Back to resources</button>
+                          <h2 className="text-xl font-light tracking-tight text-slate-800 mb-2">{viewingArticle.title}</h2>
+                          <div className="flex items-center gap-2 text-xs text-slate-400 mb-6">
+                            <span className="px-2 py-0.5 bg-slate-100 rounded-md">{RESOURCE_TOPICS.find((t) => t.id === viewingArticle.topic)?.label}</span>
+                            <span>•</span><span>{viewingArticle.readTime} read</span>
                           </div>
-                        </motion.button>
-                      ))}
-                    </div>
+                          <div className="bg-slate-50/80 border border-slate-200/40 rounded-2xl p-8 text-center">
+                            <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-4" strokeWidth={1.5} />
+                            <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">This article is coming soon. We're working with experts to bring you thoughtful, evidence-based content.</p>
+                            <p className="text-xs text-slate-400 mt-3">Want to be notified when it's ready? Let us know via feedback.</p>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <div className="mb-6 relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input type="text" placeholder="Search by topic, question, or keyword..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+                          </div>
+                          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-6 px-6 scrollbar-hide">
+                            {JOURNEY_PHASES.map((phase) => (
+                              <button key={phase.id} onClick={() => setSelectedPhase(phase.id)} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/15" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
+                                <span>{phase.emoji}</span><span>{phase.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="space-y-3">
+                            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">{JOURNEY_PHASES.find((p) => p.id === selectedPhase)?.label}</h3>
+                            {(MOCK_RESOURCES[selectedPhase] || []).filter((r) => !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase())).map((resource, idx) => (
+                              <motion.button key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} onClick={() => setViewingArticle(resource)} className="w-full bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300 hover:shadow-md transition-all text-left group">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">{resource.title}</h4>
+                                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                                      <span className="px-2 py-0.5 bg-slate-100 rounded-md">{RESOURCE_TOPICS.find((t) => t.id === resource.topic)?.label}</span>
+                                      <span>•</span><span>{resource.readTime}</span>
+                                    </div>
+                                  </div>
+                                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
+                                </div>
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
 
                 {/* PROFILE */}
                 {activeTab === "profile" && (
                   <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">Profile</h2>
+                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</h2>
+
+                    {/* Activity summary */}
+                    <div className="flex gap-3 mb-6">
+                      {[
+                        { label: "Conversations", value: conversations.length },
+                        { label: "Decree", value: decreeFileName ? "Uploaded" : "None" },
+                      ].map((stat) => (
+                        <div key={stat.label} className="flex-1 bg-slate-50/80 border border-slate-200/40 rounded-xl p-3.5 text-center">
+                          <div className="text-lg font-medium text-slate-800">{stat.value}</div>
+                          <div className="text-xs text-slate-400">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
 
                     {/* Name */}
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Name</h3>
                       <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={editName || session?.user?.name || ""} onChange={(e) => setEditName(e.target.value)} onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }} onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); (e.target as HTMLInputElement).blur(); } }} />
-                      {session?.user?.email && <div className="text-xs text-slate-400 mt-2">{session.user.email}</div>}
+                      {session?.user?.email && <div className="text-xs text-slate-400 mt-2 px-1">{session.user.email}</div>}
                     </div>
 
                     {/* Decree */}
@@ -675,7 +724,7 @@ export default function App() {
             {activeTab === "chat" && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white shrink-0">
                 <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
-                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-[15px] text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder="What's on your mind?" value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
+                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-[15px] text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "Reply..." : "What's on your mind?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
                   {streaming ? (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button size="sm" onClick={handleStop} className="rounded-full w-9 h-9 bg-slate-700 hover:bg-slate-800 flex-shrink-0 p-0"><Square className="w-3 h-3" fill="currentColor" /></Button>
@@ -686,11 +735,13 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
-                <div className="text-[10px] text-slate-300 text-center mt-2.5 flex items-center justify-center">
-                  Not legal advice
-                  <span className="mx-1.5">·</span>
-                  <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-slate-500 transition-colors">Share feedback</button>
-                </div>
+                {!hasConversation && (
+                  <div className="text-[10px] text-slate-300 text-center mt-2.5 flex items-center justify-center">
+                    Not legal advice
+                    <span className="mx-1.5">·</span>
+                    <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-slate-500 transition-colors">Share feedback</button>
+                  </div>
+                )}
               </motion.div>
             )}
 
