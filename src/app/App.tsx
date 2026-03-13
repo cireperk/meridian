@@ -185,7 +185,7 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => setShowSplash(false);
-  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setTimeout(() => { const v = videoRef.current; if (v) { v.currentTime = 0; v.play().catch(() => {}); } }, 400); };
+  const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
   const [videoPaused, setVideoPaused] = useState(false);
   const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
@@ -375,7 +375,7 @@ export default function App() {
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
               <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
               <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
-                <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
+                <video ref={(el) => { (videoRef as any).current = el; if (el) { el.play().catch(() => {}); } }} className="w-full block" src="/welcome.mp4" playsInline autoPlay onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
                   <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${videoProgress}%` }} transition={{ duration: 0.2 }} />
                 </div>
