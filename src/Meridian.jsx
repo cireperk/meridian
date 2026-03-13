@@ -2347,8 +2347,8 @@ export default function Meridian() {
               <div className="m-onboard-desc">Meridian works in three modes, each designed for a different moment.</div>
               <div className="m-onboard-modes">
                 <div className="m-onboard-mode-card">
-                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #8B7CF6, #6D5DD3)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <div className="m-onboard-mode-icon" style={{ background: "#1A1A1A" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
                   <div className="m-onboard-mode-info">
                     <div className="m-onboard-mode-name">Guidance</div>
@@ -2356,8 +2356,8 @@ export default function Meridian() {
                   </div>
                 </div>
                 <div className="m-onboard-mode-card">
-                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #60A5FA, #3B82F6)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <div className="m-onboard-mode-icon" style={{ background: "#1A1A1A" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   </div>
                   <div className="m-onboard-mode-info">
                     <div className="m-onboard-mode-name">Decree Q&A</div>
@@ -2365,8 +2365,8 @@ export default function Meridian() {
                   </div>
                 </div>
                 <div className="m-onboard-mode-card">
-                  <div className="m-onboard-mode-icon" style={{ background: "linear-gradient(135deg, #F59E0B, #D97706)" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  <div className="m-onboard-mode-icon" style={{ background: "#1A1A1A" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                   </div>
                   <div className="m-onboard-mode-info">
                     <div className="m-onboard-mode-name">Draft</div>
@@ -2383,16 +2383,30 @@ export default function Meridian() {
                 <div className="m-onboard-dot" data-active="true" />
                 <div className="m-onboard-dot" />
               </div>
-              <div className="m-onboard-icon" style={{ background: "linear-gradient(135deg, #60A5FA, #818CF8)" }}>
+              <div className="m-onboard-icon" style={{ background: "#1A1A1A" }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               </div>
-              <div className="m-onboard-heading">Got your decree?</div>
-              <div className="m-onboard-desc">Upload your divorce decree and Meridian can answer questions about it in plain English. You can always do this later.</div>
-              <div className="m-onboard-upload-area" onClick={() => fileRef.current?.click()}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>Tap to upload PDF or text file</span>
-                <span className="m-onboard-upload-hint">.pdf, .txt, or .md</span>
-              </div>
+              <div className="m-onboard-heading">Upload your decree</div>
+              <div className="m-onboard-desc">If you have your divorce decree handy, you can upload it now. Meridian will help you understand it in plain English. No worries if not — you can always add it later.</div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".txt,.md,.pdf"
+                style={{ display: "none" }}
+                onChange={handleFileUpload}
+              />
+              {decreeFileName ? (
+                <div className="m-onboard-upload-area" style={{ borderStyle: "solid", borderColor: "#D1FAE5", background: "#F0FDF4", color: "#16A34A", cursor: "default" }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span>
+                </div>
+              ) : (
+                <div className="m-onboard-upload-area" onClick={() => fileRef.current?.click()}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>Tap to upload PDF or text file</span>
+                  <span className="m-onboard-upload-hint">.pdf, .txt, or .md</span>
+                </div>
+              )}
               <button className="m-auth-btn" onClick={() => setAuthView("onboard-ready")}>
                 {decreeFileName ? "Continue" : "Skip for now"}
               </button>
@@ -2404,12 +2418,12 @@ export default function Meridian() {
                 <div className="m-onboard-dot" data-active="true" />
                 <div className="m-onboard-dot" data-active="true" />
               </div>
-              <div className="m-onboard-icon" style={{ background: "linear-gradient(135deg, #8B7CF6, #A78BFA)" }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <div className="m-onboard-heading">Just so you know</div>
+              <div className="m-onboard-note" style={{ marginBottom: 12 }}>
+                Meridian is your companion through this — not a lawyer and not a therapist. Think of it as a calm, thoughtful friend who's always in your corner.
               </div>
-              <div className="m-onboard-quote">"I'm not a lawyer, but I'm always on your side."</div>
               <div className="m-onboard-note">
-                Meridian is an AI companion — not legal counsel. For legal decisions, always consult your attorney. Everything else? We're here for you.
+                For real legal decisions, loop in your attorney. For everything else, we're here.
               </div>
               <button className="m-auth-btn" onClick={finishOnboarding}>
                 Let's go, {session?.user?.name?.split(" ")[0] || "friend"}
