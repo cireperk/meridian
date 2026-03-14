@@ -485,6 +485,13 @@ export default function App() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {authPassword.length > 0 && (
+                      <div className="flex gap-3 text-[11px] px-1">
+                        <span className={authPassword.length >= 8 ? "text-emerald-500" : "text-slate-400"}>8+ chars</span>
+                        <span className={/[A-Z]/.test(authPassword) ? "text-emerald-500" : "text-slate-400"}>Uppercase</span>
+                        <span className={/[0-9]/.test(authPassword) ? "text-emerald-500" : "text-slate-400"}>Number</span>
+                      </div>
+                    )}
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
                     <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Continue" : "Continue"}</Button>
                   </div>
