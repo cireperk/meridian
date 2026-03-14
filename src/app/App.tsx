@@ -10,7 +10,7 @@ import { Logo } from "./components/Logo";
 
 marked.setOptions({ breaks: true, gfm: true });
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.5.207/build/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
 
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
