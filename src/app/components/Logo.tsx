@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
@@ -12,6 +14,7 @@ const sizeMap = {
 
 export function Logo({ size = "md", className = "" }: LogoProps) {
   const { width, height, strokeWidth } = sizeMap[size];
+  const gradientId = useId();
 
   return (
     <svg
@@ -24,21 +27,21 @@ export function Logo({ size = "md", className = "" }: LogoProps) {
     >
       <path
         d="M8 0 Q12 28, 8 56"
-        stroke="url(#logo-gradient)"
+        stroke={`url(#${gradientId})`}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         fill="none"
       />
       <path
         d="M24 0 Q28 28, 24 56"
-        stroke="url(#logo-gradient)"
+        stroke={`url(#${gradientId})`}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         fill="none"
       />
       <defs>
         <linearGradient
-          id="logo-gradient"
+          id={gradientId}
           x1="16"
           y1="0"
           x2="16"
