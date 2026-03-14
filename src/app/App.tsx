@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { marked } from "marked";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "./components/ui/button";
@@ -11,7 +10,7 @@ import { Logo } from "./components/Logo";
 
 marked.setOptions({ breaks: true, gfm: true });
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.5.207/build/pdf.worker.min.mjs`;
 
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -240,7 +239,8 @@ export default function App() {
 
   const extractPdfText = async (file: File) => {
     const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
+    const pdf = await loadingTask.promise;
     setDecreePages(pdf.numPages);
     const pages: string[] = [];
     for (let i = 1; i <= pdf.numPages; i++) {
@@ -249,9 +249,15 @@ export default function App() {
         const content = await page.getTextContent();
         const items = content?.items;
         if (Array.isArray(items)) {
-          pages.push(items.map((item: any) => item.str || "").join(" "));
+          const text = items
+            .filter((item: any) => typeof item.str === "string")
+            .map((item: any) => item.str)
+            .join(" ");
+          if (text.trim()) pages.push(text);
         }
-      } catch { /* skip unreadable pages */ }
+      } catch (e) {
+        console.warn(`Page ${i} extraction failed:`, e);
+      }
     }
     return pages.join("\n\n");
   };
