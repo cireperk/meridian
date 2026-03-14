@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
 import { marked } from "marked";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "./components/ui/button";
@@ -267,8 +268,13 @@ export default function App() {
     setDecreeFileName(file.name); setUploading(true); setUploadError("");
     try {
       let text: string;
-      if (file.name.toLowerCase().endsWith(".pdf")) {
+      const name = file.name.toLowerCase();
+      if (name.endsWith(".pdf")) {
         text = await extractPdfText(file);
+      } else if (name.endsWith(".docx") || name.endsWith(".doc")) {
+        const buffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+        text = result.value;
       } else {
         text = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (ev) => resolve(ev.target?.result as string); reader.onerror = () => reject(new Error("Failed")); reader.readAsText(file); });
       }
@@ -327,7 +333,7 @@ export default function App() {
   // ============================================================
   return (
     <>
-      <input ref={fileRef} type="file" accept=".txt,.md,.pdf" className="hidden" onChange={handleFileUpload} />
+      <input ref={fileRef} type="file" accept=".txt,.md,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
 
       {/* ==================== SPLASH ==================== */}
       <AnimatePresence mode="wait">
@@ -493,7 +499,7 @@ export default function App() {
                       </motion.div>
                     ) : (
                       <motion.button key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all mb-4 text-slate-400">
-                        <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload PDF or text file</span><span className="text-xs text-slate-400">.pdf, .txt, or .md</span>
+                        <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
                       </motion.button>
                     )}
                   </AnimatePresence>
@@ -766,7 +772,7 @@ export default function App() {
                         </div>
                       ) : (
                         <button onClick={() => fileRef.current?.click()} className="w-full bg-white border-2 border-dashed border-slate-300 rounded-xl p-6 hover:border-emerald-400 hover:bg-emerald-50/30 transition-all">
-                          <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" /><div className="text-sm font-medium text-slate-600">Upload decree</div><div className="text-xs text-slate-400 mt-1">PDF or text file</div>
+                          <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" /><div className="text-sm font-medium text-slate-600">Upload decree</div><div className="text-xs text-slate-400 mt-1">PDF, Word, or text file</div>
                         </button>
                       )}
                       {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mt-3">{uploadError}</div>}
