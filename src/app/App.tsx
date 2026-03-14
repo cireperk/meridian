@@ -303,16 +303,16 @@ export default function App() {
       {/* ==================== SPLASH ==================== */}
       <AnimatePresence mode="wait">
         {showSplash && (
-          <motion.div key="splash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto">
+          <motion.div key="splash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden">
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
               <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-8 max-w-xl mx-auto relative z-10">
+            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
               {/* Logo */}
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-16">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/15" />
                   <span className="text-3xl font-semibold tracking-tight text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
@@ -320,32 +320,32 @@ export default function App() {
               </motion.div>
 
               {/* Headline */}
-              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-4xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-5 leading-[1.15]">
+              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
                 Navigate divorce<br />
                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">with calm and clarity</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-base text-slate-500 text-center mb-14 max-w-sm leading-relaxed">
+              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
                 A thoughtful companion for the journey ahead. Guidance, resources, and clarity — whenever you need it.
               </motion.p>
 
-              {/* Feature cards — softer, more minimal */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col sm:flex-row gap-3.5 w-full max-w-md mb-14">
+              {/* Feature cards — always horizontal */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-row gap-3 w-full max-w-md mb-8">
                 {[
-                  { icon: MessageSquare, title: "Guidance", desc: "Thoughtful support when it matters" },
-                  { icon: BookOpen, title: "Resources", desc: "Articles and tools for clarity" },
-                  { icon: FileText, title: "Decree Help", desc: "Your documents, in plain English" },
+                  { icon: MessageSquare, title: "Guidance", desc: "Support when it matters" },
+                  { icon: BookOpen, title: "Resources", desc: "Tools for clarity" },
+                  { icon: FileText, title: "Decree Help", desc: "Documents, simplified" },
                 ].map((card, idx) => (
-                  <motion.div key={card.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + idx * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-5 text-center">
-                    <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2.5" strokeWidth={1.5} />
-                    <h3 className="text-sm font-medium text-slate-800 mb-1">{card.title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{card.desc}</p>
+                  <motion.div key={card.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + idx * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-4 text-center">
+                    <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
+                    <h3 className="text-xs font-medium text-slate-800 mb-0.5">{card.title}</h3>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{card.desc}</p>
                   </motion.div>
                 ))}
               </motion.div>
 
               {/* CTAs */}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-5 w-full max-w-xs">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
                 <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                   Get Started
                 </Button>
@@ -359,7 +359,7 @@ export default function App() {
             </div>
 
             {/* Trust footer */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }} className="pb-10 text-center relative z-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }} className="pb-6 text-center relative z-10 shrink-0">
               <div className="inline-flex items-center gap-2 text-xs text-slate-400">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 <span>Private & confidential</span>
