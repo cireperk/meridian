@@ -782,9 +782,6 @@ export default function App() {
                     </motion.div>
                   )}
                 </div>
-                {!hasConversation && (
-                  <div className="text-[10px] text-slate-300 text-center mt-2.5">Not legal advice</div>
-                )}
               </motion.div>
             )}
 
