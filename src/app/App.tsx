@@ -411,17 +411,25 @@ export default function App() {
                     <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
                     <h3 className="text-xs font-medium text-slate-800 mb-0.5">{card.title}</h3>
                     <p className="text-[11px] text-slate-400 leading-relaxed">{card.desc}</p>
-                    <AnimatePresence>
-                      {expandedTile === card.title && (
-                        <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                          className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-100 text-left">
-                          {card.detail}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
                   </motion.div>
                 ))}
               </motion.div>
+              <AnimatePresence mode="wait">
+                {expandedTile && (
+                  <motion.div key={expandedTile} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full max-w-md -mt-4 mb-4">
+                    <div className="bg-white/80 backdrop-blur-sm border border-emerald-100/60 rounded-2xl px-5 py-4 text-center">
+                      <p className="text-[13px] text-slate-600 leading-relaxed">
+                        {[
+                          { title: "Guidance", detail: "Get grounded before difficult talks with your co-parent, understand your options, and respond with confidence — not reactivity." },
+                          { title: "Resources", detail: "Curated guides on custody, finances, and emotional well-being so you can make informed decisions at every step." },
+                          { title: "Decree Help", detail: "Upload your decree and get plain-language help understanding what it means — no lawyer required for the everyday questions." },
+                        ].find(t => t.title === expandedTile)?.detail}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* CTAs */}
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
