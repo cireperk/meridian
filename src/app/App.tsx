@@ -486,10 +486,19 @@ export default function App() {
                       </button>
                     </div>
                     {authPassword.length > 0 && (
-                      <div className="flex gap-3 text-[11px] px-1">
-                        <span className={authPassword.length >= 8 ? "text-emerald-500" : "text-slate-400"}>8+ chars</span>
-                        <span className={/[A-Z]/.test(authPassword) ? "text-emerald-500" : "text-slate-400"}>Uppercase</span>
-                        <span className={/[0-9]/.test(authPassword) ? "text-emerald-500" : "text-slate-400"}>Number</span>
+                      <div className="flex flex-col gap-1.5 px-1">
+                        {[
+                          { met: authPassword.length >= 8, label: "At least 8 characters" },
+                          { met: /[A-Z]/.test(authPassword), label: "One uppercase letter" },
+                          { met: /[0-9]/.test(authPassword), label: "One number" },
+                        ].map((req) => (
+                          <div key={req.label} className="flex items-center gap-2 text-[11px]">
+                            <div className={cn("w-3.5 h-3.5 rounded border flex items-center justify-center transition-all", req.met ? "bg-emerald-500 border-emerald-500" : "border-slate-300 bg-white")}>
+                              {req.met && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                            </div>
+                            <span className={req.met ? "text-emerald-600" : "text-slate-400"}>{req.label}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
