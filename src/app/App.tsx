@@ -561,8 +561,25 @@ export default function App() {
                           </motion.div>
                           <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
                           <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">Share what you're navigating, and we'll work through it together.</p>
-                          {/* Horizontal scrolling action pills */}
-                          <div className="flex gap-2 overflow-x-auto w-full -mx-6 px-6 pb-2 scrollbar-hide">
+                          {/* Auto-scrolling action pills carousel */}
+                          <div ref={(el) => {
+                            if (!el) return;
+                            let scrollPos = 0; let direction = 1; let paused = false; let pauseTimer: ReturnType<typeof setTimeout>;
+                            const maxScroll = el.scrollWidth - el.clientWidth;
+                            const step = () => {
+                              if (paused || maxScroll <= 0) { requestAnimationFrame(step); return; }
+                              scrollPos += 0.4 * direction;
+                              if (scrollPos >= maxScroll) { direction = -1; paused = true; pauseTimer = setTimeout(() => { paused = false; }, 1200); }
+                              else if (scrollPos <= 0) { direction = 1; paused = true; pauseTimer = setTimeout(() => { paused = false; }, 1200); }
+                              el.scrollLeft = scrollPos;
+                              requestAnimationFrame(step);
+                            };
+                            const startTimer = setTimeout(() => requestAnimationFrame(step), 1500);
+                            const onTouch = () => { paused = true; clearTimeout(pauseTimer); pauseTimer = setTimeout(() => { scrollPos = el.scrollLeft; paused = false; }, 3000); };
+                            el.addEventListener("touchstart", onTouch, { passive: true });
+                            el.addEventListener("mousedown", onTouch);
+                            return () => { clearTimeout(startTimer); clearTimeout(pauseTimer); };
+                          }} className="flex gap-2 overflow-x-auto w-full -mx-6 px-6 pb-2 scrollbar-hide">
                             {QUICK_ACTIONS.map((action, idx) => { const Icon = action.icon; return (
                               <motion.button key={action.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + idx * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }} whileTap={{ scale: 0.96 }} onClick={() => handleQuickAction(action.id)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-full hover:border-emerald-200 hover:bg-emerald-50/30 transition-all shrink-0 group">
                                 <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors" strokeWidth={1.5} />
