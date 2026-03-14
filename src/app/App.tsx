@@ -207,6 +207,8 @@ export default function App() {
   const abortRef = useRef<AbortController | null>(null);
 
   const [decreeText, setDecreeText] = useState(() => localStorage.getItem("m_decree_text") || "");
+  const decreeTextRef = useRef(decreeText);
+  useEffect(() => { decreeTextRef.current = decreeText; }, [decreeText]);
   const [decreeFileName, setDecreeFileName] = useState(() => localStorage.getItem("m_decree_name") || "");
   const [decreePages, setDecreePages] = useState(() => { try { return parseInt(localStorage.getItem("m_decree_pages") || "0") || 0; } catch { return 0; } });
   const [uploading, setUploading] = useState(false);
@@ -258,7 +260,8 @@ export default function App() {
     if (!convId) { convId = `conv_${Date.now()}`; setConversations((prev) => [{ id: convId, title: userMsg.slice(0, 50), messages: [], createdAt: new Date().toISOString() }, ...prev]); setActiveConvId(convId); }
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
-    const decreeContext = decreeText ? `\n\nDIVORCE DECREE CONTENT:\n${decreeText.slice(0, 8000)}` : "\n\nNo decree uploaded yet.";
+    const currentDecree = decreeTextRef.current;
+    const decreeContext = currentDecree ? `\n\nDIVORCE DECREE CONTENT:\n${currentDecree.slice(0, 8000)}` : "\n\nNo decree uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
