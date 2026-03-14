@@ -389,12 +389,12 @@ export default function App() {
 
               {/* Headline */}
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
-                Navigate divorce<br />
+                Divorce & co-parenting<br />
                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">with calm and clarity</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
-                A thoughtful companion for the journey ahead. Guidance, resources, and clarity — whenever you need it.
+                A grounding companion for every stage — from navigating divorce to building a stronger co-parenting relationship.
               </motion.p>
 
               {/* Feature cards — always horizontal */}
@@ -567,7 +567,7 @@ export default function App() {
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <button onClick={() => setAuthView("onboard-decree")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-4 text-center">Just so you know</h2>
-                  <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Meridian is not a lawyer or legal advisor. It's a grounding tool — built to help you stay clear, calm, and centered through co-parenting.</p>
+                  <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Meridian is not a lawyer or legal advisor. It's a grounding tool — built to help you stay clear, calm, and centered through divorce and co-parenting.</p>
                   <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're right here with you.</p>
                   <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Let's go{firstName ? `, ${firstName}` : ""}</Button>
                 </motion.div>
@@ -596,7 +596,7 @@ export default function App() {
               ) : authView === "signin" || authView === "signup" ? (
                 <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome back" : "Create your account"}</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Sign in to continue where you left off." : "A calmer co-parenting journey starts here."}</p>
+                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Sign in to continue where you left off." : "Your companion for divorce and co-parenting."}</p>
                   <div className="w-full flex flex-col gap-3">
                     <div>
                       <label htmlFor="auth-email" className="sr-only">Email address</label>
@@ -641,7 +641,7 @@ export default function App() {
               ) : (
                 <motion.div key="chooser" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome to Meridian</h2>
-                  <p className="text-sm text-slate-400 mb-10 text-center">Your calm co-parenting companion.</p>
+                  <p className="text-sm text-slate-400 mb-10 text-center">Calm and clarity through divorce and co-parenting.</p>
                   <div className="w-full flex flex-col gap-3">
                     <Button onClick={() => { setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 text-[15px]">Create Account</Button>
                     <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} variant="outline" className="w-full h-12 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-[15px]">Sign In</Button>
@@ -898,7 +898,7 @@ export default function App() {
                         {[
                           { id: "privacy", icon: Shield, label: "Privacy & Data", content: "Your conversations and documents are encrypted and stored securely. Meridian never shares your personal information with third parties. You can delete your account and all associated data at any time by contacting support." },
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: "Have a question or running into an issue? Reach out to us at support@getmeridian.app and we'll get back to you within 24 hours." },
-                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a thoughtful companion for co-parents navigating life after separation. Built with care, designed for calm. Meridian is not a law firm and does not provide legal advice." },
+                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a grounding companion for anyone navigating divorce and co-parenting. Built with care, designed for calm and clarity. Meridian is not a law firm and does not provide legal advice." },
                         ].map((item) => (
                           <div key={item.id} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all">
                             <button onClick={() => setExpandedSetting(expandedSetting === item.id ? null : item.id)} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
