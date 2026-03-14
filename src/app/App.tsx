@@ -395,11 +395,14 @@ export default function App() {
                 <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                   Get Started
                 </Button>
-                <button onClick={openVideo} className="flex items-center gap-2.5 text-sm text-slate-400 hover:text-slate-600 transition-all duration-300 group">
-                  <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
-                    <Play className="w-3 h-3 ml-0.5 group-hover:text-emerald-600 transition-colors" />
+                <button onClick={openVideo} className="flex flex-col items-center gap-1.5 text-slate-400 hover:text-slate-600 transition-all duration-300 group">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
+                      <Play className="w-3 h-3 ml-0.5 group-hover:text-emerald-600 transition-colors" />
+                    </div>
+                    <span className="text-sm">Hear why we built Meridian</span>
                   </div>
-                  Watch a message from our founder
+                  <span className="text-[11px] text-slate-300">A 1-minute message from our founder</span>
                 </button>
               </motion.div>
             </div>
@@ -420,9 +423,12 @@ export default function App() {
       {/* ==================== VIDEO OVERLAY ==================== */}
       {showVideo && (
         <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-6" onClick={dismissVideo}>
-          <button className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white/80 transition-all duration-300" onClick={dismissVideo}><X className="w-5 h-5" /></button>
+          <button className="absolute top-5 right-5 flex items-center gap-2 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/15 rounded-full text-white/70 hover:text-white transition-all duration-300 text-sm font-medium z-10" onClick={dismissVideo}><X className="w-4 h-4" /> Close</button>
           <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="text-xs font-medium tracking-[0.2em] uppercase text-white/30 text-center mb-5">A message from the founder</div>
+            <div className="text-center mb-5">
+              <div className="text-base font-medium text-white/80 mb-1">A message from our founder</div>
+              <div className="text-xs text-white/30">The story behind Meridian</div>
+            </div>
             <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
               <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline autoPlay muted onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
               <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
