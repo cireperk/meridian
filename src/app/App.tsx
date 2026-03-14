@@ -502,8 +502,8 @@ export default function App() {
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <button onClick={() => setAuthView("onboard-modes")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
-                  <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed">This lets Meridian answer questions directly from your actual documents.</p>
-                  <p className="text-xs text-slate-400 mb-6 text-center">You can always add it later from your profile.</p>
+                  <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed max-w-[300px]">When Meridian has your decree, it can answer questions using your actual terms — custody schedules, financial obligations, and more.</p>
+                  <p className="text-xs text-slate-400 mb-6 text-center">Your document stays private and is never shared.</p>
                   <AnimatePresence mode="wait">
                     {uploading ? (
                       <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
@@ -524,7 +524,14 @@ export default function App() {
                     )}
                   </AnimatePresence>
                   {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mb-3 w-full">{uploadError}</div>}
-                  <Button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{uploading ? "Processing..." : decreeFileName && decreeText ? "Continue" : "Skip for now"}</Button>
+                  {decreeFileName && decreeText ? (
+                    <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Continue</Button>
+                  ) : (
+                    <>
+                      <p className="text-xs text-slate-400 text-center mb-3">Don't have it yet? That's completely okay — you can add it anytime from your profile.</p>
+                      <button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="text-sm text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">{uploading ? "Processing..." : "Skip for now"}</button>
+                    </>
+                  )}
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
