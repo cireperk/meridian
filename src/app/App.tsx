@@ -677,8 +677,8 @@ export default function App() {
                           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-5">
                             <MessageSquare className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
                           </motion.div>
-                          <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
-                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">{selectedPhase === "during" ? "Since you're actively navigating the process, understanding your rights and next steps is a great place to start." : selectedPhase === "after" ? "Adjusting to a new chapter takes time. Let's work through what matters most to you right now." : "Building a strong co-parenting foundation starts with clear communication. Let's figure it out together."}</p>
+                          <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Welcome back, ${firstName}.` : "Welcome back."}</h2>
+                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">Let's take the high road today.</p>
                           {/* Auto-scrolling action pills carousel */}
                           <div ref={(el) => {
                             if (!el) return;
@@ -909,7 +909,7 @@ export default function App() {
             {activeTab === "chat" && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white shrink-0">
                 <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
-                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-base text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "Continue the conversation..." : "What's on your mind?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
+                  <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-base text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "How can we get better today?" : "How can we get better today?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
                   {streaming ? (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button size="sm" onClick={handleStop} className="rounded-full w-9 h-9 bg-slate-700 hover:bg-slate-800 flex-shrink-0 p-0"><Square className="w-3 h-3" fill="currentColor" /></Button>
