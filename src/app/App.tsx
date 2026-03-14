@@ -633,7 +633,7 @@ export default function App() {
       ) : !showSplash && (
         <>
           {/* ==================== MAIN APP ==================== */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-x-0 top-0 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ height: "100dvh" }}>
 
             {/* Header */}
             <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
