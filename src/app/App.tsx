@@ -86,10 +86,9 @@ const ACTION_PROMPTS: Record<string, string> = {
 };
 
 const JOURNEY_PHASES = [
-  { id: "considering", label: "Considering Divorce", emoji: "🤔" },
-  { id: "during", label: "During Divorce", emoji: "📋" },
-  { id: "after", label: "After Divorce", emoji: "🌅" },
-  { id: "coparenting", label: "Co-Parenting", emoji: "👨‍👩‍👧" },
+  { id: "during", label: "During Divorce" },
+  { id: "after", label: "After Divorce" },
+  { id: "coparenting", label: "Co-Parenting" },
 ] as const;
 
 const RESOURCE_TOPICS = [
@@ -217,7 +216,7 @@ export default function App() {
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
 
-  const [selectedPhase, setSelectedPhase] = useState("considering");
+  const [selectedPhase, setSelectedPhase] = useState("during");
   const [searchQuery, setSearchQuery] = useState("");
   const [editName, setEditName] = useState("");
 
@@ -431,7 +430,6 @@ export default function App() {
                   <p className="text-sm text-slate-400 mb-6 text-center">This helps us show you the most relevant resources.</p>
                   <div className="w-full flex flex-col gap-2.5 mb-6">
                     {[
-                      { id: "considering", label: "Considering divorce", desc: "Exploring options and thinking about next steps" },
                       { id: "during", label: "Going through it now", desc: "Actively navigating the divorce process" },
                       { id: "after", label: "Recently divorced", desc: "Adjusting to life after separation" },
                       { id: "coparenting", label: "Focused on co-parenting", desc: "Building a healthy co-parenting relationship" },
@@ -625,7 +623,7 @@ export default function App() {
                           <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-6 px-6 scrollbar-hide">
                             {JOURNEY_PHASES.map((phase) => (
                               <button key={phase.id} onClick={() => setSelectedPhase(phase.id)} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/15" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-                                <span>{phase.emoji}</span><span>{phase.label}</span>
+                                <span>{phase.label}</span>
                               </button>
                             ))}
                           </div>
