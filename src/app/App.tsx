@@ -136,6 +136,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [viewingArticle, setViewingArticle] = useState<{ title: string; topic: string; readTime: string } | null>(null);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
@@ -820,10 +821,24 @@ export default function App() {
                     <div className="mb-8">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
                       <div className="space-y-2">
-                        {["Privacy & Data", "Help & Support", "About Meridian"].map((label) => (
-                          <button key={label} className="w-full bg-white border border-slate-200/60 rounded-xl p-4 hover:border-slate-300 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
-                            <span className="text-sm text-slate-700">{label}</span><ChevronRight className="w-4 h-4 text-slate-400" />
-                          </button>
+                        {[
+                          { id: "privacy", icon: Shield, label: "Privacy & Data", content: "Your conversations and documents are encrypted and stored securely. Meridian never shares your personal information with third parties. You can delete your account and all associated data at any time by contacting support." },
+                          { id: "help", icon: HelpCircle, label: "Help & Support", content: "Have a question or running into an issue? Reach out to us at support@getmeridian.app and we'll get back to you within 24 hours." },
+                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a thoughtful companion for co-parents navigating life after separation. Built with care, designed for calm. Meridian is not a law firm and does not provide legal advice." },
+                        ].map((item) => (
+                          <div key={item.id} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all">
+                            <button onClick={() => setExpandedSetting(expandedSetting === item.id ? null : item.id)} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
+                              <div className="flex items-center gap-3"><item.icon className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">{item.label}</span></div>
+                              <motion.div animate={{ rotate: expandedSetting === item.id ? 90 : 0 }} transition={{ duration: 0.2 }}><ChevronRight className="w-4 h-4 text-slate-400" /></motion.div>
+                            </button>
+                            <AnimatePresence>
+                              {expandedSetting === item.id && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+                                  <div className="px-4 pb-4 pt-0 text-[13px] text-slate-500 leading-relaxed">{item.content}</div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         ))}
                       </div>
                     </div>
