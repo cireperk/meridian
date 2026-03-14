@@ -6,6 +6,7 @@ import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { Logo } from "./components/Logo";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -313,8 +314,8 @@ export default function App() {
             <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
               {/* Logo */}
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/15" />
+                <div className="flex items-center gap-3">
+                  <Logo size="lg" />
                   <span className="text-3xl font-semibold tracking-tight text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
                 </div>
               </motion.div>
@@ -411,7 +412,7 @@ export default function App() {
         <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/10 to-white overflow-hidden z-40">
           <motion.div className="max-w-[380px] w-full flex flex-col items-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
             <div className="flex items-center gap-2.5 mb-12">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/10" />
+              <Logo size="md" />
               <span className="text-xl font-semibold text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
             </div>
 
@@ -503,7 +504,7 @@ export default function App() {
             {/* Header */}
             <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/10" />
+                <Logo size="sm" />
                 <span className="text-xl font-semibold text-slate-800" style={{ fontFamily: "'Dancing Script', cursive" }}>Meridian</span>
               </div>
               <AnimatePresence>

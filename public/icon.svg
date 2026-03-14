@@ -1,4 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="92" fill="#1A1A1A"/>
-  <text x="256" y="280" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-weight="700" font-size="240" fill="#fff">M</text>
+  <path d="M176 56 Q240 256, 176 456" stroke="url(#ig)" stroke-width="40" stroke-linecap="round" fill="none"/>
+  <path d="M336 56 Q400 256, 336 456" stroke="url(#ig)" stroke-width="40" stroke-linecap="round" fill="none"/>
+  <defs>
+    <linearGradient id="ig" x1="256" y1="56" x2="256" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
 </svg>
