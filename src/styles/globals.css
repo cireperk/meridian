@@ -7,6 +7,12 @@
 /* Prevent body scroll on mobile — all scrolling happens inside app containers */
 html, body { height: 100%; overflow: hidden; }
 
+/* iOS standalone PWA safe areas */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .sa-top { padding-top: env(safe-area-inset-top) !important; }
+  .sa-bottom { padding-bottom: env(safe-area-inset-bottom) !important; }
+}
+
 /* Scrollbar hide */
 .scrollbar-hide::-webkit-scrollbar { width: 0; height: 0; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
