@@ -229,7 +229,7 @@ export default function App() {
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
 
-  const [selectedPhase, setSelectedPhase] = useState("during");
+  const [selectedPhase, setSelectedPhase] = useState(() => localStorage.getItem("m_phase") || "during");
   const [searchQuery, setSearchQuery] = useState("");
   const [editName, setEditName] = useState("");
 
@@ -491,7 +491,7 @@ export default function App() {
                       { id: "after", label: "Recently divorced", desc: "Adjusting to life after separation" },
                       { id: "coparenting", label: "Focused on co-parenting", desc: "Building a healthy co-parenting relationship" },
                     ].map((option) => (
-                      <button key={option.id} onClick={() => { setSelectedPhase(option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
+                      <button key={option.id} onClick={() => { setSelectedPhase(option.id); localStorage.setItem("m_phase", option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
                         <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
                         <div><div className="text-sm font-medium text-slate-800 mb-0.5">{option.label}</div><div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div></div>
                       </button>
@@ -665,7 +665,7 @@ export default function App() {
                             <MessageSquare className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
                           </motion.div>
                           <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
-                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">Share what you're navigating, and we'll work through it together.</p>
+                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">{selectedPhase === "during" ? "Since you're actively navigating the process, understanding your rights and next steps is a great place to start." : selectedPhase === "after" ? "Adjusting to a new chapter takes time. Let's work through what matters most to you right now." : "Building a strong co-parenting foundation starts with clear communication. Let's figure it out together."}</p>
                           {/* Auto-scrolling action pills carousel */}
                           <div ref={(el) => {
                             if (!el) return;
@@ -761,7 +761,7 @@ export default function App() {
                           </div>
                           <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-6 px-6 scrollbar-hide">
                             {JOURNEY_PHASES.map((phase) => (
-                              <button key={phase.id} onClick={() => setSelectedPhase(phase.id)} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/15" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
+                              <button key={phase.id} onClick={() => { setSelectedPhase(phase.id); localStorage.setItem("m_phase", phase.id); }} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/15" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
                                 <span>{phase.label}</span>
                               </button>
                             ))}
