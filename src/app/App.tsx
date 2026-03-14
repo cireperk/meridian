@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { marked } from "marked";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "./components/ui/button";
@@ -10,10 +11,7 @@ import { Logo } from "./components/Logo";
 
 marked.setOptions({ breaks: true, gfm: true });
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.mjs",
-  import.meta.url
-).href;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -241,8 +239,20 @@ export default function App() {
   const copyToClipboard = (text: string, idx: number) => { navigator.clipboard.writeText(text).then(() => { setCopied(idx); setShowToast(true); setTimeout(() => setCopied(null), 1500); setTimeout(() => setShowToast(false), 1500); }); };
 
   const extractPdfText = async (file: File) => {
-    const buffer = await file.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: buffer }).promise; setDecreePages(pdf.numPages);
-    const pages: string[] = []; for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); pages.push(content.items.map((item: any) => item.str).join(" ")); }
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+    setDecreePages(pdf.numPages);
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      try {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const items = content?.items;
+        if (Array.isArray(items)) {
+          pages.push(items.map((item: any) => item.str || "").join(" "));
+        }
+      } catch { /* skip unreadable pages */ }
+    }
     return pages.join("\n\n");
   };
 
@@ -736,7 +746,12 @@ export default function App() {
                     {/* Decree */}
                     <div className="mb-8">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Your Decree</h3>
-                      {decreeFileName ? (
+                      {uploading ? (
+                        <div className="bg-white border border-emerald-200 rounded-xl p-6 flex flex-col items-center gap-3">
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-7 h-7 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
+                          <span className="text-sm font-medium text-emerald-700">Reading your document...</span>
+                        </div>
+                      ) : decreeFileName && decreeText ? (
                         <div className="bg-white border border-slate-200/60 rounded-xl p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center"><FileText className="w-5 h-5 text-emerald-600" /></div>
@@ -749,6 +764,7 @@ export default function App() {
                           <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" /><div className="text-sm font-medium text-slate-600">Upload decree</div><div className="text-xs text-slate-400 mt-1">PDF or text file</div>
                         </button>
                       )}
+                      {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mt-3">{uploadError}</div>}
                     </div>
 
                     {/* Conversations */}
