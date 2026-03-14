@@ -145,7 +145,15 @@ export default function App() {
   useEffect(() => {
     if (!session?.refresh_token) return;
     authRefreshToken(session.refresh_token).then((data: any) => {
-      if (data?.access_token) { const s = { ...session, token: data.access_token, refresh_token: data.refresh_token }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); }
+      if (data?.access_token) {
+        const s = { ...session, token: data.access_token, refresh_token: data.refresh_token }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+        // Load decree from DB if not in localStorage
+        if (!localStorage.getItem("m_decree_text") && session.user?.id) {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages`, data.access_token).then((p: any) => {
+            if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
+          }).catch(() => {});
+        }
+      }
     }).catch(() => {});
   }, []);
 
@@ -154,7 +162,17 @@ export default function App() {
     try {
       const data = await authSubmit(authEmail, authPassword);
       if (data.isNew) { setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
-      else { let name = ""; try { const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name`, data.access_token); if (p?.length) name = p[0].name; } catch {} const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); }
+      else {
+        let name = "";
+        try {
+          const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name,decree_text,decree_name,decree_pages`, data.access_token);
+          if (p?.length) {
+            name = p[0].name;
+            if (p[0].decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
+          }
+        } catch {}
+        const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+      }
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
   };
 
@@ -243,6 +261,10 @@ export default function App() {
     if (decreeText) localStorage.setItem("m_decree_text", decreeText); else localStorage.removeItem("m_decree_text");
     if (decreeFileName) localStorage.setItem("m_decree_name", decreeFileName); else localStorage.removeItem("m_decree_name");
     if (decreePages) localStorage.setItem("m_decree_pages", String(decreePages)); else localStorage.removeItem("m_decree_pages");
+    // Persist to Supabase
+    if (session?.token && session?.user?.id) {
+      dbUpdate("profiles", `id=eq.${session.user.id}`, { decree_text: decreeText || null, decree_name: decreeFileName || null, decree_pages: decreePages || 0 }, session.token).catch(() => {});
+    }
   }, [decreeText, decreeFileName, decreePages]);
 
   const resizeTextarea = useCallback(() => { const el = textareaRef.current; if (!el) return; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }, []);
