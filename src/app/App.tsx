@@ -451,14 +451,26 @@ export default function App() {
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
                   <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed">This lets Meridian answer questions directly from your actual documents.</p>
                   <p className="text-xs text-slate-400 mb-6 text-center">You can always add it later from your profile.</p>
-                  {decreeFileName ? (
-                    <div className="w-full py-8 px-6 border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700"><Check size={24} /><span className="text-sm font-medium">{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span></div>
-                  ) : (
-                    <button onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all mb-4 text-slate-400">
-                      <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload PDF or text file</span><span className="text-xs text-slate-400">.pdf, .txt, or .md</span>
-                    </button>
-                  )}
-                  <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">{decreeFileName ? "Continue" : "Skip for now"}</Button>
+                  <AnimatePresence mode="wait">
+                    {uploading ? (
+                      <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-8 h-8 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
+                        <span className="text-sm font-medium text-emerald-700">Reading your document...</span>
+                        <span className="text-xs text-emerald-500/70">This only takes a moment</span>
+                      </motion.div>
+                    ) : decreeFileName && decreeText ? (
+                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700">
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}><Check size={28} className="text-emerald-500" /></motion.div>
+                        <span className="text-sm font-medium">{decreeFileName}</span>
+                        {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
+                      </motion.div>
+                    ) : (
+                      <motion.button key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all mb-4 text-slate-400">
+                        <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload PDF or text file</span><span className="text-xs text-slate-400">.pdf, .txt, or .md</span>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                  <Button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{uploading ? "Processing..." : decreeFileName && decreeText ? "Continue" : "Skip for now"}</Button>
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
