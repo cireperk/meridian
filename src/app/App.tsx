@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 import { marked } from "marked";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -429,30 +429,38 @@ export default function App() {
               <div className="text-base font-medium text-white/80 mb-1">A message from our founder</div>
               <div className="text-xs text-white/30">The story behind Meridian</div>
             </div>
-            <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10 cursor-pointer" onClick={togglePlayPause}>
-              <video ref={videoRef} className="w-full block" src="/welcome.mp4" playsInline autoPlay muted onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
-                <div className="h-full bg-emerald-500 transition-all duration-200" style={{ width: `${videoProgress}%` }} />
-              </div>
+            <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-2xl border border-white/10">
+              <video ref={videoRef} className="w-full block cursor-pointer" src="/welcome.mp4" playsInline autoPlay muted onClick={togglePlayPause} onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
               {videoPaused && !videoEnded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
                   <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
                     <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
                   </div>
                 </div>
               )}
-              {videoMuted && !videoPaused && (
-                <button className="absolute top-3 right-3 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5 hover:bg-black/80 transition-colors z-10" onClick={unmuteVideo}>
-                  🔇 Tap to unmute
-                </button>
-              )}
               {videoEnded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <button className="px-5 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white text-sm font-medium hover:bg-white/20 transition-colors" onClick={(e) => { e.stopPropagation(); const v = videoRef.current; if (v) { v.currentTime = 0; setVideoEnded(false); setVideoProgress(0); v.play().catch(() => {}); } }}>
-                    Replay
-                  </button>
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                  </div>
                 </div>
               )}
+              {/* Control bar */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent pt-8 pb-3 px-4" onClick={(e) => e.stopPropagation()}>
+                {/* Scrubber */}
+                <input type="range" min="0" max="100" step="0.1" value={videoProgress} onChange={(e) => { const v = videoRef.current; if (v && v.duration) { const pct = Number(e.target.value); v.currentTime = (pct / 100) * v.duration; setVideoProgress(pct); } }} className="w-full h-1 mb-3 appearance-none bg-white/20 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-md" style={{ background: `linear-gradient(to right, #10b981 ${videoProgress}%, rgba(255,255,255,0.2) ${videoProgress}%)` }} />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => { if (videoEnded) { const v = videoRef.current; if (v) { v.currentTime = 0; setVideoEnded(false); setVideoProgress(0); setVideoPaused(false); v.play().catch(() => {}); } } else { togglePlayPause(); } }} className="text-white/80 hover:text-white transition-colors">
+                      {videoPaused || videoEnded ? <Play className="w-5 h-5" fill="white" /> : <Pause className="w-5 h-5" fill="white" />}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); const v = videoRef.current; if (v) { v.muted = !v.muted; setVideoMuted(v.muted); } }} className="text-white/80 hover:text-white transition-colors">
+                      {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </button>
+                    <span className="text-white/50 text-xs font-mono">{videoRef.current ? `${Math.floor((videoRef.current.currentTime || 0) / 60)}:${String(Math.floor((videoRef.current.currentTime || 0) % 60)).padStart(2, "0")}` : "0:00"} / {videoRef.current?.duration ? `${Math.floor(videoRef.current.duration / 60)}:${String(Math.floor(videoRef.current.duration % 60)).padStart(2, "0")}` : "0:00"}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
