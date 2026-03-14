@@ -5,13 +5,9 @@
 @import './theme.css';
 
 /* Prevent body scroll on mobile — all scrolling happens inside app containers */
-html, body { height: 100%; overflow: hidden; }
-
-/* iOS standalone PWA safe areas */
-@supports (padding-top: env(safe-area-inset-top)) {
-  .sa-top { padding-top: env(safe-area-inset-top) !important; }
-  .sa-bottom { padding-bottom: env(safe-area-inset-bottom) !important; }
-}
+html { height: 100dvh; height: 100%; }
+body { height: 100dvh; height: 100%; margin: 0; overflow: hidden; }
+#root { height: 100%; }
 
 /* Scrollbar hide */
 .scrollbar-hide::-webkit-scrollbar { width: 0; height: 0; }
