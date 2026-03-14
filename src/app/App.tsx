@@ -213,6 +213,7 @@ export default function App() {
   const [decreeFileName, setDecreeFileName] = useState(() => localStorage.getItem("m_decree_name") || "");
   const [decreePages, setDecreePages] = useState(() => { try { return parseInt(localStorage.getItem("m_decree_pages") || "0") || 0; } catch { return 0; } });
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -246,10 +247,21 @@ export default function App() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return; setDecreeFileName(file.name); setUploading(true);
-    try { let text: string; if (file.name.toLowerCase().endsWith(".pdf")) { text = await extractPdfText(file); } else { text = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (ev) => resolve(ev.target?.result as string); reader.onerror = () => reject(new Error("Failed")); reader.readAsText(file); }); } setDecreeText(text); }
-    catch { setDecreeText(""); setDecreeFileName(""); setDecreePages(0); }
-    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
+    const file = e.target.files?.[0]; if (!file) return;
+    setDecreeFileName(file.name); setUploading(true); setUploadError("");
+    try {
+      let text: string;
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        text = await extractPdfText(file);
+      } else {
+        text = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (ev) => resolve(ev.target?.result as string); reader.onerror = () => reject(new Error("Failed")); reader.readAsText(file); });
+      }
+      if (!text || !text.trim()) { throw new Error("No text found — the file may be scanned or image-based."); }
+      setDecreeText(text);
+    } catch (err: any) {
+      setDecreeText(""); setDecreeFileName(""); setDecreePages(0);
+      setUploadError(err?.message || "Something went wrong reading that file. Try again.");
+    } finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   };
 
   const handleStop = () => { abortRef.current?.abort(); setStreaming(false); setLoading(false); };
@@ -470,6 +482,7 @@ export default function App() {
                       </motion.button>
                     )}
                   </AnimatePresence>
+                  {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mb-3 w-full">{uploadError}</div>}
                   <Button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{uploading ? "Processing..." : decreeFileName && decreeText ? "Continue" : "Skip for now"}</Button>
                 </motion.div>
               ) : authView === "onboard-ready" ? (
