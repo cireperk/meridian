@@ -514,10 +514,10 @@ export default function App() {
                   <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're right here with you.</p>
                   <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Let's go{firstName ? `, ${firstName}` : ""}</Button>
                 </motion.div>
-              ) : (
-                <motion.div key="auth" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome to Meridian</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">Sign in or create an account to get started.</p>
+              ) : authView === "signin" || authView === "signup" ? (
+                <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome back" : "Create your account"}</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Sign in to continue where you left off." : "A calmer co-parenting journey starts here."}</p>
                   <div className="w-full flex flex-col gap-3">
                     <div>
                       <label htmlFor="auth-email" className="sr-only">Email address</label>
@@ -530,7 +530,7 @@ export default function App() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {authPassword.length > 0 && (
+                    {authView === "signup" && authPassword.length > 0 && (
                       <div className="flex flex-col gap-1.5 px-1">
                         {[
                           { met: authPassword.length >= 8, label: "At least 8 characters" },
@@ -547,10 +547,23 @@ export default function App() {
                       </div>
                     )}
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Continue" : "Continue"}</Button>
+                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? (authView === "signin" ? "Signing in..." : "Creating account...") : (authView === "signin" ? "Sign In" : "Create Account")}</Button>
                   </div>
-                  <button onClick={() => setShowSplash(true)} className="mt-6 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
-                    <ArrowLeft className="w-3 h-3" /> Back to home
+                  <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(""); setAuthPassword(""); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
+                  <button onClick={() => { setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                    <ArrowLeft className="w-3 h-3" /> Back
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="chooser" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome to Meridian</h2>
+                  <p className="text-sm text-slate-400 mb-10 text-center">Your calm co-parenting companion.</p>
+                  <div className="w-full flex flex-col gap-3">
+                    <Button onClick={() => { setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 text-[15px]">Create Account</Button>
+                    <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} variant="outline" className="w-full h-12 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-[15px]">Sign In</Button>
+                  </div>
+                  <button onClick={() => setShowSplash(true)} className="mt-8 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                    <ArrowLeft className="w-3 h-3" /> Back
                   </button>
                 </motion.div>
               )}
