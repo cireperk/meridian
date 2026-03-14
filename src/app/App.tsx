@@ -521,18 +521,18 @@ export default function App() {
               <AnimatePresence mode="wait">
                 {/* CHAT */}
                 {activeTab === "chat" && (
-                  <motion.div key="chat" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                  <motion.div key="chat" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
                     {/* Decree chip */}
-                    <div className="mb-6">
+                    <div className="mb-4">
                       <AnimatePresence mode="wait">
                         {decreeFileName ? (
-                          <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-700 shadow-sm">
+                          <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-700 shadow-sm">
                             {uploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full" /> : <Check className="w-4 h-4" />}
                             <span className="text-sm font-medium">{decreeFileName}{decreePages > 0 ? ` · ${decreePages} pages` : ""}</span>
                             <button className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 transition-all ml-1" onClick={() => { setDecreeText(""); setDecreeFileName(""); setDecreePages(0); }}><X className="w-3.5 h-3.5" /></button>
                           </motion.div>
                         ) : (
-                          <motion.button key="upload" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/30 transition-all" onClick={() => fileRef.current?.click()}>
+                          <motion.button key="upload" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border-2 border-dashed border-slate-300 text-slate-600 hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50/30 transition-all" onClick={() => fileRef.current?.click()}>
                             <Upload className="w-4 h-4" /><span className="text-sm font-medium">Upload your decree</span>
                           </motion.button>
                         )}
@@ -542,17 +542,18 @@ export default function App() {
                     {/* Messages */}
                     <AnimatePresence mode="popLayout">
                       {!hasConversation ? (
-                        <motion.div key="empty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center justify-center text-center py-16">
-                          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-8">
-                            <MessageSquare className="w-6 h-6 text-emerald-500" strokeWidth={1.5} />
+                        <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center justify-center text-center flex-1">
+                          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-5">
+                            <MessageSquare className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
                           </motion.div>
-                          <h2 className="text-xl font-light tracking-tight text-slate-700 mb-2">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
-                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-10">Take a breath. Share what you're navigating, and we'll work through it together.</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-md">
+                          <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Hi ${firstName}, what's on your mind?` : "What's on your mind?"}</h2>
+                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">Share what you're navigating, and we'll work through it together.</p>
+                          {/* Horizontal scrolling action pills */}
+                          <div className="flex gap-2 overflow-x-auto w-full -mx-6 px-6 pb-2 scrollbar-hide">
                             {QUICK_ACTIONS.map((action, idx) => { const Icon = action.icon; return (
-                              <motion.button key={action.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + idx * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }} onClick={() => handleQuickAction(action.id)} className="flex items-center gap-3 px-4 py-3.5 bg-white/80 border border-slate-100 rounded-2xl hover:border-emerald-200 hover:bg-emerald-50/20 transition-all duration-300 text-left group">
-                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-emerald-50 transition-colors duration-300"><Icon className="w-4 h-4 text-slate-400 group-hover:text-emerald-500 transition-colors duration-300" strokeWidth={1.5} /></div>
-                                <span className="text-sm text-slate-600 group-hover:text-slate-800 transition-colors">{action.label}</span>
+                              <motion.button key={action.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + idx * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }} whileTap={{ scale: 0.96 }} onClick={() => handleQuickAction(action.id)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-100 rounded-full hover:border-emerald-200 hover:bg-emerald-50/30 transition-all shrink-0 group">
+                                <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors" strokeWidth={1.5} />
+                                <span className="text-[13px] text-slate-600 group-hover:text-slate-800 transition-colors whitespace-nowrap">{action.label}</span>
                               </motion.button>
                             ); })}
                           </div>
@@ -724,10 +725,13 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Sign out */}
-                    <button onClick={() => setShowSignOutConfirm(true)} className="w-full py-3 border border-slate-200 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2">
-                      <LogOut size={15} /> Sign Out
-                    </button>
+                    {/* Feedback + Sign out */}
+                    <div className="flex flex-col gap-2">
+                      <button onClick={() => setShowFeedback(true)} className="w-full py-2.5 text-xs text-slate-400 hover:text-emerald-600 transition-colors">Share feedback</button>
+                      <button onClick={() => setShowSignOutConfirm(true)} className="w-full py-3 border border-slate-200 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2">
+                        <LogOut size={15} /> Sign Out
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -749,11 +753,7 @@ export default function App() {
                   )}
                 </div>
                 {!hasConversation && (
-                  <div className="text-[10px] text-slate-300 text-center mt-2.5 flex items-center justify-center">
-                    Not legal advice
-                    <span className="mx-1.5">·</span>
-                    <button onClick={() => setShowFeedback(true)} className="text-slate-300 hover:text-slate-500 transition-colors">Share feedback</button>
-                  </div>
+                  <div className="text-[10px] text-slate-300 text-center mt-2.5">Not legal advice</div>
                 )}
               </motion.div>
             )}
