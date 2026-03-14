@@ -445,7 +445,7 @@ export default function App() {
       {/* ==================== VIDEO OVERLAY ==================== */}
       {showVideo && (
         <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6" onClick={dismissVideo}>
-          <div className="relative bg-slate-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col" style={{ maxHeight: "85vh", maxWidth: "min(420px, 90vw)" }} onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-slate-900 rounded-2xl shadow-2xl border border-white/10 overflow-hidden flex flex-col" style={{ height: "min(85vh, 700px)", maxWidth: "min(380px, 90vw)" }} onClick={(e) => e.stopPropagation()}>
             {/* Header bar */}
             <div className="flex items-center justify-between px-4 py-3 bg-slate-800/80 border-b border-white/5 shrink-0">
               <div>
