@@ -137,7 +137,6 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
-  const [expandedTile, setExpandedTile] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [viewingArticle, setViewingArticle] = useState<{ title: string; topic: string; readTime: string } | null>(null);
@@ -401,35 +400,18 @@ export default function App() {
               {/* Feature cards — always horizontal */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-row gap-3 w-full max-w-md mb-8">
                 {[
-                  { icon: MessageSquare, title: "Guidance", desc: "Prepare for hard conversations", detail: "Get grounded before difficult talks with your co-parent, understand your options, and respond with confidence — not reactivity." },
-                  { icon: BookOpen, title: "Resources", desc: "Know what to expect", detail: "Curated guides on custody, finances, and emotional well-being so you can make informed decisions at every step." },
-                  { icon: FileText, title: "Decree Help", desc: "Your documents, decoded", detail: "Upload your decree and get plain-language help understanding what it means — no lawyer required for the everyday questions." },
+                  { icon: MessageSquare, title: "Guidance", desc: "Prepare for hard conversations with confidence" },
+                  { icon: BookOpen, title: "Resources", desc: "Custody, finances, and well-being guides" },
+                  { icon: FileText, title: "Decree Help", desc: "Your documents in plain language" },
                 ].map((card, idx) => (
                   <motion.div key={card.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + idx * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    onClick={() => setExpandedTile(expandedTile === card.title ? null : card.title)}
-                    className={`flex-1 backdrop-blur-sm border rounded-2xl p-4 text-center cursor-pointer transition-all duration-300 ${expandedTile === card.title ? "bg-white/90 border-emerald-200/60 shadow-md shadow-emerald-500/5" : "bg-white/70 border-slate-200/40 hover:bg-white/80"}`}>
+                    className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-4 text-center">
                     <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
                     <h3 className="text-xs font-medium text-slate-800 mb-0.5">{card.title}</h3>
                     <p className="text-[11px] text-slate-400 leading-relaxed">{card.desc}</p>
                   </motion.div>
                 ))}
               </motion.div>
-              <AnimatePresence mode="wait">
-                {expandedTile && (
-                  <motion.div key={expandedTile} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-full max-w-md -mt-4 mb-4">
-                    <div className="bg-white/80 backdrop-blur-sm border border-emerald-100/60 rounded-2xl px-5 py-4 text-center">
-                      <p className="text-[13px] text-slate-600 leading-relaxed">
-                        {[
-                          { title: "Guidance", detail: "Get grounded before difficult talks with your co-parent, understand your options, and respond with confidence — not reactivity." },
-                          { title: "Resources", detail: "Curated guides on custody, finances, and emotional well-being so you can make informed decisions at every step." },
-                          { title: "Decree Help", detail: "Upload your decree and get plain-language help understanding what it means — no lawyer required for the everyday questions." },
-                        ].find(t => t.title === expandedTile)?.detail}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* CTAs */}
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
