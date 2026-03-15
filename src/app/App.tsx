@@ -418,6 +418,7 @@ export default function App() {
                 <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                   Get Started
                 </Button>
+                <p className="text-[11px] text-slate-400 -mt-2">Free to start. No credit card needed.</p>
                 <button onClick={openVideo} className="flex flex-col items-center gap-1.5 text-slate-400 hover:text-slate-600 transition-all duration-300 group">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
