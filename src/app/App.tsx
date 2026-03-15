@@ -45,6 +45,17 @@ const dbUpdate = async (table: string, query: string, body: any, token: string) 
   return res.json();
 };
 
+const dbUpsert = async (table: string, body: any, token: string) => {
+  const headers: any = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=representation" };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers, body: JSON.stringify(body) });
+  return res.json();
+};
+
+const dbDelete = async (table: string, query: string, token: string) => {
+  const headers: any = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method: "DELETE", headers });
+};
+
 // --- System prompt ---
 const SYSTEM_PROMPT = `You're Meridian — think of yourself as a calm, wise friend who's been through divorce and co-parenting. You talk like a real person, not a chatbot.
 
@@ -153,6 +164,17 @@ export default function App() {
             if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
           }).catch(() => {});
         }
+        // Load conversations from Supabase
+        if (session.user?.id) {
+          dbSelect("conversations", `user_id=eq.${session.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
+            if (rows?.length) {
+              const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
+              setConversations(convs);
+              setActiveConvId(convs[0].id);
+              localStorage.setItem("m_conversations", JSON.stringify(convs));
+            }
+          }).catch(() => {});
+        }
       }
     }).catch(() => {});
   }, []);
@@ -172,6 +194,15 @@ export default function App() {
           }
         } catch {}
         const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+        // Load conversations from Supabase
+        dbSelect("conversations", `user_id=eq.${data.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
+          if (rows?.length) {
+            const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
+            setConversations(convs);
+            setActiveConvId(convs[0].id);
+            localStorage.setItem("m_conversations", JSON.stringify(convs));
+          }
+        }).catch(() => {});
       }
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
   };
@@ -256,7 +287,19 @@ export default function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
-  useEffect(() => { localStorage.setItem("m_conversations", JSON.stringify(conversations)); }, [conversations]);
+  const syncTimeoutRef = useRef<any>(null);
+  useEffect(() => {
+    localStorage.setItem("m_conversations", JSON.stringify(conversations));
+    // Debounced sync to Supabase
+    if (session?.token && session?.user?.id && conversations.length > 0) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = setTimeout(() => {
+        conversations.forEach((c) => {
+          dbUpsert("conversations", { id: c.id, user_id: session.user.id, title: c.title || "Untitled", messages: c.messages, updated_at: new Date().toISOString() }, session.token).catch(() => {});
+        });
+      }, 1500);
+    }
+  }, [conversations]);
   useEffect(() => {
     if (decreeText) localStorage.setItem("m_decree_text", decreeText); else localStorage.removeItem("m_decree_text");
     if (decreeFileName) localStorage.setItem("m_decree_name", decreeFileName); else localStorage.removeItem("m_decree_name");
@@ -979,7 +1022,7 @@ export default function App() {
                     <button key={c.id} className={cn("w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors group relative pr-9", c.id === activeConvId && "bg-slate-50")} onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}>
                       <div className="text-sm font-medium text-slate-700 truncate">{c.title || "New conversation"}</div>
                       <div className="text-[12px] text-slate-400">{c.messages?.length || 0} messages</div>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); }}><X size={12} /></span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); if (session?.token) dbDelete("conversations", `id=eq.${c.id}`, session.token).catch(() => {}); }}><X size={12} /></span>
                     </button>
                   ))}
                   {conversations.length === 0 && <div className="py-6 text-center text-sm text-slate-300">No conversations yet</div>}
