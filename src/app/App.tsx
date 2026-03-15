@@ -215,7 +215,6 @@ export default function App() {
             if (rows?.length) {
               const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
               setConversations(convs);
-              setActiveConvId(convs[0].id);
               localStorage.setItem("m_conversations", JSON.stringify(convs));
             }
           }).catch(() => {});
@@ -244,7 +243,6 @@ export default function App() {
           if (rows?.length) {
             const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
             setConversations(convs);
-            setActiveConvId(convs[0].id);
             localStorage.setItem("m_conversations", JSON.stringify(convs));
           }
         }).catch(() => {});
@@ -298,7 +296,7 @@ export default function App() {
   // --- App state ---
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [conversations, setConversations] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); if (c?.length) return c; return []; } catch { return []; } });
-  const [activeConvId, setActiveConvId] = useState<string | null>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); return c?.length ? c[0].id : null; } catch { return null; } });
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [vaultDocs, setVaultDocs] = useState<any[]>([]);
