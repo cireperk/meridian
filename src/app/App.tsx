@@ -255,6 +255,7 @@ export default function App() {
   const [conversations, setConversations] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); if (c?.length) return c; return []; } catch { return []; } });
   const [activeConvId, setActiveConvId] = useState<string | null>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); return c?.length ? c[0].id : null; } catch { return null; } });
   const [showHistory, setShowHistory] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
 
@@ -777,10 +778,17 @@ export default function App() {
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                           <span className="text-[11px] text-slate-300">{timeAgo}</span>
-                                          <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                            onClick={(e) => { e.stopPropagation(); deleteConv(); }}>
-                                            <Trash2 size={12} />
-                                          </button>
+                                          {confirmDeleteId === c.id ? (
+                                            <button className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all"
+                                              onClick={(e) => { e.stopPropagation(); deleteConv(); setConfirmDeleteId(null); }}>
+                                              Delete
+                                            </button>
+                                          ) : (
+                                            <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(c.id); setTimeout(() => setConfirmDeleteId((prev) => prev === c.id ? null : prev), 3000); }}>
+                                              <Trash2 size={12} />
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-3 mt-2">
