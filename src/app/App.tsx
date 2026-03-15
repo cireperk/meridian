@@ -416,6 +416,15 @@ export default function App() {
       }
       if (!text || !text.trim()) { throw new Error("No text found — the file may be scanned or image-based."); }
       setDecreeText(text);
+      // Also save to vault as a decree document
+      if (session?.token && session?.user?.id) {
+        try {
+          const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
+          await dbStorageUpload("documents", storagePath, file, session.token);
+          await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: text.slice(0, 50000) || null }, token: session.token });
+          await loadVaultDocs();
+        } catch {}
+      }
     } catch (err: any) {
       setDecreeText(""); setDecreeFileName(""); setDecreePages(0);
       setUploadError(err?.message || "Something went wrong reading that file. Try again.");
@@ -431,11 +440,9 @@ export default function App() {
     if (!convId) { convId = `conv_${Date.now()}`; setConversations((prev) => [{ id: convId, title: userMsg.slice(0, 50), messages: [], createdAt: new Date().toISOString() }, ...prev]); setActiveConvId(convId); }
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
-    const currentDecree = decreeTextRef.current;
-    const decreeContext = currentDecree ? `\n\nDIVORCE DECREE CONTENT:\n${currentDecree.slice(0, 8000)}` : "";
-    // Build vault docs context
+    // Build vault docs context (includes decree if uploaded)
     const vaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content.slice(0, 6000)}`).join("");
-    const docsContext = decreeContext || vaultContext ? `${decreeContext}${vaultContext}` : "\n\nNo documents uploaded yet.";
+    const docsContext = vaultContext || "\n\nNo documents uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
@@ -801,7 +808,7 @@ export default function App() {
                     <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Continue</Button>
                   ) : (
                     <>
-                      <p className="text-xs text-slate-400 text-center mb-3">Don't have it yet? That's completely okay — you can add it anytime from your profile.</p>
+                      <p className="text-xs text-slate-400 text-center mb-3">Don't have it yet? That's completely okay — you can add it anytime from your vault.</p>
                       <button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="text-sm text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">{uploading ? "Processing..." : "Skip for now"}</button>
                     </>
                   )}
@@ -1304,7 +1311,7 @@ export default function App() {
                     <div className="flex gap-3 mb-6">
                       {[
                         { label: "Conversations", value: conversations.length },
-                        { label: "Decree", value: decreeFileName ? "Uploaded" : "None" },
+                        { label: "Documents", value: vaultDocs.length },
                       ].map((stat) => (
                         <div key={stat.label} className="flex-1 bg-slate-50/80 border border-slate-200/40 rounded-xl p-3.5 text-center">
                           <div className="text-lg font-medium text-slate-800">{stat.value}</div>
@@ -1318,30 +1325,6 @@ export default function App() {
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Name</h3>
                       <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={editName || session?.user?.name || ""} onChange={(e) => setEditName(e.target.value)} onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }} onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); (e.target as HTMLInputElement).blur(); } }} />
                       {session?.user?.email && <div className="text-xs text-slate-400 mt-2 px-1">{session.user.email}</div>}
-                    </div>
-
-                    {/* Decree */}
-                    <div className="mb-8">
-                      <h3 className="text-sm font-medium text-slate-700 mb-3">Your Decree</h3>
-                      {uploading ? (
-                        <div className="bg-white border border-emerald-200 rounded-xl p-6 flex flex-col items-center gap-3">
-                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-7 h-7 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
-                          <span className="text-sm font-medium text-emerald-700">Reading your document...</span>
-                        </div>
-                      ) : decreeFileName && decreeText ? (
-                        <div className="bg-white border border-slate-200/60 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center"><FileText className="w-5 h-5 text-emerald-600" /></div>
-                            <div className="flex-1"><div className="font-medium text-slate-900 text-sm">{decreeFileName}</div>{decreePages > 0 && <div className="text-xs text-slate-500">{decreePages} pages</div>}</div>
-                            <button onClick={() => { setDecreeText(""); setDecreeFileName(""); setDecreePages(0); }} className="text-sm text-slate-500 hover:text-red-600 transition-colors">Remove</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button onClick={() => fileRef.current?.click()} className="w-full bg-white border-2 border-dashed border-slate-300 rounded-xl p-6 hover:border-emerald-400 hover:bg-emerald-50/30 transition-all">
-                          <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" /><div className="text-sm font-medium text-slate-600">Upload decree</div><div className="text-xs text-slate-400 mt-1">PDF, Word, or text file</div>
-                        </button>
-                      )}
-                      {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mt-3">{uploadError}</div>}
                     </div>
 
                     {/* Settings */}
