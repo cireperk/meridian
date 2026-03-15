@@ -389,7 +389,7 @@ export default function App() {
 
               {/* Headline */}
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
-                Divorce & co-parenting<br />
+                Navigate what's next<br />
                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">with calm and clarity</span>
               </motion.h1>
 
@@ -600,7 +600,7 @@ export default function App() {
               ) : authView === "signin" || authView === "signup" ? (
                 <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome back" : "Create your account"}</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Sign in to continue where you left off." : "Your companion for divorce and co-parenting."}</p>
+                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Welcome back. Let's pick up where you left off." : "You've taken the first step. Let's make the road ahead clearer."}</p>
                   <div className="w-full flex flex-col gap-3">
                     <div>
                       <label htmlFor="auth-email" className="sr-only">Email address</label>
@@ -645,7 +645,7 @@ export default function App() {
               ) : (
                 <motion.div key="chooser" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Welcome to Meridian</h2>
-                  <p className="text-sm text-slate-400 mb-10 text-center">Calm and clarity through divorce and co-parenting.</p>
+                  <p className="text-sm text-slate-400 mb-10 text-center">From divorce to co-parenting — find your footing.</p>
                   <div className="w-full flex flex-col gap-3">
                     <Button onClick={() => { setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 text-[15px]">Create Account</Button>
                     <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }} variant="outline" className="w-full h-12 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 text-[15px]">Sign In</Button>
