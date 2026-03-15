@@ -721,11 +721,11 @@ export default function App() {
                           Decree
                         </button>
                       )}
-                      {hasConversation && (
-                        <>
-                          <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100" aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
-                        </>
+                      {conversations.length > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => { setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
+                      )}
+                      {(hasConversation || showHistory) && (
+                        <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
                       )}
                     </motion.div>
                   )}
@@ -744,7 +744,53 @@ export default function App() {
                   <motion.div key="chat" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
                     {/* Messages */}
                     <AnimatePresence mode="popLayout">
-                      {!hasConversation ? (
+                      {showHistory ? (
+                        <motion.div key="history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="flex flex-col">
+                          <h2 className="text-lg font-light text-slate-700 mb-4">Your conversations</h2>
+                          {conversations.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                              <MessageSquare className="w-8 h-8 text-slate-200 mb-3" strokeWidth={1.5} />
+                              <p className="text-sm text-slate-400">No conversations yet</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {conversations.map((c, idx) => {
+                                const lastMsg = c.messages?.[c.messages.length - 1];
+                                const preview = lastMsg?.content?.slice(0, 80) || "";
+                                const date = c.createdAt ? new Date(c.createdAt) : null;
+                                const now = new Date();
+                                const diffMs = date ? now.getTime() - date.getTime() : 0;
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffHrs = Math.floor(diffMins / 60);
+                                const diffDays = Math.floor(diffHrs / 24);
+                                const timeAgo = !date ? "" : diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : diffDays < 7 ? `${diffDays}d ago` : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                return (
+                                  <motion.button key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03, duration: 0.3 }}
+                                    onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}
+                                    className={cn("w-full text-left p-4 rounded-xl border transition-all group relative", c.id === activeConvId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50")}>
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium text-slate-700 truncate">{c.title || "New conversation"}</div>
+                                        {preview && <div className="text-[13px] text-slate-400 truncate mt-0.5">{lastMsg?.role === "assistant" ? preview : `You: ${preview}`}{preview.length >= 80 ? "..." : ""}</div>}
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="text-[11px] text-slate-300">{timeAgo}</span>
+                                        <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                          onClick={(e) => { e.stopPropagation(); setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); if (session?.token) dbDelete("conversations", `id=eq.${c.id}`, session.token).catch(() => {}); }}>
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-2">
+                                      <span className="text-[11px] text-slate-300">{c.messages?.length || 0} messages</span>
+                                    </div>
+                                  </motion.button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </motion.div>
+                      ) : !hasConversation ? (
                         <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center justify-center text-center flex-1">
                           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100/60 flex items-center justify-center mb-5">
                             <MessageSquare className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
@@ -977,8 +1023,8 @@ export default function App() {
               </AnimatePresence>
             </div>
 
-            {/* Input - chat only */}
-            {activeTab === "chat" && (
+            {/* Input - chat only, hidden when viewing history */}
+            {activeTab === "chat" && !showHistory && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white shrink-0">
                 <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
                   <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-base text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "How can we get better today?" : "How can we get better today?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
@@ -1008,28 +1054,6 @@ export default function App() {
             </motion.nav>
           </motion.div>
 
-          {/* History drawer */}
-          <AnimatePresence>
-            {showHistory && (<>
-              <motion.div className="fixed inset-0 z-50 bg-black/20" onClick={() => setShowHistory(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
-              <motion.div className="fixed top-0 left-0 bottom-0 w-[300px] max-w-[85vw] bg-white z-[51] flex flex-col shadow-xl" initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={spring}>
-                <div className="px-4 pt-5 pb-3 flex items-center justify-between border-b border-slate-100">
-                  <span className="text-[15px] font-semibold text-slate-800">Conversations</span>
-                  <button onClick={() => setShowHistory(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50"><X size={14} /></button>
-                </div>
-                <div className="flex-1 overflow-y-auto py-2">
-                  {conversations.map((c) => (
-                    <button key={c.id} className={cn("w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors group relative pr-9", c.id === activeConvId && "bg-slate-50")} onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}>
-                      <div className="text-sm font-medium text-slate-700 truncate">{c.title || "New conversation"}</div>
-                      <div className="text-[12px] text-slate-400">{c.messages?.length || 0} messages</div>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); if (session?.token) dbDelete("conversations", `id=eq.${c.id}`, session.token).catch(() => {}); }}><X size={12} /></span>
-                    </button>
-                  ))}
-                  {conversations.length === 0 && <div className="py-6 text-center text-sm text-slate-300">No conversations yet</div>}
-                </div>
-              </motion.div>
-            </>)}
-          </AnimatePresence>
 
           {/* Feedback modal */}
           <AnimatePresence>
