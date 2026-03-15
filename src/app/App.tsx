@@ -486,6 +486,19 @@ export default function App() {
 
   useEffect(() => { if (activeTab === "vault" || activeTab === "chat") loadVaultDocs(); }, [activeTab]);
 
+  // Migrate legacy decree (localStorage/profiles) into vault documents table
+  useEffect(() => {
+    if (!session?.token || !session?.user?.id || !decreeText) return;
+    (async () => {
+      try {
+        const existing = await dbSelect("documents", `user_id=eq.${session.user.id}&category=eq.decree`, session.token);
+        if (existing && existing.length > 0) return; // already migrated
+        await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: decreeFileName || "Decree", file_size: 0, mime_type: "text/plain", storage_path: `${session.user.id}/migrated_decree`, text_content: decreeText.slice(0, 50000) }, token: session.token });
+        await loadVaultDocs();
+      } catch {}
+    })();
+  }, [session?.token, session?.user?.id, decreeText]);
+
   const extractFileText = async (file: File): Promise<string> => {
     const name = file.name.toLowerCase();
     if (name.endsWith(".pdf")) {
@@ -919,12 +932,6 @@ export default function App() {
                 <AnimatePresence>
                   {activeTab === "chat" && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
-                      {decreeFileName && (
-                        <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-medium hover:bg-emerald-100 transition-colors">
-                          {uploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border-[1.5px] border-emerald-600 border-t-transparent rounded-full" /> : <Check className="w-3 h-3" />}
-                          Decree
-                        </button>
-                      )}
                       {conversations.length > 0 && (
                         <Button variant="ghost" size="sm" onClick={() => { setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
                       )}
