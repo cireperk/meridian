@@ -140,46 +140,22 @@ const ACTION_PROMPTS: Record<string, string> = {
   children: "I need help talking to my children about our divorce:",
 };
 
-const JOURNEY_PHASES = [
-  { id: "during", label: "During Divorce" },
-  { id: "after", label: "After Divorce" },
-  { id: "coparenting", label: "Co-Parenting" },
-] as const;
+const COACH_SYSTEM_PROMPT = `You are Meridian's Co-Parenting Communication Coach. Your role is to help users communicate with their co-parent in ways that are:
 
-const RESOURCE_TOPICS = [
-  { id: "legal", label: "Legal Basics", icon: FileText, color: "from-blue-500 to-blue-600" },
-  { id: "emotional", label: "Emotional Support", icon: Heart, color: "from-pink-500 to-rose-600" },
-  { id: "financial", label: "Financial Planning", icon: DollarSign, color: "from-green-500 to-emerald-600" },
-  { id: "children", label: "Children & Family", icon: Baby, color: "from-purple-500 to-purple-600" },
-  { id: "coparenting", label: "Co-Parenting Tools", icon: Users, color: "from-teal-500 to-cyan-600" },
-] as const;
+1. LEGALLY NEUTRAL — avoid language that could be used against them in court. No accusations, threats, ultimatums, or inflammatory language.
+2. EMOTIONALLY DE-ESCALATED — calm, measured, and non-reactive. Remove sarcasm, passive aggression, and emotional charge.
+3. CHILD-FOCUSED — center the children's needs and wellbeing. Use "the kids" or children's names rather than possessive language.
+4. BRIEF AND CLEAR — keep messages short and factual. State the topic, the request/information, and next steps.
 
-const MOCK_RESOURCES: Record<string, { title: string; topic: string; readTime: string }[]> = {
-  considering: [
-    { title: "Is Divorce Right for Me?", topic: "emotional", readTime: "8 min" },
-    { title: "Understanding Divorce Costs", topic: "financial", readTime: "6 min" },
-    { title: "How to Tell Your Spouse", topic: "emotional", readTime: "5 min" },
-  ],
-  during: [
-    { title: "Preparing for Mediation", topic: "legal", readTime: "10 min" },
-    { title: "Protecting Your Finances During Divorce", topic: "financial", readTime: "12 min" },
-    { title: "Supporting Children Through Divorce", topic: "children", readTime: "9 min" },
-    { title: "Creating a Parenting Plan", topic: "coparenting", readTime: "15 min" },
-  ],
-  after: [
-    { title: "Your First Week Post-Divorce", topic: "emotional", readTime: "7 min" },
-    { title: "Establishing New Routines", topic: "children", readTime: "8 min" },
-    { title: "Managing Shared Expenses", topic: "financial", readTime: "6 min" },
-  ],
-  coparenting: [
-    { title: "Effective Co-Parent Communication", topic: "coparenting", readTime: "10 min" },
-    { title: "Handling Pickup & Dropoff", topic: "coparenting", readTime: "5 min" },
-    { title: "Holidays and Special Events", topic: "coparenting", readTime: "8 min" },
-    { title: "When to Modify Your Decree", topic: "legal", readTime: "12 min" },
-  ],
-};
+FORMATTING RULES:
+- When given a message to respond to: First briefly analyze what the message is really asking/saying (1-2 sentences), flag any manipulative tactics if present, then provide a drafted response they can copy and send.
+- When helping draft a message: Ask clarifying questions only if truly needed, then provide the draft.
+- Always put the draft message in a clearly marked section starting with "**Your message:**" so they can easily copy it.
+- After the draft, add a brief "**Why this works:**" explanation (1-2 sentences) to teach them the principle.
+- Keep drafts under 4 sentences unless the situation requires more detail.
+- Be warm and supportive in your coaching voice, but make the actual draft messages businesslike and neutral.`;
 
-type Tab = "chat" | "calendar" | "vault" | "learn" | "profile";
+type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
 
 // ============================================================
 export default function App() {
@@ -195,7 +171,12 @@ export default function App() {
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [viewingArticle, setViewingArticle] = useState<{ title: string; topic: string; readTime: string } | null>(null);
+  const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
+  const [coachInput, setCoachInput] = useState("");
+  const [coachResult, setCoachResult] = useState("");
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachCopied, setCoachCopied] = useState(false);
+  const coachAbortRef = useRef<AbortController | null>(null);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
 
   useEffect(() => {
@@ -338,8 +319,6 @@ export default function App() {
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
 
-  const [selectedPhase, setSelectedPhase] = useState(() => localStorage.getItem("m_phase") || "during");
-  const [searchQuery, setSearchQuery] = useState("");
   const [editName, setEditName] = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -541,6 +520,33 @@ export default function App() {
   };
 
   const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
+
+  // --- Coach ---
+  const handleCoachSend = async () => {
+    if (!coachInput.trim() || coachLoading) return;
+    setCoachResult(""); setCoachLoading(true); setCoachCopied(false);
+    const userPrompt = coachMode === "respond"
+      ? `I received this message from my co-parent. Help me respond:\n\n"${coachInput}"`
+      : `I need to send a message to my co-parent about the following:\n\n${coachInput}`;
+    const abort = new AbortController(); coachAbortRef.current = abort;
+    try {
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: COACH_SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
+      if (!res.ok) throw new Error("API error");
+      const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
+      try {
+        while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop() || "";
+          for (const line of lines) { if (!line.startsWith("data: ")) continue; const data = line.slice(6); if (data === "[DONE]") continue; try { const parsed = JSON.parse(data); if (parsed.type === "content_block_delta" && parsed.delta?.text) { fullText += parsed.delta.text; setCoachResult(fullText); } } catch {} }
+        }
+      } catch (e: any) { if (e.name !== "AbortError") throw e; }
+    } catch (err: any) { if (err.name !== "AbortError") setCoachResult("Something went wrong. Please try again."); }
+    finally { setCoachLoading(false); }
+  };
+
+  const copyCoachMessage = () => {
+    const match = coachResult.match(/\*\*Your message:\*\*\s*\n([\s\S]*?)(?:\n\*\*|$)/);
+    const textToCopy = match ? match[1].trim() : coachResult;
+    navigator.clipboard.writeText(textToCopy).then(() => { setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2000); }).catch(() => {});
+  };
 
   // --- Calendar ---
   const loadCalEvents = useCallback(async () => {
@@ -1088,56 +1094,76 @@ export default function App() {
                 )}
 
                 {/* LEARN */}
-                {activeTab === "learn" && (
-                  <motion.div key="learn" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <AnimatePresence mode="wait">
-                      {viewingArticle ? (
-                        <motion.div key="article" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                          <button onClick={() => setViewingArticle(null)} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6"><ArrowLeft className="w-4 h-4" /> Back to resources</button>
-                          <h2 className="text-xl font-light tracking-tight text-slate-800 mb-2">{viewingArticle.title}</h2>
-                          <div className="flex items-center gap-2 text-xs text-slate-400 mb-6">
-                            <span className="px-2 py-0.5 bg-slate-100 rounded-md">{RESOURCE_TOPICS.find((t) => t.id === viewingArticle.topic)?.label}</span>
-                            <span>•</span><span>{viewingArticle.readTime} read</span>
-                          </div>
-                          <div className="bg-slate-50/80 border border-slate-200/40 rounded-2xl p-8 text-center">
-                            <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-4" strokeWidth={1.5} />
-                            <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">This article is coming soon. We're working with experts to bring you thoughtful, evidence-based content.</p>
-                            <p className="text-xs text-slate-400 mt-3">Want to be notified when it's ready? Let us know via feedback.</p>
-                          </div>
-                        </motion.div>
+                {activeTab === "coach" && (
+                  <motion.div key="coach" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
+                    <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
+
+                    {/* Mode toggle */}
+                    <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
+                      {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
+                        <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachResult(""); setCoachInput(""); }}
+                          className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Input */}
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-slate-500 mb-2 block">
+                        {coachMode === "respond" ? "Paste the message you received" : "What do you need to communicate?"}
+                      </label>
+                      <textarea value={coachInput} onChange={(e) => setCoachInput(e.target.value)}
+                        placeholder={coachMode === "respond" ? "Paste their text message, email, or app message here..." : "e.g. I need to change the pickup time this Friday from 5pm to 6pm..."}
+                        className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none min-h-[120px]" />
+                    </div>
+
+                    <Button onClick={handleCoachSend} disabled={!coachInput.trim() || coachLoading}
+                      className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 mb-6">
+                      {coachLoading ? (
+                        <div className="flex items-center gap-2"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Coaching...</div>
                       ) : (
-                        <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                          <div className="mb-6 relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input type="text" placeholder="Search by topic, question, or keyword..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+                        <>{coachMode === "respond" ? "Coach my response" : "Draft my message"}</>
+                      )}
+                    </Button>
+
+                    {/* Result */}
+                    <AnimatePresence>
+                      {coachResult && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                          <div className="bg-white border border-slate-200/60 rounded-2xl p-5 mb-3">
+                            <div className="prose prose-sm prose-slate max-w-none text-[14px] leading-relaxed [&_strong]:text-slate-800 [&_p]:text-slate-600 [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: marked.parse(coachResult) as string }} />
                           </div>
-                          <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-6 px-6 scrollbar-hide">
-                            {JOURNEY_PHASES.map((phase) => (
-                              <button key={phase.id} onClick={() => { setSelectedPhase(phase.id); localStorage.setItem("m_phase", phase.id); }} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0", selectedPhase === phase.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md shadow-emerald-500/15" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-                                <span>{phase.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                          <div className="space-y-3">
-                            <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-4">{JOURNEY_PHASES.find((p) => p.id === selectedPhase)?.label}</h3>
-                            {(MOCK_RESOURCES[selectedPhase] || []).filter((r) => !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase())).map((resource, idx) => (
-                              <motion.button key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} onClick={() => setViewingArticle(resource)} className="w-full bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300 hover:shadow-md transition-all text-left group">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">{resource.title}</h4>
-                                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                                      <span className="px-2 py-0.5 bg-slate-100 rounded-md">{RESOURCE_TOPICS.find((t) => t.id === resource.topic)?.label}</span>
-                                      <span>•</span><span>{resource.readTime}</span>
-                                    </div>
-                                  </div>
-                                  <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500 transition-colors flex-shrink-0" />
-                                </div>
-                              </motion.button>
-                            ))}
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={copyCoachMessage}
+                              className={cn("flex-1 transition-all", coachCopied ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
+                              {coachCopied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy message</>}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setCoachResult(""); setCoachInput(""); }} className="text-slate-400 hover:text-slate-600">
+                              Clear
+                            </Button>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {/* Empty state tips */}
+                    {!coachResult && !coachLoading && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-4 space-y-3">
+                        <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">How this helps</p>
+                        {[
+                          { title: "Legally neutral", desc: "Avoid language that could be used against you" },
+                          { title: "De-escalated", desc: "Remove emotional charge without losing your point" },
+                          { title: "Child-focused", desc: "Center your kids' needs in every message" },
+                        ].map((tip, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 bg-slate-50/60 rounded-xl">
+                            <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-3 h-3 text-emerald-500" /></div>
+                            <div><div className="text-sm font-medium text-slate-600">{tip.title}</div><div className="text-xs text-slate-400">{tip.desc}</div></div>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
 
@@ -1380,7 +1406,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10">
               <div className="flex items-center justify-around px-6 py-2.5 pb-3">
-                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
+                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "coach" as Tab, icon: Users, label: "Coach" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
