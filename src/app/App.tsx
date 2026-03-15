@@ -669,24 +669,29 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <AnimatePresence>
-                {activeTab === "chat" && (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
-                    {decreeFileName && (
-                      <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-medium hover:bg-emerald-100 transition-colors">
-                        {uploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border-[1.5px] border-emerald-600 border-t-transparent rounded-full" /> : <Check className="w-3 h-3" />}
-                        Decree
-                      </button>
-                    )}
-                    {hasConversation && (
-                      <>
-                        <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100" aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4 mr-1.5" />New chat</Button>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className="flex items-center gap-1">
+                <AnimatePresence>
+                  {activeTab === "chat" && (
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
+                      {decreeFileName && (
+                        <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-medium hover:bg-emerald-100 transition-colors">
+                          {uploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border-[1.5px] border-emerald-600 border-t-transparent rounded-full" /> : <Check className="w-3 h-3" />}
+                          Decree
+                        </button>
+                      )}
+                      {hasConversation && (
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100" aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4 mr-1.5" />New chat</Button>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <button onClick={() => setActiveTab("profile")} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
+                  <User className="w-4 h-4" strokeWidth={activeTab === "profile" ? 2 : 1.5} />
+                </button>
+              </div>
             </motion.header>
 
             {/* Content */}
@@ -951,7 +956,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10">
               <div className="flex items-center justify-around px-6 py-2.5 pb-3">
-                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }, { id: "profile" as Tab, icon: User, label: "You" }]).map((tab) => (
+                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
