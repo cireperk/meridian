@@ -400,15 +400,14 @@ export default function App() {
               {/* Feature cards — always horizontal */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-row gap-3 w-full max-w-md mb-8">
                 {[
-                  { icon: MessageSquare, title: "Guidance", desc: "Prepare for hard conversations with confidence" },
-                  { icon: BookOpen, title: "Resources", desc: "Custody, finances, and well-being guides" },
-                  { icon: FileText, title: "Decree Help", desc: "Your documents in plain language" },
+                  { icon: MessageSquare, title: "Guidance" },
+                  { icon: BookOpen, title: "Resources" },
+                  { icon: FileText, title: "Decree Help" },
                 ].map((card, idx) => (
                   <motion.div key={card.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + idx * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-4 text-center">
                     <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
-                    <h3 className="text-xs font-medium text-slate-800 mb-0.5">{card.title}</h3>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">{card.desc}</p>
+                    <h3 className="text-xs font-medium text-slate-800">{card.title}</h3>
                   </motion.div>
                 ))}
               </motion.div>
