@@ -600,7 +600,7 @@ export default function App() {
               ) : authView === "signin" || authView === "signup" ? (
                 <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome back" : "Create your account"}</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Welcome back. Let's pick up where you left off." : "You've taken the first step. Let's make the road ahead clearer."}</p>
+                  <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Let's pick up where you left off." : "You've taken the first step. Let's make the road ahead clearer."}</p>
                   <div className="w-full flex flex-col gap-3">
                     <div>
                       <label htmlFor="auth-email" className="sr-only">Email address</label>
