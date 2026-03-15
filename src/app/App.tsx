@@ -285,6 +285,9 @@ export default function App() {
   const [vaultLoading, setVaultLoading] = useState(false);
   const [vaultCategory, setVaultCategory] = useState("all");
   const [vaultUploading, setVaultUploading] = useState(false);
+  const [vaultUploadProgress, setVaultUploadProgress] = useState<"uploading" | "processing" | "done" | null>(null);
+  const [vaultViewDoc, setVaultViewDoc] = useState<any>(null);
+  const [vaultViewUrl, setVaultViewUrl] = useState<string | null>(null);
   const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
   const [vaultUploadCategory, setVaultUploadCategory] = useState<string | null>(null);
   const vaultFileRef = useRef<HTMLInputElement>(null);
@@ -497,17 +500,19 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file || !session?.token || !vaultUploadCategory) return;
     if (file.size > 50 * 1024 * 1024) { alert("File must be under 50MB"); return; }
-    setVaultUploading(true);
+    setVaultUploading(true); setVaultUploadProgress("uploading");
     try {
       const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
       await dbStorageUpload("documents", storagePath, file, session.token);
-      // Extract text content for chat context
+      setVaultUploadProgress("processing");
       let textContent: string | null = null;
       try { textContent = await extractFileText(file); } catch {}
       await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 50000) || null }, token: session.token });
+      setVaultUploadProgress("done");
+      await new Promise(r => setTimeout(r, 1200));
       await loadVaultDocs();
     } catch (err: any) { alert(err?.message || "Upload failed"); }
-    finally { setVaultUploading(false); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
+    finally { setVaultUploading(false); setVaultUploadProgress(null); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
   };
 
   const handleVaultDelete = async (doc: any) => {
@@ -1297,28 +1302,30 @@ export default function App() {
                       <div className="space-y-3">
                         {filteredVaultDocs.map((doc: any, idx: number) => (
                           <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04, duration: 0.3 }}
-                            className="bg-white border border-slate-200/60 rounded-xl p-4 hover:border-slate-300/60 transition-all">
+                            className="bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300/60 transition-all cursor-pointer active:scale-[0.98]"
+                            onClick={() => {
+                              setVaultViewDoc(doc); setVaultViewUrl(null);
+                              if (doc.storage_path && !doc.storage_path.startsWith(session?.user?.id + "/migrated"))
+                                fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session?.token}` } })
+                                  .then(r => r.blob()).then(blob => setVaultViewUrl(URL.createObjectURL(blob))).catch(() => setVaultViewUrl(""));
+                              else setVaultViewUrl("");
+                            }}>
                             <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-medium text-slate-700 truncate">{doc.file_name}</h4>
-                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                  <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === doc.category)?.label || doc.category}</span>
-                                  <span className="text-[11px] text-slate-300">{formatFileSize(doc.file_size)}</span>
-                                  <span className="text-[11px] text-slate-300">·</span>
-                                  <span className="text-[11px] text-slate-300">{new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5", doc.mime_type?.startsWith("image/") ? "bg-purple-50" : "bg-emerald-50")}>
+                                  {doc.mime_type?.startsWith("image/") ? <Eye className="w-4.5 h-4.5 text-purple-500" /> : <FileText className="w-4.5 h-4.5 text-emerald-600" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="text-sm font-medium text-slate-700 truncate">{doc.file_name}</h4>
+                                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === doc.category)?.label || doc.category}</span>
+                                    <span className="text-[11px] text-slate-300">{formatFileSize(doc.file_size)}</span>
+                                    <span className="text-[11px] text-slate-300">·</span>
+                                    <span className="text-[11px] text-slate-300">{new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <a href={`${SUPABASE_URL}/storage/v1/object/authenticated/documents/${doc.storage_path}`}
-                                  target="_blank" rel="noopener noreferrer"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session?.token}` } })
-                                      .then(r => r.blob()).then(blob => { const url = URL.createObjectURL(blob); window.open(url, "_blank"); }).catch(() => {});
-                                  }}
-                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all">
-                                  <Eye className="w-4 h-4" />
-                                </a>
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                 {vaultDeleteId === doc.id ? (
                                   <button onClick={() => handleVaultDelete(doc)} className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all">Delete</button>
                                 ) : (
@@ -1490,6 +1497,83 @@ export default function App() {
                         <span className="text-sm font-medium text-slate-700">{cat.label}</span>
                       </button>
                     ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Upload progress overlay */}
+            {vaultUploadProgress && (
+              <motion.div className="fixed inset-0 z-[250] bg-white/95 flex flex-col items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {vaultUploadProgress === "done" ? (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15, type: "spring", stiffness: 400 }}>
+                        <Check className="w-8 h-8 text-emerald-500" />
+                      </motion.div>
+                    </div>
+                    <span className="text-base font-medium text-slate-700">Saved to vault</span>
+                  </motion.div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-16 h-16 mb-5">
+                      <motion.div className="absolute inset-0 rounded-full border-[3px] border-emerald-100" />
+                      <motion.div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-emerald-500"
+                        animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} />
+                      <motion.div className="absolute inset-2 rounded-full border-[2px] border-transparent border-b-teal-400"
+                        animate={{ rotate: -360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Upload className="w-5 h-5 text-emerald-500" />
+                      </div>
+                    </div>
+                    <motion.span key={vaultUploadProgress} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                      className="text-sm font-medium text-slate-600">
+                      {vaultUploadProgress === "uploading" ? "Uploading..." : "Processing document..."}
+                    </motion.span>
+                    <motion.div className="w-48 h-1 bg-slate-100 rounded-full mt-4 overflow-hidden">
+                      <motion.div className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"
+                        initial={{ width: "0%" }}
+                        animate={{ width: vaultUploadProgress === "uploading" ? "60%" : "90%" }}
+                        transition={{ duration: vaultUploadProgress === "uploading" ? 2 : 1.5, ease: "easeOut" }} />
+                    </motion.div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Document viewer modal */}
+            {vaultViewDoc && (
+              <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => { setVaultViewDoc(null); if (vaultViewUrl) { URL.revokeObjectURL(vaultViewUrl); setVaultViewUrl(null); } }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-4" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-medium text-slate-800 truncate">{vaultViewDoc.file_name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === vaultViewDoc.category)?.label}</span>
+                        <span className="text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => { setVaultViewDoc(null); if (vaultViewUrl) { URL.revokeObjectURL(vaultViewUrl); setVaultViewUrl(null); } }} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><X className="w-4 h-4" /></button>
+                  </div>
+                  <div className="flex-1 overflow-auto rounded-xl border border-slate-200/60 bg-slate-50/50 min-h-[200px]">
+                    {!vaultViewUrl ? (
+                      <div className="flex items-center justify-center h-48">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                      </div>
+                    ) : vaultViewDoc.mime_type?.startsWith("image/") ? (
+                      <img src={vaultViewUrl} alt={vaultViewDoc.file_name} className="w-full rounded-xl" />
+                    ) : vaultViewDoc.mime_type === "application/pdf" ? (
+                      <iframe src={vaultViewUrl} className="w-full h-[60vh] rounded-xl" title={vaultViewDoc.file_name} />
+                    ) : vaultViewDoc.text_content ? (
+                      <div className="p-4 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{vaultViewDoc.text_content.slice(0, 10000)}</div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                        <FileText className="w-8 h-8 mb-2" strokeWidth={1.5} />
+                        <p className="text-sm">Preview not available</p>
+                        <button onClick={() => window.open(vaultViewUrl, "_blank")} className="mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium">Open in new tab</button>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </motion.div>
