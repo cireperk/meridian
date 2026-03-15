@@ -679,7 +679,7 @@ export default function App() {
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
-                From divorce to building a stronger co-parenting relationship, to building a better you.
+                From divorce to stronger co-parenting, to building a better you.
               </motion.p>
 
               {/* Feature cards — always horizontal */}
