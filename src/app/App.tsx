@@ -774,8 +774,8 @@ export default function App() {
                                     </div>
                                     {/* Swipeable card */}
                                     <motion.button
-                                      drag="x" dragConstraints={{ left: -80, right: 0 }} dragElastic={0.1}
-                                      onDragEnd={(_e, info) => { if (info.offset.x < -60) deleteConv(); }}
+                                      drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.5}
+                                      onDragEnd={(_e, info) => { if (info.offset.x < -80) deleteConv(); }}
                                       onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}
                                       className={cn("w-full text-left p-4 rounded-xl border relative z-10", c.id === activeConvId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100")}>
                                       <div className="flex items-start justify-between gap-3">
