@@ -71,6 +71,7 @@ const VAULT_CATEGORIES = [
   { id: "custody_agreement", label: "Custody" },
   { id: "financial_records", label: "Financial" },
   { id: "court_orders", label: "Court Orders" },
+  { id: "messages", label: "Messages" },
   { id: "other", label: "Other" },
 ] as const;
 
