@@ -288,6 +288,8 @@ export default function App() {
   const [vaultUploadProgress, setVaultUploadProgress] = useState<"uploading" | "processing" | "done" | null>(null);
   const [vaultViewDoc, setVaultViewDoc] = useState<any>(null);
   const [vaultViewUrl, setVaultViewUrl] = useState<string | null>(null);
+  const [vaultRenameId, setVaultRenameId] = useState<string | null>(null);
+  const [vaultRenameName, setVaultRenameName] = useState("");
   const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
   const [vaultUploadCategory, setVaultUploadCategory] = useState<string | null>(null);
   const vaultFileRef = useRef<HTMLInputElement>(null);
@@ -523,6 +525,16 @@ export default function App() {
       setVaultDocs(prev => prev.filter(d => d.id !== doc.id));
     } catch {}
     setVaultDeleteId(null);
+  };
+
+  const handleVaultRename = async (docId: string, newName: string) => {
+    if (!session?.token || !newName.trim()) { setVaultRenameId(null); return; }
+    try {
+      await dbUpdate("documents", `id=eq.${docId}`, { file_name: newName.trim() }, session.token);
+      setVaultDocs(prev => prev.map(d => d.id === docId ? { ...d, file_name: newName.trim() } : d));
+      if (vaultViewDoc?.id === docId) setVaultViewDoc((prev: any) => prev ? { ...prev, file_name: newName.trim() } : prev);
+    } catch {}
+    setVaultRenameId(null);
   };
 
   const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
@@ -1316,7 +1328,15 @@ export default function App() {
                                   {doc.mime_type?.startsWith("image/") ? <Eye className="w-4.5 h-4.5 text-purple-500" /> : <FileText className="w-4.5 h-4.5 text-emerald-600" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-medium text-slate-700 truncate">{doc.file_name}</h4>
+                                  {vaultRenameId === doc.id ? (
+                                    <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
+                                      onBlur={() => handleVaultRename(doc.id, vaultRenameName)}
+                                      onKeyDown={(e) => { if (e.key === "Enter") handleVaultRename(doc.id, vaultRenameName); if (e.key === "Escape") setVaultRenameId(null); }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-full text-sm font-medium text-slate-700 bg-emerald-50 border border-emerald-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                                  ) : (
+                                    <h4 className="text-sm font-medium text-slate-700 truncate">{doc.file_name}</h4>
+                                  )}
                                   <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                     <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === doc.category)?.label || doc.category}</span>
                                     <span className="text-[11px] text-slate-300">{formatFileSize(doc.file_size)}</span>
@@ -1326,6 +1346,10 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <button onClick={() => { setVaultRenameId(doc.id); setVaultRenameName(doc.file_name); }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 transition-all">
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
                                 {vaultDeleteId === doc.id ? (
                                   <button onClick={() => handleVaultDelete(doc)} className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all">Delete</button>
                                 ) : (
@@ -1548,7 +1572,18 @@ export default function App() {
                   <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-4" />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-medium text-slate-800 truncate">{vaultViewDoc.file_name}</h3>
+                      {vaultRenameId === vaultViewDoc.id ? (
+                        <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
+                          onBlur={() => handleVaultRename(vaultViewDoc.id, vaultRenameName)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleVaultRename(vaultViewDoc.id, vaultRenameName); if (e.key === "Escape") setVaultRenameId(null); }}
+                          className="w-full text-base font-medium text-slate-800 bg-emerald-50 border border-emerald-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                      ) : (
+                        <button onClick={() => { setVaultRenameId(vaultViewDoc.id); setVaultRenameName(vaultViewDoc.file_name); }}
+                          className="flex items-center gap-1.5 group text-left">
+                          <h3 className="text-base font-medium text-slate-800 truncate">{vaultViewDoc.file_name}</h3>
+                          <Edit3 className="w-3.5 h-3.5 text-slate-300 group-hover:text-emerald-500 transition-colors shrink-0" />
+                        </button>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === vaultViewDoc.category)?.label}</span>
                         <span className="text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
