@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 import { marked } from "marked";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -78,6 +78,27 @@ const formatFileSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / 1048576).toFixed(1)} MB`;
+};
+
+const EVENT_TYPES = [
+  { id: "handoff", label: "Handoff", color: "bg-blue-500" },
+  { id: "kids_activity", label: "Kids Activity", color: "bg-purple-500" },
+  { id: "court_mediation", label: "Court / Mediation", color: "bg-red-500" },
+  { id: "appointment", label: "Appointment", color: "bg-amber-500" },
+  { id: "deadline", label: "Deadline", color: "bg-orange-500" },
+  { id: "other", label: "Other", color: "bg-slate-400" },
+] as const;
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const formatTime12 = (t: string) => {
+  if (!t) return "";
+  if (t.includes("AM") || t.includes("PM")) return t;
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
 };
 
 // --- System prompt ---
@@ -158,7 +179,7 @@ const MOCK_RESOURCES: Record<string, { title: string; topic: string; readTime: s
   ],
 };
 
-type Tab = "chat" | "vault" | "learn" | "profile";
+type Tab = "chat" | "calendar" | "vault" | "learn" | "profile";
 
 // ============================================================
 export default function App() {
@@ -287,6 +308,15 @@ export default function App() {
   const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
   const [vaultUploadCategory, setVaultUploadCategory] = useState<string | null>(null);
   const vaultFileRef = useRef<HTMLInputElement>(null);
+  // Calendar state
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [calEvents, setCalEvents] = useState<any[]>([]);
+  const [calSelectedDate, setCalSelectedDate] = useState<string | null>(null);
+  const [calLoading, setCalLoading] = useState(false);
+  const [calShowAdd, setCalShowAdd] = useState(false);
+  const [calEditEvent, setCalEditEvent] = useState<any | null>(null);
+  const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
+  const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "" });
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
 
@@ -473,6 +503,86 @@ export default function App() {
   };
 
   const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
+
+  // --- Calendar ---
+  const loadCalEvents = useCallback(async () => {
+    if (!session?.token) return;
+    setCalLoading(true);
+    try {
+      const start = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-01`;
+      const end = new Date(calMonth.year, calMonth.month + 1, 0);
+      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+      const events = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${start}&date=lte.${endStr}&order=date,time`, session.token);
+      setCalEvents(events || []);
+    } catch { setCalEvents([]); }
+    setCalLoading(false);
+  }, [session?.token, session?.user?.id, calMonth]);
+
+  useEffect(() => { if (activeTab === "calendar") loadCalEvents(); }, [activeTab, calMonth]);
+
+  const calDays = (() => {
+    const first = new Date(calMonth.year, calMonth.month, 1);
+    const startDay = first.getDay();
+    const daysInMonth = new Date(calMonth.year, calMonth.month + 1, 0).getDate();
+    const prevDays = new Date(calMonth.year, calMonth.month, 0).getDate();
+    const cells: { day: number; month: "prev" | "current" | "next"; dateStr: string }[] = [];
+    for (let i = startDay - 1; i >= 0; i--) {
+      const d = prevDays - i;
+      const m = calMonth.month === 0 ? 12 : calMonth.month;
+      const y = calMonth.month === 0 ? calMonth.year - 1 : calMonth.year;
+      cells.push({ day: d, month: "prev", dateStr: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      cells.push({ day: i, month: "current", dateStr: `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}` });
+    }
+    const remaining = 42 - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      const m = calMonth.month === 11 ? 1 : calMonth.month + 2;
+      const y = calMonth.month === 11 ? calMonth.year + 1 : calMonth.year;
+      cells.push({ day: i, month: "next", dateStr: `${y}-${String(m).padStart(2, "0")}-${String(i).padStart(2, "0")}` });
+    }
+    return cells;
+  })();
+
+  const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+
+  const handleCalSave = async () => {
+    if (!calForm.title.trim() || !calForm.date || !session?.token) return;
+    const body = { user_id: session.user.id, title: calForm.title.trim(), date: calForm.date, time: calForm.time ? formatTime12(calForm.time) : null, type: calForm.type, notes: calForm.notes.trim() || null };
+    try {
+      if (calEditEvent) {
+        await dbUpdate("calendar_events", `id=eq.${calEditEvent.id}`, body, session.token);
+      } else {
+        await sbFetch("/rest/v1/calendar_events", { method: "POST", body, token: session.token });
+      }
+      await loadCalEvents();
+      setCalShowAdd(false);
+      setCalEditEvent(null);
+      setCalForm({ title: "", date: "", time: "", type: "handoff", notes: "" });
+    } catch {}
+  };
+
+  const handleCalDelete = async (eventId: string) => {
+    if (!session?.token) return;
+    await dbDelete("calendar_events", `id=eq.${eventId}`, session.token);
+    setCalEvents(prev => prev.filter(e => e.id !== eventId));
+    setCalDeleteConfirm(null);
+  };
+
+  const openAddEvent = (date?: string) => {
+    setCalEditEvent(null);
+    setCalForm({ title: "", date: date || calSelectedDate || todayStr, time: "", type: "handoff", notes: "" });
+    setCalShowAdd(true);
+  };
+
+  const openEditEvent = (evt: any) => {
+    setCalEditEvent(evt);
+    const timeVal = evt.time ? (() => { const [hm, p] = evt.time.split(" "); const [h, m] = hm.split(":").map(Number); const h24 = p === "PM" && h !== 12 ? h + 12 : p === "AM" && h === 12 ? 0 : h; return `${String(h24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; })() : "";
+    setCalForm({ title: evt.title, date: evt.date, time: timeVal, type: evt.type, notes: evt.notes || "" });
+    setCalShowAdd(true);
+  };
+
+  const selectedDateEvents = calEvents.filter(e => e.date === calSelectedDate);
 
   const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
 
@@ -999,6 +1109,97 @@ export default function App() {
                   </motion.div>
                 )}
 
+                {/* CALENDAR */}
+                {activeTab === "calendar" && (
+                  <motion.div key="calendar" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                    {/* Month header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <h2 className="text-lg font-light tracking-tight text-slate-700">{MONTHS[calMonth.month]} {calMonth.year}</h2>
+                      <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Day headers */}
+                    <div className="grid grid-cols-7 mb-2">
+                      {DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}
+                    </div>
+
+                    {/* Calendar grid */}
+                    <div className="grid grid-cols-7 gap-y-1">
+                      {calDays.map((cell, i) => {
+                        const isToday = cell.dateStr === todayStr;
+                        const isSelected = cell.dateStr === calSelectedDate;
+                        const dayEvents = calEvents.filter(e => e.date === cell.dateStr);
+                        const eventTypes = [...new Set(dayEvents.map(e => e.type))].slice(0, 3);
+                        return (
+                          <button key={i} onClick={() => setCalSelectedDate(cell.dateStr)}
+                            className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isToday && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
+                            <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isToday ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
+                            {eventTypes.length > 0 && (
+                              <div className="flex gap-0.5 mt-0.5">
+                                {eventTypes.map(t => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Selected date events */}
+                    {calSelectedDate && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-medium text-slate-700">
+                            {new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                          </h3>
+                          <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all">
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {selectedDateEvents.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-sm text-slate-400 mb-3">No events</p>
+                            <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {selectedDateEvents.map((evt: any) => {
+                              const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
+                              return (
+                                <button key={evt.id} onClick={() => openEditEvent(evt)} className="w-full text-left p-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-slate-300 transition-all">
+                                  <div className="flex items-start gap-3">
+                                    <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-slate-700">{evt.title}</div>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        {evt.time && <span className="text-[12px] text-slate-400">{evt.time}</span>}
+                                        <span className="text-[11px] text-slate-300 px-1.5 py-0.5 bg-slate-50 rounded">{typeInfo?.label}</span>
+                                      </div>
+                                      {evt.notes && <p className="text-[12px] text-slate-400 mt-1 truncate">{evt.notes}</p>}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+
+                    {/* FAB */}
+                    {!calSelectedDate && (
+                      <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                        onClick={() => openAddEvent(todayStr)} className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25 flex items-center justify-center text-white z-30 hover:shadow-xl transition-shadow">
+                        <Plus className="w-6 h-6" />
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* VAULT */}
                 {activeTab === "vault" && (
                   <motion.div key="vault" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
@@ -1184,8 +1385,8 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10">
               <div className="flex items-center justify-around px-6 py-2.5 pb-3">
-                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
+                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
                   </button>
@@ -1194,6 +1395,63 @@ export default function App() {
             </motion.nav>
           </motion.div>
 
+
+          {/* Calendar add/edit event */}
+          <AnimatePresence>
+            {calShowAdd && (
+              <motion.div className="fixed inset-0 z-[250] bg-black/30 flex items-end justify-center" onClick={() => { setCalShowAdd(false); setCalEditEvent(null); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-lg font-light text-slate-700">{calEditEvent ? "Edit event" : "Add event"}</h3>
+                    <button onClick={() => { setCalShowAdd(false); setCalEditEvent(null); }} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50"><X size={14} /></button>
+                  </div>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Title</label>
+                      <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Pick up kids" value={calForm.title} onChange={e => setCalForm(p => ({ ...p, title: e.target.value }))} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Date</label>
+                        <input type="date" className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={calForm.date} onChange={e => setCalForm(p => ({ ...p, date: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Time <span className="text-slate-300">(optional)</span></label>
+                        <input type="time" className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={calForm.time} onChange={e => setCalForm(p => ({ ...p, time: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Type</label>
+                      <div className="flex flex-wrap gap-2">
+                        {EVENT_TYPES.map(t => (
+                          <button key={t.id} onClick={() => setCalForm(p => ({ ...p, type: t.id }))}
+                            className={cn("px-3 py-2 rounded-full text-[13px] font-medium transition-all flex items-center gap-1.5",
+                              calForm.type === t.id ? "text-white shadow-sm" : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+                              calForm.type === t.id && t.color)}>
+                            <div className={cn("w-2 h-2 rounded-full", calForm.type === t.id ? "bg-white/60" : t.color)} />
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Notes <span className="text-slate-300">(optional)</span></label>
+                      <textarea className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none" rows={3} placeholder="Any details..." value={calForm.notes} onChange={e => setCalForm(p => ({ ...p, notes: e.target.value }))} />
+                    </div>
+                    <Button onClick={handleCalSave} disabled={!calForm.title.trim() || !calForm.date} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{calEditEvent ? "Save Changes" : "Add Event"}</Button>
+                    {calEditEvent && (
+                      calDeleteConfirm === calEditEvent.id ? (
+                        <button onClick={() => { handleCalDelete(calEditEvent.id); setCalShowAdd(false); setCalEditEvent(null); }} className="w-full py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all">Confirm Delete</button>
+                      ) : (
+                        <button onClick={() => setCalDeleteConfirm(calEditEvent.id)} className="w-full py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">Delete Event</button>
+                      )
+                    )}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Vault category picker */}
           <AnimatePresence>
