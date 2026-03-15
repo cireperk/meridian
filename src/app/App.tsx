@@ -969,22 +969,6 @@ export default function App() {
                       {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mt-3">{uploadError}</div>}
                     </div>
 
-                    {/* Conversations */}
-                    {conversations.length > 0 && (
-                      <div className="mb-8">
-                        <h3 className="text-sm font-medium text-slate-700 mb-3">Recent Conversations</h3>
-                        <div className="space-y-2">
-                          {conversations.slice(0, 5).map((c) => (
-                            <button key={c.id} onClick={() => { setActiveConvId(c.id); setActiveTab("chat"); }} className="w-full bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition-all text-left flex items-center gap-3">
-                              <MessageSquare className="w-4 h-4 text-slate-400 shrink-0" />
-                              <div className="flex-1 min-w-0"><div className="text-sm text-slate-700 truncate">{c.title || "New conversation"}</div><div className="text-xs text-slate-400">{c.messages?.length || 0} messages</div></div>
-                              <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Settings */}
                     <div className="mb-8">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
