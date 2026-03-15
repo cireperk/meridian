@@ -432,13 +432,16 @@ export default function App() {
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
     const currentDecree = decreeTextRef.current;
-    const decreeContext = currentDecree ? `\n\nDIVORCE DECREE CONTENT:\n${currentDecree.slice(0, 8000)}` : "\n\nNo decree uploaded yet.";
+    const decreeContext = currentDecree ? `\n\nDIVORCE DECREE CONTENT:\n${currentDecree.slice(0, 8000)}` : "";
+    // Build vault docs context
+    const vaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content.slice(0, 6000)}`).join("");
+    const docsContext = decreeContext || vaultContext ? `${decreeContext}${vaultContext}` : "\n\nNo documents uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
     const abort = new AbortController(); abortRef.current = abort;
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${decreeContext}`, messages: history }), signal: abort.signal });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "" }]); setLoading(false); setStreaming(true);
@@ -474,7 +477,21 @@ export default function App() {
     } catch {} finally { setVaultLoading(false); }
   }, [session?.token, session?.user?.id]);
 
-  useEffect(() => { if (activeTab === "vault") loadVaultDocs(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "vault" || activeTab === "chat") loadVaultDocs(); }, [activeTab]);
+
+  const extractFileText = async (file: File): Promise<string> => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".pdf")) {
+      return await extractPdfText(file);
+    } else if (name.endsWith(".docx") || name.endsWith(".doc")) {
+      const buffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      return result.value;
+    } else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".csv")) {
+      return await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (ev) => resolve(ev.target?.result as string); reader.onerror = () => reject(new Error("Failed")); reader.readAsText(file); });
+    }
+    return "";
+  };
 
   const handleVaultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -484,7 +501,10 @@ export default function App() {
     try {
       const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
       await dbStorageUpload("documents", storagePath, file, session.token);
-      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath }, token: session.token });
+      // Extract text content for chat context
+      let textContent: string | null = null;
+      try { textContent = await extractFileText(file); } catch {}
+      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 50000) || null }, token: session.token });
       await loadVaultDocs();
     } catch (err: any) { alert(err?.message || "Upload failed"); }
     finally { setVaultUploading(false); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
