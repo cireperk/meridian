@@ -674,12 +674,12 @@ export default function App() {
 
               {/* Headline */}
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
-                Navigate what's next<br />
-                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">with calm and clarity</span>
+                Hard chapter.<br />
+                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">Not the last one.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
-                From divorce to stronger co-parenting, to building a better you.
+                Meridian walks with you through divorce, co-parenting, and everything you're rebuilding.
               </motion.p>
 
               {/* Feature cards — always horizontal */}
