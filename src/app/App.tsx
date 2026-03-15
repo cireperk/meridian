@@ -1314,19 +1314,6 @@ export default function App() {
                   <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</h2>
 
-                    {/* Activity summary */}
-                    <div className="flex gap-3 mb-6">
-                      {[
-                        { label: "Conversations", value: conversations.length },
-                        { label: "Documents", value: vaultDocs.length },
-                      ].map((stat) => (
-                        <div key={stat.label} className="flex-1 bg-slate-50/80 border border-slate-200/40 rounded-xl p-3.5 text-center">
-                          <div className="text-lg font-medium text-slate-800">{stat.value}</div>
-                          <div className="text-xs text-slate-400">{stat.label}</div>
-                        </div>
-                      ))}
-                    </div>
-
                     {/* Name */}
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Name</h3>
