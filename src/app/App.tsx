@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 import { marked } from "marked";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -54,6 +54,30 @@ const dbUpsert = async (table: string, body: any, token: string) => {
 const dbDelete = async (table: string, query: string, token: string) => {
   const headers: any = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` };
   await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method: "DELETE", headers });
+};
+
+const dbStorageUpload = async (bucket: string, path: string, file: File, token: string) => {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "Content-Type": file.type, "x-upsert": "true" },
+    body: file,
+  });
+  if (!res.ok) throw new Error("Upload failed");
+};
+
+const VAULT_CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "decree", label: "Decree" },
+  { id: "custody_agreement", label: "Custody" },
+  { id: "financial_records", label: "Financial" },
+  { id: "court_orders", label: "Court Orders" },
+  { id: "other", label: "Other" },
+] as const;
+
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
 };
 
 // --- System prompt ---
@@ -134,7 +158,7 @@ const MOCK_RESOURCES: Record<string, { title: string; topic: string; readTime: s
   ],
 };
 
-type Tab = "chat" | "learn" | "profile";
+type Tab = "chat" | "vault" | "learn" | "profile";
 
 // ============================================================
 export default function App() {
@@ -256,6 +280,13 @@ export default function App() {
   const [activeConvId, setActiveConvId] = useState<string | null>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); return c?.length ? c[0].id : null; } catch { return null; } });
   const [showHistory, setShowHistory] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [vaultDocs, setVaultDocs] = useState<any[]>([]);
+  const [vaultLoading, setVaultLoading] = useState(false);
+  const [vaultCategory, setVaultCategory] = useState("all");
+  const [vaultUploading, setVaultUploading] = useState(false);
+  const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
+  const [vaultUploadCategory, setVaultUploadCategory] = useState<string | null>(null);
+  const vaultFileRef = useRef<HTMLInputElement>(null);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
 
@@ -405,12 +436,51 @@ export default function App() {
   const firstName = session?.user?.name?.split(" ")[0] || "";
   const hasConversation = messages.length > 0;
 
+  // --- Vault ---
+  const loadVaultDocs = useCallback(async () => {
+    if (!session?.token) return;
+    setVaultLoading(true);
+    try {
+      const docs = await dbSelect("documents", `user_id=eq.${session.user.id}&order=created_at.desc`, session.token);
+      setVaultDocs(docs || []);
+    } catch {} finally { setVaultLoading(false); }
+  }, [session?.token, session?.user?.id]);
+
+  useEffect(() => { if (activeTab === "vault") loadVaultDocs(); }, [activeTab]);
+
+  const handleVaultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.token || !vaultUploadCategory) return;
+    if (file.size > 50 * 1024 * 1024) { alert("File must be under 50MB"); return; }
+    setVaultUploading(true);
+    try {
+      const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
+      await dbStorageUpload("documents", storagePath, file, session.token);
+      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath }, token: session.token });
+      await loadVaultDocs();
+    } catch (err: any) { alert(err?.message || "Upload failed"); }
+    finally { setVaultUploading(false); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
+  };
+
+  const handleVaultDelete = async (doc: any) => {
+    if (!session?.token) return;
+    try {
+      await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { method: "DELETE", headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.token}` } });
+      await dbDelete("documents", `id=eq.${doc.id}`, session.token);
+      setVaultDocs(prev => prev.filter(d => d.id !== doc.id));
+    } catch {}
+    setVaultDeleteId(null);
+  };
+
+  const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
+
   const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
 
   // ============================================================
   return (
     <>
       <input ref={fileRef} type="file" accept=".txt,.md,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
+      <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
 
       {/* ==================== SPLASH ==================== */}
       <AnimatePresence mode="wait">
@@ -931,6 +1001,83 @@ export default function App() {
                   </motion.div>
                 )}
 
+                {/* VAULT */}
+                {activeTab === "vault" && (
+                  <motion.div key="vault" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-2xl font-light tracking-tight text-slate-700">Document Vault</h2>
+                      <Button size="sm" onClick={() => setVaultUploadCategory("picking")} disabled={vaultUploading}
+                        className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm shadow-emerald-500/15 text-sm">
+                        {vaultUploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload</>}
+                      </Button>
+                    </div>
+
+                    {/* Category filter pills */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-6 px-6 scrollbar-hide">
+                      {VAULT_CATEGORIES.map(cat => (
+                        <button key={cat.id} onClick={() => setVaultCategory(cat.id)}
+                          className={cn("px-3.5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all shrink-0",
+                            vaultCategory === cat.id ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/15"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200")}>
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Document list */}
+                    {vaultLoading ? (
+                      <div className="flex justify-center py-16">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                      </div>
+                    ) : filteredVaultDocs.length === 0 ? (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 text-center">
+                        <FolderLock className="w-10 h-10 text-slate-200 mb-3" strokeWidth={1.5} />
+                        <p className="text-sm text-slate-400 mb-1">{vaultCategory === "all" ? "No documents yet" : "No documents in this category"}</p>
+                        <p className="text-xs text-slate-300">Upload your first document to get started</p>
+                      </motion.div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredVaultDocs.map((doc: any, idx: number) => (
+                          <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04, duration: 0.3 }}
+                            className="bg-white border border-slate-200/60 rounded-xl p-4 hover:border-slate-300/60 transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-medium text-slate-700 truncate">{doc.file_name}</h4>
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                  <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === doc.category)?.label || doc.category}</span>
+                                  <span className="text-[11px] text-slate-300">{formatFileSize(doc.file_size)}</span>
+                                  <span className="text-[11px] text-slate-300">·</span>
+                                  <span className="text-[11px] text-slate-300">{new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <a href={`${SUPABASE_URL}/storage/v1/object/authenticated/documents/${doc.storage_path}`}
+                                  target="_blank" rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session?.token}` } })
+                                      .then(r => r.blob()).then(blob => { const url = URL.createObjectURL(blob); window.open(url, "_blank"); }).catch(() => {});
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all">
+                                  <Eye className="w-4 h-4" />
+                                </a>
+                                {vaultDeleteId === doc.id ? (
+                                  <button onClick={() => handleVaultDelete(doc)} className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all">Delete</button>
+                                ) : (
+                                  <button onClick={() => { setVaultDeleteId(doc.id); setTimeout(() => setVaultDeleteId(prev => prev === doc.id ? null : prev), 3000); }}
+                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* PROFILE */}
                 {activeTab === "profile" && (
                   <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
@@ -1039,7 +1186,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10">
               <div className="flex items-center justify-around px-6 py-2.5 pb-3">
-                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
+                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "learn" as Tab, icon: BookOpen, label: "Learn" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-5 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
@@ -1049,6 +1196,27 @@ export default function App() {
             </motion.nav>
           </motion.div>
 
+
+          {/* Vault category picker */}
+          <AnimatePresence>
+            {vaultUploadCategory === "picking" && (
+              <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => setVaultUploadCategory(null)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+                  <h3 className="text-lg font-light text-slate-700 mb-1">Upload document</h3>
+                  <p className="text-sm text-slate-400 mb-5">Choose a category for your file</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {VAULT_CATEGORIES.filter(c => c.id !== "all").map(cat => (
+                      <button key={cat.id} onClick={() => { setVaultUploadCategory(cat.id); setTimeout(() => vaultFileRef.current?.click(), 100); }}
+                        className="p-4 rounded-xl border border-slate-200/60 text-left hover:border-emerald-300 hover:bg-emerald-50/30 transition-all">
+                        <span className="text-sm font-medium text-slate-700">{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Feedback modal */}
           <AnimatePresence>
