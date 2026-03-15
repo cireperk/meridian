@@ -764,27 +764,32 @@ export default function App() {
                                 const diffHrs = Math.floor(diffMins / 60);
                                 const diffDays = Math.floor(diffHrs / 24);
                                 const timeAgo = !date ? "" : diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : diffDays < 7 ? `${diffDays}d ago` : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                const deleteConv = () => { setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); if (session?.token) dbDelete("conversations", `id=eq.${c.id}`, session.token).catch(() => {}); };
                                 return (
-                                  <motion.button key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03, duration: 0.3 }}
-                                    onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}
-                                    className={cn("w-full text-left p-4 rounded-xl border transition-all group relative", c.id === activeConvId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50")}>
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-sm font-medium text-slate-700 truncate">{c.title || "New conversation"}</div>
-                                        {preview && <div className="text-[13px] text-slate-400 truncate mt-0.5">{lastMsg?.role === "assistant" ? preview : `You: ${preview}`}{preview.length >= 80 ? "..." : ""}</div>}
-                                      </div>
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <span className="text-[11px] text-slate-300">{timeAgo}</span>
-                                        <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                                          onClick={(e) => { e.stopPropagation(); setConversations((prev) => prev.filter((x) => x.id !== c.id)); if (activeConvId === c.id) setActiveConvId(null); if (session?.token) dbDelete("conversations", `id=eq.${c.id}`, session.token).catch(() => {}); }}>
-                                          <X size={12} />
-                                        </button>
-                                      </div>
+                                  <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03, duration: 0.3 }}
+                                    className="relative overflow-hidden rounded-xl">
+                                    {/* Delete background */}
+                                    <div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-5 rounded-xl">
+                                      <Trash2 className="w-5 h-5 text-white" />
                                     </div>
-                                    <div className="flex items-center gap-3 mt-2">
-                                      <span className="text-[11px] text-slate-300">{c.messages?.length || 0} messages</span>
-                                    </div>
-                                  </motion.button>
+                                    {/* Swipeable card */}
+                                    <motion.button
+                                      drag="x" dragConstraints={{ left: -80, right: 0 }} dragElastic={0.1}
+                                      onDragEnd={(_e, info) => { if (info.offset.x < -60) deleteConv(); }}
+                                      onClick={() => { setActiveConvId(c.id); setShowHistory(false); }}
+                                      className={cn("w-full text-left p-4 rounded-xl border relative z-10", c.id === activeConvId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100")}>
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-sm font-medium text-slate-700 truncate">{c.title || "New conversation"}</div>
+                                          {preview && <div className="text-[13px] text-slate-400 truncate mt-0.5">{lastMsg?.role === "assistant" ? preview : `You: ${preview}`}{preview.length >= 80 ? "..." : ""}</div>}
+                                        </div>
+                                        <span className="text-[11px] text-slate-300 shrink-0">{timeAgo}</span>
+                                      </div>
+                                      <div className="flex items-center gap-3 mt-2">
+                                        <span className="text-[11px] text-slate-300">{c.messages?.length || 0} messages</span>
+                                      </div>
+                                    </motion.button>
+                                  </motion.div>
                                 );
                               })}
                             </div>
