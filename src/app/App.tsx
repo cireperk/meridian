@@ -305,6 +305,29 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); };
+
+  // Pull-to-refresh for splash landing page
+  const splashRef = useRef<HTMLDivElement>(null);
+  const [pullY, setPullY] = useState(0);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const pullStartY = useRef(0);
+  const pulling = useRef(false);
+
+  const onPullTouchStart = (e: React.TouchEvent) => {
+    const el = splashRef.current;
+    if (el && el.scrollTop <= 0) { pullStartY.current = e.touches[0].clientY; pulling.current = true; }
+  };
+  const onPullTouchMove = (e: React.TouchEvent) => {
+    if (!pulling.current) return;
+    const dy = Math.max(0, (e.touches[0].clientY - pullStartY.current) * 0.4);
+    setPullY(Math.min(dy, 80));
+  };
+  const onPullTouchEnd = () => {
+    if (!pulling.current) return;
+    pulling.current = false;
+    if (pullY > 50) { setPullRefreshing(true); setTimeout(() => window.location.reload(), 300); }
+    else setPullY(0);
+  };
   const [videoMuted, setVideoMuted] = useState(true);
   const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); setVideoMuted(true); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
@@ -693,7 +716,15 @@ export default function App() {
 
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
-          <div className="fixed inset-0 z-50 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
+          <div ref={splashRef} onTouchStart={onPullTouchStart} onTouchMove={onPullTouchMove} onTouchEnd={onPullTouchEnd}
+            className="fixed inset-0 z-50 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
+            {/* Pull-to-refresh indicator */}
+            {(pullY > 0 || pullRefreshing) && (
+              <div className="flex items-center justify-center transition-all duration-200" style={{ height: pullRefreshing ? 48 : pullY }}>
+                <div className={cn("w-6 h-6 rounded-full border-2 border-emerald-400 border-t-transparent", pullRefreshing && "animate-spin")}
+                  style={{ opacity: pullRefreshing ? 1 : Math.min(pullY / 50, 1), transform: `rotate(${pullY * 4}deg)` }} />
+              </div>
+            )}
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ height: "100dvh", position: "fixed" }}>
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
