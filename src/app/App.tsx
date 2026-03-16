@@ -1402,10 +1402,13 @@ export default function App() {
 
             {/* Trial banner */}
             {isTrialActive && !isSubscribed && trialDaysLeft <= TRIAL_DAYS && (
-              <div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs text-center font-medium shrink-0">
-                {trialDaysLeft === 0 ? "Trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
-                <span className="mx-1.5">·</span>
-                <button onClick={handleSubscribe} className="underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity">Subscribe now</button>
+              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <span className="text-xs text-slate-500">
+                  {trialDaysLeft === 0 ? "Your trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
+                </span>
+                <button onClick={handleSubscribe} className="text-xs font-medium text-emerald-600 hover:text-emerald-700 active:text-emerald-800 transition-colors px-3 py-1 rounded-lg hover:bg-emerald-50 active:bg-emerald-100">
+                  Subscribe
+                </button>
               </div>
             )}
 
