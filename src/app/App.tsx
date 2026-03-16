@@ -700,7 +700,19 @@ export default function App() {
               <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
+            {/* Top nav */}
+            <div className="relative z-10 flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-2">
+                <Logo size="sm" />
+                <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
+              </div>
+              <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
+                className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
+                Sign In
+              </button>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10 -mt-14">
               {/* Logo */}
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
                 <div className="flex items-center gap-4">
