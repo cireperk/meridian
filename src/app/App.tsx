@@ -251,7 +251,10 @@ export default function App() {
           }).catch(() => {});
         }
       }
-    }).catch(() => {});
+    }).catch(() => {
+      // Refresh token is invalid/expired — sign user out gracefully
+      setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true);
+    });
   }, []);
 
   const handleAuth = async () => {
@@ -312,14 +315,18 @@ export default function App() {
   const checkSubscription = useCallback(async (token: string, userId: string) => {
     try {
       const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
-      if (p?.[0]) {
+      if (Array.isArray(p) && p[0]?.created_at) {
         const createdAt = new Date(p[0].created_at);
         const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
         setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
-        setSubscription(s => ({ ...s, loading: false }));
+        // Query failed or columns missing — fail open
+        setSubscription({ status: "active", trialEnd: null, loading: false });
       }
-    } catch { setSubscription(s => ({ ...s, loading: false })); }
+    } catch {
+      // Fail open: if we can't verify subscription, grant access so paying users aren't locked out
+      setSubscription({ status: "active", trialEnd: null, loading: false });
+    }
   }, []);
 
   useEffect(() => {
@@ -433,6 +440,9 @@ export default function App() {
   const [streaming, setStreaming] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("Copied!");
+  const [toastIsError, setToastIsError] = useState(false);
+  const showToastMsg = (msg: string, isError = false) => { setToastMessage(msg); setToastIsError(isError); setShowToast(true); setTimeout(() => setShowToast(false), 2500); };
   const abortRef = useRef<AbortController | null>(null);
 
   const [decreeText, setDecreeText] = useState(() => localStorage.getItem("m_decree_text") || "");
@@ -480,7 +490,7 @@ export default function App() {
 
   const resizeTextarea = useCallback(() => { const el = textareaRef.current; if (!el) return; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }, []);
 
-  const copyToClipboard = (text: string, idx: number) => { navigator.clipboard.writeText(text).then(() => { setCopied(idx); setShowToast(true); setTimeout(() => setCopied(null), 1500); setTimeout(() => setShowToast(false), 1500); }); };
+  const copyToClipboard = (text: string, idx: number) => { navigator.clipboard.writeText(text).then(() => { setCopied(idx); showToastMsg("Copied!"); setTimeout(() => setCopied(null), 1500); }); };
 
   const extractPdfText = async (file: File) => {
     const buffer = await file.arrayBuffer();
@@ -567,7 +577,16 @@ export default function App() {
       } catch (e: any) { if (e.name === "AbortError") { setStreaming(false); return; } throw e; }
       setStreaming(false);
       if (!fullText) updateConvMessages((prev: any[]) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
-    } catch (e: any) { if (e.name === "AbortError") return; updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "Connection error. Please try again." }]); setLoading(false); setStreaming(false); }
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
+      const errMsg = "I'm having trouble connecting right now. Please check your internet connection and try again.";
+      updateConvMessages((prev: any[]) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && !last.content) { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: errMsg }; return u; }
+        return [...prev, { role: "assistant", content: errMsg }];
+      });
+      setLoading(false); setStreaming(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
@@ -636,7 +655,7 @@ export default function App() {
       setVaultUploadProgress("done");
       await new Promise(r => setTimeout(r, 1200));
       await loadVaultDocs();
-    } catch (err: any) { alert(err?.message || "Upload failed"); }
+    } catch (err: any) { showToastMsg(err?.message || "Upload failed. Please try again.", true); }
     finally { setVaultUploading(false); setVaultUploadProgress(null); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
   };
 
@@ -2101,7 +2120,7 @@ export default function App() {
 
           {/* Toast */}
           <AnimatePresence>
-            {showToast && <motion.div className="fixed bottom-[100px] left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-2 rounded-full text-[13px] font-medium z-[200] pointer-events-none" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}>Copied!</motion.div>}
+            {showToast && <motion.div className={`fixed bottom-[100px] left-1/2 -translate-x-1/2 ${toastIsError ? "bg-red-600" : "bg-slate-800"} text-white px-5 py-2 rounded-full text-[13px] font-medium z-[200] pointer-events-none`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}>{toastMessage}</motion.div>}
           </AnimatePresence>
         </>
       )}
