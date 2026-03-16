@@ -326,10 +326,20 @@ export default function App() {
   }, [session?.token, session?.user?.id, checkSubscription]);
 
   // Handle Stripe success callback
+  const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
   useEffect(() => {
     if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
       window.history.replaceState(null, "", window.location.pathname);
-      setTimeout(() => checkSubscription(session.token, session.user.id), 1500);
+      // Immediately grant access so user isn't stuck on paywall
+      setSubscription({ status: "active", trialEnd: null, loading: false });
+      setShowSubscribeSuccess(true);
+      setTimeout(() => setShowSubscribeSuccess(false), 4000);
+      // Poll for webhook to update DB (may take a few seconds)
+      const poll = (attempt: number) => {
+        if (attempt > 5) return;
+        setTimeout(() => checkSubscription(session.token, session.user.id), attempt * 2000);
+      };
+      poll(1); poll(2); poll(3);
     }
   }, [session?.token, session?.user?.id, checkSubscription]);
 
@@ -1399,6 +1409,22 @@ export default function App() {
       ) : !showSplash && (
         <>
           {/* ==================== MAIN APP ==================== */}
+
+          {/* Subscription success toast */}
+          <AnimatePresence>
+            {showSubscribeSuccess && (
+              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-white rounded-2xl shadow-xl shadow-emerald-500/10 border border-emerald-100 px-6 py-4 flex items-center gap-3 max-w-sm">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center shrink-0">
+                  <Check className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Welcome to Meridian</p>
+                  <p className="text-xs text-slate-400">You have full access. We're glad you're here.</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
 
             {/* Trial banner */}
