@@ -768,7 +768,7 @@ export default function App() {
                 <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                   Start here
                 </Button>
-                <p className="text-[11px] text-slate-400 -mt-2">Free. No credit card needed.</p>
+                <p className="text-[11px] text-slate-400 -mt-2">Your data is private and never shared.</p>
               </motion.div>
 
               {/* Scroll hint */}
