@@ -796,7 +796,49 @@ export default function App() {
               </motion.div>
             </div>
 
-            {/* ===== SECTION 3: Your Story + Final CTA ===== */}
+            {/* ===== SECTION 3: What Meridian Does ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">One app for all of it</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { icon: Sparkles, title: "Talk through anything", desc: "AI that listens, understands, and helps you think clearly" },
+                    { icon: MessageSquare, title: "Draft calm messages", desc: "Respond to your co-parent without escalating" },
+                    { icon: FolderLock, title: "Keep documents safe", desc: "Your decree, agreements, and records — locked down" },
+                    { icon: CalendarDays, title: "Stay organized", desc: "Custody schedules, handoffs, and important dates" },
+                  ].map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center mb-3">
+                        <item.icon className="w-4.5 h-4.5 text-emerald-600" strokeWidth={1.5} />
+                      </div>
+                      <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* ===== SECTION 4: The Anti-Competitor ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <div className="space-y-6 text-center">
+                  {[
+                    "Your conversations never end up in court.",
+                    "No one sees your data. Not even us.",
+                    "Free. No catch. No trial that expires.",
+                  ].map((line, i) => (
+                    <motion.p key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                      className="text-lg sm:text-xl font-light text-slate-800">
+                      {line}
+                    </motion.p>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* ===== SECTION 5: Your Story + Final CTA ===== */}
             <div className="min-h-[100dvh] flex items-center justify-center px-6 pt-24 pb-12 relative z-10">
               <motion.div className="max-w-lg text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8">Why Meridian exists</p>
