@@ -184,14 +184,6 @@ export default function App() {
   const coachAbortRef = useRef<AbortController | null>(null);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
 
-  // Handle Stripe success callback
-  useEffect(() => {
-    if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
-      window.history.replaceState(null, "", window.location.pathname);
-      setTimeout(() => checkSubscription(session.token, session.user.id), 1500);
-    }
-  }, [session?.token, session?.user?.id, checkSubscription]);
-
   // Handle OAuth callback (Google sign-in redirect)
   useEffect(() => {
     const hash = window.location.hash;
@@ -252,8 +244,8 @@ export default function App() {
         }
       }
     }).catch(() => {
-      // Refresh token is invalid/expired — sign user out gracefully
-      setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true);
+      // Refresh token is invalid/expired — clear session, let app redirect to auth
+      setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations");
     });
   }, []);
 
@@ -331,6 +323,14 @@ export default function App() {
 
   useEffect(() => {
     if (session?.token && session?.user?.id) checkSubscription(session.token, session.user.id);
+  }, [session?.token, session?.user?.id, checkSubscription]);
+
+  // Handle Stripe success callback
+  useEffect(() => {
+    if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => checkSubscription(session.token, session.user.id), 1500);
+    }
   }, [session?.token, session?.user?.id, checkSubscription]);
 
   const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
