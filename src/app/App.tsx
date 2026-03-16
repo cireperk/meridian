@@ -305,6 +305,8 @@ export default function App() {
 
   // --- Subscription ---
   const checkSubscription = useCallback(async (token: string, userId: string) => {
+    // Don't downgrade if user just completed checkout
+    if (justSubscribedRef.current) return;
     try {
       const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
       if (Array.isArray(p) && p[0]?.created_at) {
@@ -312,11 +314,9 @@ export default function App() {
         const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
         setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
-        // Query returned unexpected shape — fail open but as trial so UI still shows banners
         setSubscription({ status: null, trialEnd: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), loading: false });
       }
     } catch {
-      // Fail open: if we can't verify subscription, grant access so paying users aren't locked out
       setSubscription({ status: "active", trialEnd: null, loading: false });
     }
   }, []);
@@ -327,21 +327,16 @@ export default function App() {
 
   // Handle Stripe success callback
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
+  const justSubscribedRef = useRef(false);
   useEffect(() => {
     if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
       window.history.replaceState(null, "", window.location.pathname);
-      // Immediately grant access so user isn't stuck on paywall
+      justSubscribedRef.current = true;
       setSubscription({ status: "active", trialEnd: null, loading: false });
       setShowSubscribeSuccess(true);
       setTimeout(() => setShowSubscribeSuccess(false), 4000);
-      // Poll for webhook to update DB (may take a few seconds)
-      const poll = (attempt: number) => {
-        if (attempt > 5) return;
-        setTimeout(() => checkSubscription(session.token, session.user.id), attempt * 2000);
-      };
-      poll(1); poll(2); poll(3);
     }
-  }, [session?.token, session?.user?.id, checkSubscription]);
+  }, [session?.token, session?.user?.id]);
 
   const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
   const isSubscribed = subscription.status === "active" || subscription.status === "trialing";
