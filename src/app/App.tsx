@@ -312,8 +312,8 @@ export default function App() {
         const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
         setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
-        // Query failed or columns missing — fail open
-        setSubscription({ status: "active", trialEnd: null, loading: false });
+        // Query returned unexpected shape — fail open but as trial so UI still shows banners
+        setSubscription({ status: null, trialEnd: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), loading: false });
       }
     } catch {
       // Fail open: if we can't verify subscription, grant access so paying users aren't locked out
