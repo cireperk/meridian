@@ -305,11 +305,16 @@ export default function App() {
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
+  const justSubscribedRef = useRef(false);
 
   const checkSubscription = useCallback(async (token: string, userId: string) => {
+    // Once we've detected a successful checkout, never downgrade for this session
+    if (justSubscribedRef.current) return;
+
     // If returning from Stripe checkout, skip DB check entirely — grant access immediately
     if (window.location.hash.includes("subscription=success")) {
       window.history.replaceState(null, "", window.location.pathname);
+      justSubscribedRef.current = true;
       setSubscription({ status: "active", trialEnd: null, loading: false });
       setShowSubscribeSuccess(true);
       setTimeout(() => setShowSubscribeSuccess(false), 4000);
