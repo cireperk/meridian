@@ -792,25 +792,6 @@ export default function App() {
                   <p>You don't need another article that says "prioritize self-care" and "control what you can control." You need someone who gets it and can actually help you figure out what to do next.</p>
                 </div>
 
-                {/* Real questions */}
-                <div className="mt-10 space-y-3">
-                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">The stuff you're actually wondering at 1am</p>
-                  {[
-                    "They want to change the custody schedule. Can they just do that?",
-                    "How do I respond to this without starting a fight?",
-                    "I found the decree but I don't understand half of it.",
-                    "Am I handling this okay?",
-                  ].map((q, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-xl px-4 py-3 text-[14px] text-slate-700 italic">
-                      "{q}"
-                    </motion.div>
-                  ))}
-                  <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.6 }}
-                    className="text-sm text-slate-500 pt-2">
-                    Meridian gives you real answers in plain language — not legal jargon, not judgment, not a $300 invoice.
-                  </motion.p>
-                </div>
               </motion.div>
             </div>
 
