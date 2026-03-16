@@ -838,7 +838,7 @@ export default function App() {
                     </div>
                   </div>
                   <p className="relative z-10 text-white/50 text-[13px] italic leading-relaxed mt-4 border-t border-white/5 pt-4">
-                    "There should be something better than being alone with a Google search at your worst moment."
+                    "Divorce is hard. When you thought this was the end, you found co-parenting is even harder, and I hope you use this app to navigate those waters."
                   </p>
                 </button>
 
