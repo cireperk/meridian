@@ -693,15 +693,15 @@ export default function App() {
 
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto overflow-x-hidden scroll-smooth">
             {/* Soft ambient background */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
               <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
             </div>
 
-            {/* Top nav */}
-            <div className="relative z-20 flex items-center justify-between px-6 py-4">
+            {/* Sticky top nav */}
+            <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md">
               <div className="flex items-center gap-2">
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
@@ -712,8 +712,8 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10 -mt-14">
-              {/* Logo */}
+            {/* ===== SECTION 1: Hero ===== */}
+            <div className="min-h-[calc(100dvh-60px)] flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
                 <div className="flex items-center gap-4">
                   <Logo size="lg" />
@@ -721,7 +721,6 @@ export default function App() {
                 </div>
               </motion.div>
 
-              {/* Headline */}
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
                 Hard chapter.<br />
                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">Not the last one.</span>
@@ -731,48 +730,98 @@ export default function App() {
                 Meridian walks with you through divorce, co-parenting, and everything you're rebuilding.
               </motion.p>
 
-              {/* Feature cards — always horizontal */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="flex flex-row gap-3 w-full max-w-md mb-8">
-                {[
-                  { icon: MessageSquare, title: "Guidance" },
-                  { icon: BookOpen, title: "Resources" },
-                  { icon: FileText, title: "Decree Help" },
-                ].map((card, idx) => (
-                  <motion.div key={card.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + idx * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex-1 bg-white/70 backdrop-blur-sm border border-slate-200/40 rounded-2xl p-4 text-center">
-                    <card.icon className="w-5 h-5 text-emerald-500 mx-auto mb-2" strokeWidth={1.5} />
-                    <h3 className="text-xs font-medium text-slate-800">{card.title}</h3>
-                  </motion.div>
-                ))}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
+                <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
+                  Start here
+                </Button>
+                <p className="text-[11px] text-slate-400 -mt-2">Free. No credit card needed.</p>
               </motion.div>
 
-              {/* CTAs */}
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
-                <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
-                  Get Started
-                </Button>
-                <p className="text-[11px] text-slate-400 -mt-2">Free to start. No credit card needed.</p>
-                <button onClick={openVideo} className="flex flex-col items-center gap-1.5 text-slate-400 hover:text-slate-600 transition-all duration-300 group">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
-                      <Play className="w-3 h-3 ml-0.5 group-hover:text-emerald-600 transition-colors" />
-                    </div>
-                    <span className="text-sm">Hear why we built Meridian</span>
-                  </div>
-                  <span className="text-[11px] text-slate-300">A 1-minute message from our founder</span>
-                </button>
+              {/* Scroll hint */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 0.8 }} className="absolute bottom-8">
+                <motion.div animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="text-slate-300">
+                  <ChevronLeft className="w-5 h-5 rotate-[-90deg]" />
+                </motion.div>
               </motion.div>
             </div>
 
-            {/* Trust footer */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.6 }} className="pb-6 text-center relative z-10 shrink-0">
-              <div className="inline-flex items-center gap-2 text-xs text-slate-400">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                <span>Private & confidential</span>
-                <span className="text-slate-300">·</span>
-                <span>Not legal advice</span>
-              </div>
-            </motion.div>
+            {/* ===== SECTION 2: The Mirror ===== */}
+            <div className="min-h-[100dvh] flex items-center justify-center px-6 relative z-10">
+              <motion.div className="max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-2 leading-snug">
+                  We know where you are.
+                </h2>
+                <p className="text-lg sm:text-xl font-light text-emerald-600 mb-8">We've been there.</p>
+
+                <div className="space-y-5 text-[15px] sm:text-base text-slate-600 leading-relaxed">
+                  <p>Googling custody laws at midnight. Re-reading a text from your ex for the fifth time trying to figure out how to respond without making it worse. Holding it together for the kids and quietly breaking down in the car.</p>
+                  <p>You don't need another article that says "prioritize self-care" and "control what you can control." You need someone who gets it and can actually help you figure out what to do next.</p>
+                </div>
+
+                {/* Real questions */}
+                <div className="mt-10 space-y-3">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">The stuff you're actually wondering at 1am</p>
+                  {[
+                    "They want to change the custody schedule. Can they just do that?",
+                    "How do I respond to this without starting a fight?",
+                    "I found the decree but I don't understand half of it.",
+                    "Am I handling this okay?",
+                  ].map((q, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-xl px-4 py-3 text-[14px] text-slate-700 italic">
+                      "{q}"
+                    </motion.div>
+                  ))}
+                  <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.6 }}
+                    className="text-sm text-slate-500 pt-2">
+                    Meridian gives you real answers in plain language — not legal jargon, not judgment, not a $300 invoice.
+                  </motion.p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* ===== SECTION 3: Your Story + Final CTA ===== */}
+            <div className="min-h-[100dvh] flex items-center justify-center px-6 relative z-10">
+              <motion.div className="max-w-lg text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-6">Why this exists</p>
+
+                <div className="text-[15px] sm:text-base text-slate-600 leading-relaxed space-y-4 text-left mb-12">
+                  <p>I went through a divorce. It sucks. It's not easy, and no one wins.</p>
+                  <p>Many nights I didn't know what to do, who to call, or if I was going to be okay. I couldn't afford to ask a lawyer every question. I didn't want pity. I just wanted someone to help me think clearly when I couldn't.</p>
+                  <p className="text-slate-800 font-medium">That's why I built Meridian.</p>
+                </div>
+
+                {/* Video link */}
+                <button onClick={openVideo} className="flex items-center gap-3 text-slate-400 hover:text-slate-600 transition-all duration-300 group mx-auto mb-10">
+                  <div className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center group-hover:border-emerald-300 group-hover:bg-emerald-50 transition-all duration-300">
+                    <Play className="w-4 h-4 ml-0.5 group-hover:text-emerald-600 transition-colors" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm block">Hear the full story</span>
+                    <span className="text-[11px] text-slate-300 block">1-minute message from our founder</span>
+                  </div>
+                </button>
+
+                {/* Final CTA */}
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-lg sm:text-xl font-light text-slate-800 mb-2">Whenever you're ready.</p>
+                  <Button size="lg" onClick={enterApp} className="h-13 px-10 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
+                    Take the first step
+                  </Button>
+                  <p className="text-[11px] text-slate-400">No credit card. No commitment.</p>
+                </div>
+
+                {/* Trust footer */}
+                <div className="mt-16 pb-8">
+                  <div className="inline-flex items-center gap-2 text-xs text-slate-400">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    <span>Private & confidential</span>
+                    <span className="text-slate-300">·</span>
+                    <span>Not legal advice</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         )}
 
