@@ -307,6 +307,16 @@ export default function App() {
   const prefersReducedMotion = useReducedMotion();
 
   const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); };
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const handleWaitlist = async () => {
+    if (!waitlistEmail.trim() || waitlistStatus === "sending") return;
+    setWaitlistStatus("sending");
+    try {
+      await sbFetch("/rest/v1/waitlist", { method: "POST", body: { email: waitlistEmail.trim().toLowerCase() } });
+      setWaitlistStatus("sent");
+    } catch { setWaitlistStatus("sent"); /* don't reveal failures */ }
+  };
 
   // Pull-to-refresh for splash landing page
   const splashRef = useRef<HTMLDivElement>(null);
@@ -894,6 +904,26 @@ export default function App() {
                   </Button>
                   <p className="text-[11px] text-slate-400">No credit card. No commitment.</p>
                 </div>
+
+                {/* Email capture */}
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6 }} className="mt-12 w-full max-w-sm mx-auto">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-3">Not ready yet? Stay in the loop.</p>
+                  {waitlistStatus === "sent" ? (
+                    <div className="flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 font-medium">
+                      <Check className="w-4 h-4" />
+                      <span>You're on the list.</span>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input type="email" placeholder="Your email" value={waitlistEmail} onChange={(e) => setWaitlistEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleWaitlist()}
+                        className="flex-1 px-4 py-2.5 bg-white border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+                      <Button onClick={handleWaitlist} disabled={!waitlistEmail.trim() || waitlistStatus === "sending"}
+                        className="px-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-sm disabled:opacity-40">
+                        {waitlistStatus === "sending" ? "..." : "Join"}
+                      </Button>
+                    </div>
+                  )}
+                </motion.div>
 
                 {/* Social links */}
                 <div className="mt-12 flex items-center justify-center gap-4">

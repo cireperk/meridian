@@ -27,3 +27,14 @@ CREATE POLICY "Users can update own profile"
 
 -- 4. Grant access
 GRANT ALL ON profiles TO authenticated;
+
+-- 5. Waitlist table (email capture from splash page)
+CREATE TABLE IF NOT EXISTS waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can join waitlist" ON waitlist FOR INSERT WITH CHECK (true);
+GRANT INSERT ON waitlist TO anon;
+GRANT INSERT ON waitlist TO authenticated;
