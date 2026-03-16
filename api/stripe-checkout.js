@@ -1,9 +1,8 @@
-import Stripe from "stripe";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
+  const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID;
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
   const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -28,34 +27,41 @@ export default async function handler(req, res) {
 
     if (!customerId) {
       // Create Stripe customer
-      const customer = await stripe.customers.create({
-        email: user.email || profiles?.[0]?.email || "",
-        metadata: { supabase_user_id: user.id },
+      const custRes = await fetch("https://api.stripe.com/v1/customers", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_SECRET}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ email: user.email || profiles?.[0]?.email || "", "metadata[supabase_user_id]": user.id }),
       });
+      const customer = await custRes.json();
+      if (customer.error) throw new Error(customer.error.message);
       customerId = customer.id;
 
       // Save customer ID to profile
       await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
         method: "PATCH",
-        headers: {
-          apikey: SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({ stripe_customer_id: customerId }),
       });
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ["card"],
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
-      mode: "subscription",
-      success_url: `${req.headers.origin || "https://mymeridianapp.com"}/#subscription=success`,
-      cancel_url: `${req.headers.origin || "https://mymeridianapp.com"}/#subscription=cancelled`,
-      metadata: { supabase_user_id: user.id },
+    const origin = req.headers.origin || "https://mymeridianapp.com";
+    const sessionRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${STRIPE_SECRET}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        customer: customerId,
+        "payment_method_types[0]": "card",
+        "line_items[0][price]": STRIPE_PRICE_ID,
+        "line_items[0][quantity]": "1",
+        mode: "subscription",
+        success_url: `${origin}/#subscription=success`,
+        cancel_url: `${origin}/#subscription=cancelled`,
+        "metadata[supabase_user_id]": user.id,
+      }),
     });
+    const session = await sessionRes.json();
+    if (session.error) throw new Error(session.error.message);
 
     res.json({ url: session.url });
   } catch (err) {

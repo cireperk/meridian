@@ -1,9 +1,7 @@
-import Stripe from "stripe";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
   const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -25,10 +23,16 @@ export default async function handler(req, res) {
     const customerId = profiles?.[0]?.stripe_customer_id;
     if (!customerId) return res.status(400).json({ error: "No subscription found" });
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: req.headers.origin || "https://mymeridianapp.com",
+    const portalRes = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${STRIPE_SECRET}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        customer: customerId,
+        return_url: req.headers.origin || "https://mymeridianapp.com",
+      }),
     });
+    const session = await portalRes.json();
+    if (session.error) throw new Error(session.error.message);
 
     res.json({ url: session.url });
   } catch (err) {
