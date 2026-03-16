@@ -167,6 +167,7 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
   const [authError, setAuthError] = useState("");
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
@@ -843,13 +844,14 @@ export default function App() {
                 </div>
 
                 {/* Trust footer */}
-                <div className="mt-6 pb-8">
+                <div className="mt-6 pb-8 flex flex-col items-center gap-2">
                   <div className="inline-flex items-center gap-2 text-xs text-slate-400">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                     <span>Private & confidential</span>
                     <span className="text-slate-300">·</span>
                     <span>Not legal advice</span>
                   </div>
+                  <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</button>
                 </div>
               </motion.div>
             </div>
@@ -891,6 +893,75 @@ export default function App() {
                   {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </button>
                 <span className="text-white/40 text-xs font-mono">{videoRef.current ? `${Math.floor((videoRef.current.currentTime || 0) / 60)}:${String(Math.floor((videoRef.current.currentTime || 0) % 60)).padStart(2, "0")}` : "0:00"} / {videoRef.current?.duration ? `${Math.floor(videoRef.current.duration / 60)}:${String(Math.floor(videoRef.current.duration % 60)).padStart(2, "0")}` : "0:00"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== PRIVACY POLICY ==================== */}
+      {showPrivacy && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-2xl font-light tracking-tight text-slate-800">Privacy Policy</h1>
+              <button onClick={() => setShowPrivacy(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-6">Effective March 16, 2026</p>
+            <div className="space-y-6 text-sm text-slate-600 leading-relaxed">
+              <p>Meridian is built for people navigating one of the hardest chapters of their lives. We believe your privacy isn't just a feature — it's a right. This policy explains exactly what we collect, why, and what we'll never do.</p>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">What we collect</h2>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li><strong>Account info:</strong> Your name and email address, used solely for authentication and to personalize your experience.</li>
+                  <li><strong>Conversations:</strong> Messages you exchange with Meridian's AI assistant are stored securely so you can access your history across sessions.</li>
+                  <li><strong>Documents:</strong> Files you upload to your Vault (decrees, agreements, etc.) are stored in encrypted cloud storage tied to your account.</li>
+                  <li><strong>Calendar events:</strong> Dates, times, and notes you add to your co-parenting calendar.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">What we never do</h2>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>We <strong>never sell, share, or monetize</strong> your personal data. Period.</li>
+                  <li>We <strong>never use your conversations or documents to train AI models.</strong> Your words stay yours.</li>
+                  <li>We <strong>never show ads</strong> or share data with advertisers.</li>
+                  <li>We <strong>never allow your co-parent, attorneys, or anyone else</strong> to access your account or data.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">How we protect your data</h2>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>All data is transmitted over HTTPS and encrypted at rest.</li>
+                  <li>Authentication is handled by Supabase with industry-standard security practices including bcrypt password hashing and secure token management.</li>
+                  <li>Document storage uses isolated, access-controlled cloud buckets — only you can retrieve your files.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">AI conversations</h2>
+                <p>When you chat with Meridian, your messages are sent to Anthropic's Claude API to generate responses. Anthropic does not use API inputs or outputs to train their models. Your conversations are processed in real time and are not retained by Anthropic beyond what's needed to deliver the response.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Google sign-in</h2>
+                <p>If you sign in with Google, we receive only your name and email address. We do not access your Google contacts, calendar, drive, or any other Google services.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Deleting your data</h2>
+                <p>You can delete individual conversations, documents, and calendar events at any time. To delete your entire account and all associated data, contact us at <a href="mailto:privacy@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridian.app</a> and we'll remove everything within 48 hours.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Changes to this policy</h2>
+                <p>If we make meaningful changes, we'll notify you in the app. We'll never quietly weaken your privacy protections.</p>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:privacy@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridian.app</a></p>
               </div>
             </div>
           </div>
