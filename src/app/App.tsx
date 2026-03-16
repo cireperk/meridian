@@ -307,7 +307,7 @@ export default function App() {
   const [splashFading, setSplashFading] = useState(false);
   const fadeToAuth = (view: "signin" | "signup") => {
     setSplashFading(true); setAuthView(view); setAuthError(""); setAuthEmail(""); setAuthPassword("");
-    setTimeout(() => { setShowSplash(false); setSplashFading(false); }, 400);
+    setTimeout(() => { setShowSplash(false); setSplashFading(false); }, 200);
   };
   const enterApp = () => fadeToAuth("signup");
   const [videoMuted, setVideoMuted] = useState(true);
@@ -698,7 +698,7 @@ export default function App() {
 
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
-          <div className={cn("fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden transition-all duration-400 ease-out", splashFading && "opacity-0 scale-[0.98]")}>
+          <div className={cn("fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden transition-all duration-200 ease-out", splashFading && "opacity-0")}>
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
