@@ -304,7 +304,12 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); };
+  const [splashFading, setSplashFading] = useState(false);
+  const fadeToAuth = (view: "signin" | "signup") => {
+    setSplashFading(true); setAuthView(view); setAuthError(""); setAuthEmail(""); setAuthPassword("");
+    setTimeout(() => { setShowSplash(false); setSplashFading(false); }, 400);
+  };
+  const enterApp = () => fadeToAuth("signup");
   const [videoMuted, setVideoMuted] = useState(true);
   const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); setVideoMuted(true); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
@@ -692,9 +697,8 @@ export default function App() {
       <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
 
       {/* ==================== SPLASH ==================== */}
-        <AnimatePresence>
         {showSplash && (
-          <motion.div key="splash" initial={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }} className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden">
+          <div className={cn("fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden transition-all duration-400 ease-out", splashFading && "opacity-0 scale-[0.98]")}>
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
@@ -707,7 +711,7 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
+              <button onClick={() => fadeToAuth("signin")}
                 className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
                 Sign In
               </button>
@@ -774,9 +778,8 @@ export default function App() {
                 <span>Not legal advice</span>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
-        </AnimatePresence>
 
       {/* ==================== VIDEO OVERLAY ==================== */}
       {showVideo && (
