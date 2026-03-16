@@ -28,7 +28,13 @@ CREATE POLICY "Users can update own profile"
 -- 4. Grant access
 GRANT ALL ON profiles TO authenticated;
 
--- 5. Waitlist table (email capture from splash page)
+-- 5. Subscription columns on profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_id TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_status TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
+
+-- 6. Waitlist table (email capture from splash page)
 CREATE TABLE IF NOT EXISTS waitlist (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL UNIQUE,

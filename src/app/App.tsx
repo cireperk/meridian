@@ -174,6 +174,8 @@ export default function App() {
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
+  const TRIAL_DAYS = 3;
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
   const [coachInput, setCoachInput] = useState("");
   const [coachResult, setCoachResult] = useState("");
@@ -181,6 +183,14 @@ export default function App() {
   const [coachCopied, setCoachCopied] = useState(false);
   const coachAbortRef = useRef<AbortController | null>(null);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
+
+  // Handle Stripe success callback
+  useEffect(() => {
+    if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
+      window.history.replaceState(null, "", window.location.pathname);
+      setTimeout(() => checkSubscription(session.token, session.user.id), 1500);
+    }
+  }, [session?.token, session?.user?.id, checkSubscription]);
 
   // Handle OAuth callback (Google sign-in redirect)
   useEffect(() => {
@@ -296,7 +306,48 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
+
+  // --- Subscription ---
+  const checkSubscription = useCallback(async (token: string, userId: string) => {
+    try {
+      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
+      if (p?.[0]) {
+        const createdAt = new Date(p[0].created_at);
+        const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+        setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
+      } else {
+        setSubscription(s => ({ ...s, loading: false }));
+      }
+    } catch { setSubscription(s => ({ ...s, loading: false })); }
+  }, []);
+
+  useEffect(() => {
+    if (session?.token && session?.user?.id) checkSubscription(session.token, session.user.id);
+  }, [session?.token, session?.user?.id, checkSubscription]);
+
+  const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
+  const isSubscribed = subscription.status === "active" || subscription.status === "trialing";
+  const hasAccess = isTrialActive || isSubscribed;
+  const trialDaysLeft = subscription.trialEnd ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
+
+  const handleSubscribe = async () => {
+    if (!session?.token) return;
+    try {
+      const res = await fetch("/api/stripe-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {}
+  };
+
+  const handleManageSubscription = async () => {
+    if (!session?.token) return;
+    try {
+      const res = await fetch("/api/stripe-portal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {}
+  };
 
   // --- Splash ---
   const [showSplash, setShowSplash] = useState(() => !localStorage.getItem("m_session"));
@@ -1297,10 +1348,47 @@ export default function App() {
             </AnimatePresence>
           </motion.div>
         </div>
+      ) : !showSplash && !subscription.loading && !hasAccess ? (
+        <>
+          {/* ==================== PAYWALL ==================== */}
+          <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white z-40">
+            <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-sm w-full text-center">
+              <Logo size="lg" className="mx-auto mb-6" />
+              <h2 className="text-2xl font-light tracking-tight text-slate-800 mb-2">Your free trial has ended</h2>
+              <p className="text-sm text-slate-500 mb-8 leading-relaxed">Continue having Meridian walk with you for just $4.99/month. Cancel anytime.</p>
+              <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm mb-6">
+                <div className="flex items-baseline justify-center gap-1 mb-1">
+                  <span className="text-3xl font-light text-slate-800">$4.99</span>
+                  <span className="text-sm text-slate-400">/month</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-5">Unlimited access to everything</p>
+                <ul className="text-sm text-slate-600 space-y-2.5 text-left mb-6">
+                  {["Unlimited AI conversations", "Communication coach", "Document vault", "Calendar & scheduling"].map((f, i) => (
+                    <li key={i} className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" />{f}</li>
+                  ))}
+                </ul>
+                <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
+                  Subscribe
+                </Button>
+              </div>
+              <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Sign out</button>
+            </motion.div>
+          </div>
+        </>
       ) : !showSplash && (
         <>
           {/* ==================== MAIN APP ==================== */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
+
+            {/* Trial banner */}
+            {isTrialActive && !isSubscribed && trialDaysLeft <= TRIAL_DAYS && (
+              <div className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs text-center font-medium shrink-0">
+                {trialDaysLeft === 0 ? "Trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
+                <span className="mx-1.5">·</span>
+                <button onClick={handleSubscribe} className="underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity">Subscribe now</button>
+              </div>
+            )}
 
             {/* Header */}
             <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20">
@@ -1759,8 +1847,15 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Feedback + Sign out */}
+                    {/* Subscription + Feedback + Sign out */}
                     <div className="flex flex-col gap-2">
+                      {isSubscribed ? (
+                        <button onClick={handleManageSubscription} className="w-full py-2.5 text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-medium">Manage Subscription</button>
+                      ) : (
+                        <button onClick={handleSubscribe} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
+                          {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
+                        </button>
+                      )}
                       <button onClick={() => setShowFeedback(true)} className="w-full py-2.5 text-xs text-slate-400 hover:text-emerald-600 transition-colors">Share feedback</button>
                       <button onClick={() => setShowSignOutConfirm(true)} className="w-full py-3 border border-slate-200 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2">
                         <LogOut size={15} /> Sign Out
