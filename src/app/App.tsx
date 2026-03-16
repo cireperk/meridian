@@ -941,7 +941,7 @@ export default function App() {
                       { id: "after", label: "Recently divorced", desc: "Adjusting to life after separation" },
                       { id: "coparenting", label: "Focused on co-parenting", desc: "Building a healthy co-parenting relationship" },
                     ].map((option) => (
-                      <button key={option.id} onClick={() => { setSelectedPhase(option.id); localStorage.setItem("m_phase", option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
+                      <button key={option.id} onClick={() => { localStorage.setItem("m_phase", option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
                         <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
                         <div><div className="text-sm font-medium text-slate-800 mb-0.5">{option.label}</div><div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div></div>
                       </button>
