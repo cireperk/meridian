@@ -946,8 +946,8 @@ export default function App() {
                       </button>
                     </div>
                     {authView === "signin" && (
-                      <div className="flex justify-end px-1 -mt-1">
-                        <button onClick={() => { setAuthView("forgot"); setAuthError(""); setResetSent(false); }} className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors">Forgot password?</button>
+                      <div className="flex justify-center">
+                        <button onClick={() => { setAuthView("forgot"); setAuthError(""); setResetSent(false); }} className="text-[13px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors">Forgot password?</button>
                       </div>
                     )}
                     {authView === "signup" && authPassword.length > 0 && (
