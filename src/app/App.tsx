@@ -780,7 +780,7 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 2: The Mirror ===== */}
-            <div className="min-h-[100dvh] flex items-center justify-center px-6 relative z-10">
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <motion.div className="max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-2 leading-snug">
                   We know where you are.
