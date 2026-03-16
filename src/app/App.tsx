@@ -168,6 +168,7 @@ export default function App() {
   const [authName, setAuthName] = useState("");
   const [authError, setAuthError] = useState("");
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
@@ -838,6 +839,25 @@ export default function App() {
               </motion.div>
             </div>
 
+            {/* ===== SECTION 4.5: Testimonials ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <div className="max-w-lg w-full space-y-6">
+                <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-2">People like you</motion.p>
+                {[
+                  { quote: "I was drowning in legal documents and couldn\u2019t afford to call my lawyer every time I had a question. Meridian helped me understand my decree in plain English.", name: "Sarah", situation: "2 years post-divorce" },
+                  { quote: "The message coach saved me. I used to fire off angry texts at 2am. Now I run them through Meridian first and actually get better responses from my ex.", name: "Marcus", situation: "co-parenting two kids" },
+                  { quote: "I just needed someone to talk to who understood. Not a therapist appointment I had to wait 3 weeks for. Meridian was there at midnight when I needed it most.", name: "Jamie", situation: "going through separation" },
+                ].map((t, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+                    <p className="text-sm text-slate-600 italic">&ldquo;{t.quote}&rdquo;</p>
+                    <p className="text-xs text-slate-400 font-medium mt-3">&mdash; {t.name}, {t.situation}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
             {/* ===== SECTION 5: Your Story + Final CTA ===== */}
             <div className="min-h-[100dvh] flex items-center justify-center px-6 pt-24 pb-12 relative z-10">
               <motion.div className="max-w-lg text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
@@ -893,7 +913,11 @@ export default function App() {
                     <span className="text-slate-300">·</span>
                     <span>Not legal advice</span>
                   </div>
-                  <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</button>
+                    <span className="text-[11px] text-slate-600">·</span>
+                    <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Terms of Service</button>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -1004,6 +1028,70 @@ export default function App() {
 
               <div className="pt-4 border-t border-slate-100">
                 <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:privacy@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridian.app</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== TERMS OF SERVICE ==================== */}
+      {showTerms && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-2xl font-light tracking-tight text-slate-800">Terms of Service</h1>
+              <button onClick={() => setShowTerms(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-slate-400 mb-6">Effective March 16, 2026</p>
+            <div className="space-y-6 text-sm text-slate-600 leading-relaxed">
+              <p>Welcome to Meridian. By using our app, you agree to these terms. Please read them carefully — they're written in plain language because we believe you deserve clarity, especially right now.</p>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">What Meridian is</h2>
+                <p>Meridian is an AI-powered support tool designed to help people navigating divorce and co-parenting. It provides emotional support, informational resources, and organizational tools to help you through this chapter of your life.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">What Meridian is not</h2>
+                <p>Meridian is <strong>not a law firm, not a licensed attorney, and not a substitute for legal counsel.</strong> AI responses are provided for informational and emotional support purposes only. Nothing in this app constitutes legal advice. You are solely responsible for your own legal decisions, and we strongly encourage you to consult a qualified attorney for any legal matters.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Eligibility</h2>
+                <p>You must be at least 18 years old to use Meridian. By creating an account, you confirm that you meet this requirement.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Subscription & billing</h2>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>Meridian offers a <strong>3-day free trial</strong> for new users.</li>
+                  <li>After the trial, the service costs <strong>$4.99/month</strong>, billed monthly.</li>
+                  <li>You can cancel anytime. Cancellation takes effect at the end of your current billing period.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Your content</h2>
+                <p>Any content you upload to Meridian — documents, messages, calendar entries, notes — <strong>remains your property.</strong> We do not claim ownership of your content. We store it securely solely to provide the service to you.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Acceptable use</h2>
+                <p>We built Meridian to help people. We reserve the right to suspend or terminate accounts that are used to harass others, upload harmful content, attempt to compromise the service, or otherwise abuse the platform. We'll always try to give notice before taking action, except in cases where safety is at risk.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Limitation of liability</h2>
+                <p>Meridian is provided "as is" without warranties of any kind. To the maximum extent permitted by law, Meridian and its creators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of data, profits, or goodwill, arising from your use of the service. Our total liability to you for any claim shall not exceed the amount you paid us in the 12 months preceding the claim.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Changes to these terms</h2>
+                <p>We may update these terms from time to time. When we do, we'll notify you in the app. Continued use of Meridian after changes take effect means you accept the updated terms.</p>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:terms@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">terms@mymeridian.app</a></p>
               </div>
             </div>
           </div>
