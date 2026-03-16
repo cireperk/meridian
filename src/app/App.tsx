@@ -701,7 +701,7 @@ export default function App() {
             </div>
 
             {/* Top nav */}
-            <div className="relative z-10 flex items-center justify-between px-6 py-4">
+            <div className="relative z-20 flex items-center justify-between px-6 py-4">
               <div className="flex items-center gap-2">
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
