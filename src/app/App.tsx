@@ -947,6 +947,7 @@ export default function App() {
                       </button>
                     ))}
                   </div>
+                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-1">Skip for now</button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
