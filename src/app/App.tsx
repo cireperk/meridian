@@ -1454,8 +1454,6 @@ export default function App() {
                                   )}
                                   <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                     <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === doc.category)?.label || doc.category}</span>
-                                    <span className="text-[11px] text-slate-300">{formatFileSize(doc.file_size)}</span>
-                                    <span className="text-[11px] text-slate-300">·</span>
                                     <span className="text-[11px] text-slate-300">{new Date(doc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                                   </div>
                                 </div>
