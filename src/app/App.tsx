@@ -772,9 +772,8 @@ export default function App() {
               </motion.div>
 
               {/* Scroll hint */}
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 0.8 }} className="absolute bottom-8 flex flex-col items-center gap-1">
-                <span className="text-xs text-slate-400 font-medium tracking-wide">Scroll</span>
-                <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="text-slate-400">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 0.8 }} className="absolute bottom-8">
+                <motion.div animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="text-slate-500">
                   <ChevronLeft className="w-6 h-6 rotate-[-90deg]" />
                 </motion.div>
               </motion.div>
