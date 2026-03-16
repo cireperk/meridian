@@ -304,9 +304,17 @@ export default function App() {
   const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
+  const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
+
   const checkSubscription = useCallback(async (token: string, userId: string) => {
-    // Don't downgrade if user just completed checkout
-    if (justSubscribedRef.current) return;
+    // If returning from Stripe checkout, skip DB check entirely — grant access immediately
+    if (window.location.hash.includes("subscription=success")) {
+      window.history.replaceState(null, "", window.location.pathname);
+      setSubscription({ status: "active", trialEnd: null, loading: false });
+      setShowSubscribeSuccess(true);
+      setTimeout(() => setShowSubscribeSuccess(false), 4000);
+      return;
+    }
     try {
       const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
       if (Array.isArray(p) && p[0]?.created_at) {
@@ -324,19 +332,6 @@ export default function App() {
   useEffect(() => {
     if (session?.token && session?.user?.id) checkSubscription(session.token, session.user.id);
   }, [session?.token, session?.user?.id, checkSubscription]);
-
-  // Handle Stripe success callback
-  const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
-  const justSubscribedRef = useRef(false);
-  useEffect(() => {
-    if (window.location.hash.includes("subscription=success") && session?.token && session?.user?.id) {
-      window.history.replaceState(null, "", window.location.pathname);
-      justSubscribedRef.current = true;
-      setSubscription({ status: "active", trialEnd: null, loading: false });
-      setShowSubscribeSuccess(true);
-      setTimeout(() => setShowSubscribeSuccess(false), 4000);
-    }
-  }, [session?.token, session?.user?.id]);
 
   const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
   const isSubscribed = subscription.status === "active" || subscription.status === "trialing";
