@@ -304,12 +304,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const [splashFading, setSplashFading] = useState(false);
-  const fadeToAuth = (view: "signin" | "signup") => {
-    setSplashFading(true); setAuthView(view); setAuthError(""); setAuthEmail(""); setAuthPassword("");
-    setTimeout(() => { setShowSplash(false); setSplashFading(false); }, 200);
-  };
-  const enterApp = () => fadeToAuth("signup");
+  const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); };
   const [videoMuted, setVideoMuted] = useState(true);
   const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); setVideoMuted(true); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
@@ -698,7 +693,7 @@ export default function App() {
 
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
-          <div className={cn("fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden transition-all duration-200 ease-out", splashFading && "opacity-0")}>
+          <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden">
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
@@ -711,7 +706,7 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <button onClick={() => fadeToAuth("signin")}
+              <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
                 className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
                 Sign In
               </button>
