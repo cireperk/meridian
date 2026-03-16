@@ -693,9 +693,9 @@ export default function App() {
 
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
-          <div className="fixed inset-0 z-50 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto overflow-x-hidden scroll-smooth">
+          <div className="relative min-h-dvh bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-x-hidden scroll-smooth">
             {/* Soft ambient background */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
               <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
             </div>
