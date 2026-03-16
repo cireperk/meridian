@@ -717,14 +717,17 @@ export default function App() {
       {/* ==================== SPLASH ==================== */}
         {showSplash && (
           <div ref={splashRef} onTouchStart={onPullTouchStart} onTouchMove={onPullTouchMove} onTouchEnd={onPullTouchEnd}
-            className="fixed inset-0 z-50 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
-            {/* Pull-to-refresh indicator */}
+            className="fixed inset-0 z-50 bg-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
+            {/* Pull-to-refresh indicator — fixed overlay, doesn't push content */}
             {(pullY > 0 || pullRefreshing) && (
-              <div className="flex items-center justify-center transition-all duration-200" style={{ height: pullRefreshing ? 48 : pullY }}>
+              <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-center bg-white" style={{ height: pullRefreshing ? 48 : pullY }}>
                 <div className={cn("w-6 h-6 rounded-full border-2 border-emerald-400 border-t-transparent", pullRefreshing && "animate-spin")}
                   style={{ opacity: pullRefreshing ? 1 : Math.min(pullY / 50, 1), transform: `rotate(${pullY * 4}deg)` }} />
               </div>
             )}
+            {/* Content wrapper — slides down with pull */}
+            <div className="relative min-h-full bg-gradient-to-b from-white via-emerald-50/20 to-white transition-transform duration-200 ease-out"
+              style={{ transform: pullY > 0 || pullRefreshing ? `translateY(${pullRefreshing ? 48 : pullY}px)` : undefined }}>
             {/* Soft ambient background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ height: "100dvh", position: "fixed" }}>
               <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
@@ -853,6 +856,7 @@ export default function App() {
                 </div>
               </motion.div>
             </div>
+            </div>{/* end content wrapper */}
           </div>
         )}
 
