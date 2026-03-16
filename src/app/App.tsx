@@ -339,12 +339,13 @@ export default function App() {
   const trialDaysLeft = subscription.trialEnd ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
 
   const handleSubscribe = async () => {
-    if (!session?.token) return;
+    if (!session?.token) { console.error("Subscribe: no token"); return; }
     try {
       const res = await fetch("/api/stripe-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-    } catch {}
+      if (data.url) { window.location.href = data.url; }
+      else { console.error("Stripe checkout error:", data); alert("Something went wrong. Please try again."); }
+    } catch (err) { console.error("Subscribe error:", err); alert("Connection error. Please try again."); }
   };
 
   const handleManageSubscription = async () => {
