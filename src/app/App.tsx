@@ -815,9 +815,9 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 3: Your Story + Final CTA ===== */}
-            <div className="min-h-[100dvh] flex items-center justify-center px-6 relative z-10">
+            <div className="min-h-[100dvh] flex items-center justify-center px-6 pt-24 pb-12 relative z-10">
               <motion.div className="max-w-lg text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-6">Why this exists</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8">Why this exists</p>
 
                 <div className="text-[15px] sm:text-base text-slate-600 leading-relaxed space-y-4 text-left mb-12">
                   <p>I went through a divorce. It sucks. It's not easy, and no one wins.</p>
