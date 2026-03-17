@@ -34,10 +34,13 @@ export default async function handler(req, res) {
     const sub = subs.data?.[0];
 
     if (sub) {
+      const periodEnd = sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString()
+        : null;
       const data = {
         subscription_status: sub.status,
         subscription_id: sub.id,
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        current_period_end: periodEnd,
       };
 
       // Write to DB so future checks don't need to hit Stripe
@@ -47,7 +50,7 @@ export default async function handler(req, res) {
         body: JSON.stringify(data),
       });
 
-      return res.json({ status: sub.status, current_period_end: data.current_period_end });
+      return res.json({ status: sub.status, current_period_end: periodEnd });
     }
 
     res.json({ status: null });
