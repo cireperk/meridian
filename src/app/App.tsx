@@ -2085,7 +2085,11 @@ export default function App() {
                     {/* Subscription + Feedback + Sign out */}
                     <div className="flex flex-col gap-2">
                       {isSubscribed ? (
-                        <button onClick={handleManageSubscription} className="w-full py-2.5 text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-medium">Manage Subscription</button>
+                        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-4 text-center">
+                          <p className="text-sm text-emerald-800 font-medium mb-0.5">You're a Meridian member</p>
+                          <p className="text-xs text-emerald-600/70 mb-3">Thank you for being here. We're glad you're on this journey with us.</p>
+                          <button onClick={handleManageSubscription} className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-medium underline underline-offset-2 decoration-emerald-300">Manage subscription</button>
+                        </div>
                       ) : (
                         <button onClick={handleSubscribe} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
                           {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
