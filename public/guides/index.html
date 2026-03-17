@@ -29,10 +29,20 @@
     .guide-card .category { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #10b981; margin-bottom: 8px; }
     .guide-card h2 { font-size: 17px; font-weight: 500; color: #1e293b; margin-bottom: 6px; line-height: 1.4; }
     .guide-card p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.6; }
+    .section-divider { margin: 56px 0 40px; border: none; border-top: 1px solid #e2e8f0; }
+    .founder-header { margin-bottom: 24px; }
+    .founder-header h2 { font-size: 22px; font-weight: 300; color: #1e293b; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .founder-header p { font-size: 14px; color: #94a3b8; }
+    .notes { display: flex; flex-direction: column; gap: 16px; }
+    .note-card { display: block; text-decoration: none; padding: 24px; background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%); border: 1px solid #fde68a40; border-radius: 16px; transition: all 0.2s; }
+    .note-card:hover { border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08); transform: translateY(-1px); }
+    .note-card .date { font-size: 11px; font-weight: 500; color: #d97706; margin-bottom: 8px; }
+    .note-card h3 { font-size: 17px; font-weight: 500; color: #1e293b; margin-bottom: 6px; line-height: 1.4; }
+    .note-card p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.6; }
     .footer { text-align: center; padding: 40px 24px; border-top: 1px solid #f1f5f9; }
     .footer p { font-size: 13px; color: #94a3b8; }
     .footer a { color: #10b981; text-decoration: none; }
-    @media (max-width: 640px) { h1 { font-size: 26px; } .page { padding: 32px 20px 60px; } }
+    @media (max-width: 640px) { h1 { font-size: 26px; } .page { padding: 32px 20px 60px; } .founder-header h2 { font-size: 19px; } }
   </style>
 </head>
 <body>
@@ -74,6 +84,21 @@
         <div class="category">High-Conflict Co-Parenting</div>
         <h2>Co-Parenting with a Narcissist: Scripts That Actually Work</h2>
         <p>The gray rock method, real message scripts, and boundaries that protect your peace.</p>
+      </a>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="founder-header">
+      <h2>Notes from our founder</h2>
+      <p>Honest thoughts from Eric — who's been through it too.</p>
+    </div>
+
+    <div class="notes">
+      <a href="/guides/notes/why-i-built-meridian.html" class="note-card">
+        <div class="date">March 17, 2026</div>
+        <h3>Why I Built Meridian</h3>
+        <p>I went through a divorce and couldn't find a single tool that actually helped. So I built one.</p>
       </a>
     </div>
   </div>
