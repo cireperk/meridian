@@ -630,7 +630,7 @@ export default function App() {
         try {
           const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
           await dbStorageUpload("documents", storagePath, file, session.token);
-          await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: text.slice(0, 50000) || null }, token: session.token });
+          await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: text.slice(0, 500000) || null }, token: session.token });
           await loadVaultDocs();
         } catch {}
       }
@@ -650,7 +650,7 @@ export default function App() {
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
     // Build vault docs context (includes decree if uploaded)
-    const vaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content.slice(0, 6000)}`).join("");
+    const vaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("");
     const docsContext = vaultContext || "\n\nNo documents uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
@@ -713,7 +713,7 @@ export default function App() {
       try {
         const existing = await dbSelect("documents", `user_id=eq.${session.user.id}&category=eq.decree`, session.token);
         if (existing && existing.length > 0) return; // already migrated
-        await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: decreeFileName || "Decree", file_size: 0, mime_type: "text/plain", storage_path: `${session.user.id}/migrated_decree`, text_content: decreeText.slice(0, 50000) }, token: session.token });
+        await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: decreeFileName || "Decree", file_size: 0, mime_type: "text/plain", storage_path: `${session.user.id}/migrated_decree`, text_content: decreeText.slice(0, 500000) }, token: session.token });
         await loadVaultDocs();
       } catch {}
     })();
@@ -744,7 +744,7 @@ export default function App() {
       setVaultUploadProgress("processing");
       let textContent: string | null = null;
       try { textContent = await extractFileText(file); } catch {}
-      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 50000) || null }, token: session.token });
+      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 500000) || null }, token: session.token });
       setVaultUploadProgress("done");
       await new Promise(r => setTimeout(r, 1200));
       await loadVaultDocs();
@@ -786,7 +786,7 @@ export default function App() {
     const abort = new AbortController(); coachAbortRef.current = abort;
     let finalText = "";
     try {
-      const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content.slice(0, 6000)}`).join("") || "";
+      const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
       const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
