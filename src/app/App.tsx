@@ -323,10 +323,23 @@ export default function App() {
       return;
     }
     try {
-      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
+      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at,stripe_customer_id`, token);
       if (Array.isArray(p) && p[0]?.created_at) {
         const createdAt = new Date(p[0].created_at);
         const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+        // If DB has no subscription but user has a Stripe customer, verify directly with Stripe
+        if (!p[0].subscription_status && p[0].stripe_customer_id) {
+          try {
+            const vRes = await fetch("/api/stripe-verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+            const vData = await vRes.json();
+            if (vData.status) {
+              setSubscription({ status: vData.status, trialEnd: trialEnd.toISOString(), loading: false });
+              return;
+            }
+          } catch {}
+        }
+
         setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
         setSubscription({ status: null, trialEnd: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), loading: false });
