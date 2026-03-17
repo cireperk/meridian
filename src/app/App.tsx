@@ -311,13 +311,15 @@ export default function App() {
     // Once we've detected a successful checkout, never downgrade for this session
     if (justSubscribedRef.current) return;
 
-    // If returning from Stripe checkout, skip DB check entirely — grant access immediately
+    // If returning from Stripe checkout, grant access immediately then verify with Stripe and write to DB
     if (window.location.hash.includes("subscription=success")) {
       window.history.replaceState(null, "", window.location.pathname);
       justSubscribedRef.current = true;
       setSubscription({ status: "active", trialEnd: null, loading: false });
       setShowSubscribeSuccess(true);
       setTimeout(() => setShowSubscribeSuccess(false), 4000);
+      // Verify with Stripe and persist to DB in background so future loads work
+      fetch("/api/stripe-verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
       return;
     }
     try {
