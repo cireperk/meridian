@@ -1833,6 +1833,19 @@ export default function App() {
                       })}
                     </div>
 
+                    {/* Hint when no date selected */}
+                    {!calSelectedDate && calEvents.length === 0 && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-col items-center text-center py-6">
+                        <p className="text-sm text-slate-400 mb-1">Tap a date to get started</p>
+                        <p className="text-xs text-slate-300">Track handoffs, appointments, deadlines, and more</p>
+                      </motion.div>
+                    )}
+                    {!calSelectedDate && calEvents.length > 0 && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-col items-center text-center py-4">
+                        <p className="text-xs text-slate-300">Tap a date to view or add events</p>
+                      </motion.div>
+                    )}
+
                     {/* Selected date events */}
                     {calSelectedDate && (
                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
@@ -1846,7 +1859,8 @@ export default function App() {
                         </div>
                         {selectedDateEvents.length === 0 ? (
                           <div className="text-center py-8">
-                            <p className="text-sm text-slate-400 mb-3">No events</p>
+                            <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
+                            <p className="text-xs text-slate-300 mb-4">Track a handoff, appointment, or deadline</p>
                             <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
                           </div>
                         ) : (
