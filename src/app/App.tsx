@@ -1513,7 +1513,7 @@ export default function App() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
 
             {/* Trial banner */}
-            {isTrialActive && !isSubscribed && (
+            {isTrialActive && !isSubscribed && trialDaysLeft < TRIAL_DAYS && (
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <span className="text-xs text-slate-500">
                   {trialDaysLeft === 0 ? "Your trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
