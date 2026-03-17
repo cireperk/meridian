@@ -1008,7 +1008,7 @@ export default function App() {
                     { q: "Is Meridian a therapist or a lawyer?", a: "Neither \u2014 think of it as a knowledgeable friend who\u2019s available anytime. It won\u2019t replace professional advice, but it can help you think clearly, understand your documents, and figure out what to say \u2014 especially at 2am when no one else is picking up." },
                     { q: "What does Meridian actually do?", a: "Everything you need in one place. Store and reference your legal documents. Get coached on exactly what to say to your co-parent. Understand your decree in plain English. Manage your schedule, handoffs, and deadlines. Build healthier habits for yourself and your kids. Meridian is your private command center for getting through the hardest chapter \u2014 and becoming a better version of yourself on the other side." },
                     { q: "Is my data private?", a: "Completely. Your conversations and documents are encrypted and never shared with anyone \u2014 not your ex, not a court, not even us. Meridian is built for you alone." },
-                    { q: "Is it really free?", a: "You get a full 3-day free trial with no credit card required. After that, a subscription keeps everything running. You can cancel anytime." },
+                    { q: "Is it really free?", a: "You get a full 3-day free trial with no credit card required. After that, Meridian is $4.99/month \u2014 less than a single coffee. Cancel anytime, no questions asked." },
                     { q: "Can my ex see what I write here?", a: "No. There is no shared access, no co-parent portal, no way for anyone else to see your account. This is your private space." },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -1066,7 +1066,7 @@ export default function App() {
                   <Button size="lg" onClick={enterApp} className="h-13 px-10 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
                     Take the first step
                   </Button>
-                  <p className="text-[11px] text-slate-400">No credit card. No commitment.</p>
+                  <p className="text-[11px] text-slate-400">Free for 3 days, then $4.99/mo. Cancel anytime.</p>
                 </div>
 
                 {/* Email capture */}
