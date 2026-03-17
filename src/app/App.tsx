@@ -216,8 +216,20 @@ export default function App() {
           dbSelect("conversations", `user_id=eq.${userId}&order=updated_at.desc`, accessToken).then((rows: any) => {
             if (rows?.length) {
               if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
-              const convs = rows.filter((r: any) => r.id !== "_trial_banner_seen").map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
-              if (convs.length) { setConversations(convs); localStorage.setItem("m_conversations", JSON.stringify(convs)); }
+              const chatRows = rows.filter((r: any) => !r.id?.startsWith("coach_") && r.id !== "_trial_banner_seen");
+              const coachRows = rows.filter((r: any) => r.id?.startsWith("coach_"));
+              if (chatRows.length) { const convs = chatRows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at })); setConversations(convs); localStorage.setItem("m_conversations", JSON.stringify(convs)); }
+              if (coachRows.length) {
+                const sessions = coachRows.map((r: any) => {
+                  const msgs = r.messages || [];
+                  const userMsg = msgs.find((m: any) => m.role === "user");
+                  const assistantMsg = msgs.find((m: any) => m.role === "assistant");
+                  const inputText = userMsg?.content?.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "") || "";
+                  const mode = userMsg?.content?.startsWith("I received") ? "respond" : "draft";
+                  return { id: r.id, mode, input: inputText, result: assistantMsg?.content || "", title: r.title, createdAt: r.created_at };
+                });
+                setCoachSessions(sessions); localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
+              }
             }
           }).catch(() => {});
         } else {
@@ -299,13 +311,27 @@ export default function App() {
           }
         } catch {}
         const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); setAuthView("main");
-        // Load conversations from Supabase
+        // Load conversations + coach sessions from Supabase
         dbSelect("conversations", `user_id=eq.${data.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
           if (rows?.length) {
             if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
-            const convs = rows.filter((r: any) => r.id !== "_trial_banner_seen").map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
-            setConversations(convs);
-            localStorage.setItem("m_conversations", JSON.stringify(convs));
+            const chatRows = rows.filter((r: any) => !r.id?.startsWith("coach_") && r.id !== "_trial_banner_seen");
+            const coachRows = rows.filter((r: any) => r.id?.startsWith("coach_"));
+            if (chatRows.length) {
+              const convs = chatRows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
+              setConversations(convs); localStorage.setItem("m_conversations", JSON.stringify(convs));
+            }
+            if (coachRows.length) {
+              const sessions = coachRows.map((r: any) => {
+                const msgs = r.messages || [];
+                const userMsg = msgs.find((m: any) => m.role === "user");
+                const assistantMsg = msgs.find((m: any) => m.role === "assistant");
+                const inputText = userMsg?.content?.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "") || "";
+                const mode = userMsg?.content?.startsWith("I received") ? "respond" : "draft";
+                return { id: r.id, mode, input: inputText, result: assistantMsg?.content || "", title: r.title, createdAt: r.created_at };
+              });
+              setCoachSessions(sessions); localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
+            }
           }
         }).catch(() => {});
       }
