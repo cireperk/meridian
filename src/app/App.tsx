@@ -1659,13 +1659,19 @@ export default function App() {
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
                     <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
 
+                    {/* Mode toggle — always visible */}
+                    <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
+                      {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
+                        <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachResult(""); setCoachInput(""); setActiveCoachSessionId(null); }}
+                          className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+
                     {/* Viewing a past session */}
                     {activeCoachSession && !coachLoading && coachResult === activeCoachSession.result ? (
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={cn("text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded", activeCoachSession.mode === "respond" ? "bg-blue-50 text-blue-500" : "bg-purple-50 text-purple-500")}>{activeCoachSession.mode === "respond" ? "Response" : "Draft"}</span>
-                          <span className="text-[11px] text-slate-300">{activeCoachSession.createdAt ? new Date(activeCoachSession.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : ""}</span>
-                        </div>
                         <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 mb-4">
                           <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">{activeCoachSession.mode === "respond" ? "Their message" : "Your situation"}</label>
                           <p className="text-sm text-slate-700 whitespace-pre-wrap">{activeCoachSession.input}</p>
@@ -1678,23 +1684,10 @@ export default function App() {
                             className={cn("flex-1 transition-all", coachCopied ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
                             {coachCopied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy message</>}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => { setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); }} className="text-slate-400 hover:text-slate-600">
-                            New session
-                          </Button>
                         </div>
                       </div>
                     ) : (
                       <>
-                    {/* Mode toggle */}
-                    <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
-                      {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
-                        <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachResult(""); setCoachInput(""); setActiveCoachSessionId(null); }}
-                          className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-
                     {/* Input */}
                     <div className="mb-4">
                       <label className="text-xs font-medium text-slate-500 mb-2 block">
