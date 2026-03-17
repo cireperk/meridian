@@ -176,6 +176,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
   const TRIAL_DAYS = 3;
+  const [trialBannerSeen, setTrialBannerSeen] = useState(() => localStorage.getItem("m_trial_banner_seen") === "1");
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
   const [coachInput, setCoachInput] = useState("");
   const [coachResult, setCoachResult] = useState("");
@@ -213,7 +214,11 @@ export default function App() {
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
           setShowSplash(false); setAuthView("main");
           dbSelect("conversations", `user_id=eq.${userId}&order=updated_at.desc`, accessToken).then((rows: any) => {
-            if (rows?.length) { const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at })); setConversations(convs); localStorage.setItem("m_conversations", JSON.stringify(convs)); }
+            if (rows?.length) {
+              if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
+              const convs = rows.filter((r: any) => r.id !== "_trial_banner_seen").map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
+              if (convs.length) { setConversations(convs); localStorage.setItem("m_conversations", JSON.stringify(convs)); }
+            }
           }).catch(() => {});
         } else {
           // New user — go to onboarding
@@ -240,7 +245,8 @@ export default function App() {
         if (session.user?.id) {
           dbSelect("conversations", `user_id=eq.${session.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
             if (rows?.length) {
-              const chatRows = rows.filter((r: any) => !r.id?.startsWith("coach_"));
+              if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
+              const chatRows = rows.filter((r: any) => !r.id?.startsWith("coach_") && r.id !== "_trial_banner_seen");
               const coachRows = rows.filter((r: any) => r.id?.startsWith("coach_"));
               if (chatRows.length) {
                 const convs = chatRows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
@@ -287,7 +293,8 @@ export default function App() {
         // Load conversations from Supabase
         dbSelect("conversations", `user_id=eq.${data.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
           if (rows?.length) {
-            const convs = rows.map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
+            if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
+            const convs = rows.filter((r: any) => r.id !== "_trial_banner_seen").map((r: any) => ({ id: r.id, title: r.title, messages: r.messages || [], createdAt: r.created_at }));
             setConversations(convs);
             localStorage.setItem("m_conversations", JSON.stringify(convs));
           }
@@ -321,7 +328,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setTrialBannerSeen(false); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -1620,14 +1627,13 @@ export default function App() {
                           </motion.div>
                           <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Welcome back, ${firstName}.` : "Welcome back."}</h2>
                           <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-4">Let's take the high road today.</p>
-                          {isTrialActive && !isSubscribed && (
-                            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }} className="w-full max-w-sm bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-3.5 mb-5">
+                          {isTrialActive && !isSubscribed && !trialBannerSeen && (
+                            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }} onAnimationComplete={() => {
+                              setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1");
+                              if (session?.token && session?.user?.id) { dbUpsert("conversations", { id: "_trial_banner_seen", user_id: session.user.id, title: "_flag", messages: [], updated_at: new Date().toISOString() }, session.token).catch(() => {}); }
+                            }} className="w-full max-w-sm bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-3.5 mb-5">
                               <p className="text-[13px] text-emerald-700 leading-relaxed">
-                                {trialDaysLeft === 0
-                                  ? "Your free trial ends today. We're here whenever you need us."
-                                  : trialDaysLeft === 1
-                                    ? "1 day left in your free trial. Explore everything — chat, coaching, your vault."
-                                    : `You have ${trialDaysLeft} days free — here's how to make the most of them. Ask anything, upload your decree, or try the Coach.`}
+                                {`You have ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} free — here's how to make the most of them. Ask anything, upload your decree, or try the Coach.`}
                               </p>
                             </motion.div>
                           )}
