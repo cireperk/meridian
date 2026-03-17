@@ -235,6 +235,14 @@ export default function App() {
     authRefreshToken(session.refresh_token).then((data: any) => {
       if (data?.access_token) {
         const s = { ...session, token: data.access_token, refresh_token: data.refresh_token }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+        // If session exists but no profile name, check DB then resume onboarding
+        if (!session.user?.name && session.user?.id) {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=name`, data.access_token).then((p: any) => {
+            if (p?.length && p[0].name) {
+              const updated = { ...s, user: { ...s.user, name: p[0].name } }; setSession(updated); localStorage.setItem("m_session", JSON.stringify(updated));
+            } else { setAuthView("onboarding"); setShowSplash(false); }
+          }).catch(() => { setAuthView("onboarding"); setShowSplash(false); });
+        }
         // Load decree from DB if not in localStorage
         if (!localStorage.getItem("m_decree_text") && session.user?.id) {
           dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages`, data.access_token).then((p: any) => {
