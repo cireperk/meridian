@@ -1404,7 +1404,15 @@ export default function App() {
                   <p className="text-sm text-slate-700 font-medium mb-6 text-center">{authEmail}</p>
                   <p className="text-[13px] text-slate-400 text-center leading-relaxed max-w-[300px] mb-8">Tap the link in your email to activate your account. It may take a minute to arrive — check your spam folder if you don't see it.</p>
                   <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">I've confirmed — Sign In</Button>
-                  <button onClick={() => { setAuthView("signup"); setAuthError(""); }} className="mt-4 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
+                  <button onClick={async () => {
+                    try {
+                      await sbFetch("/auth/v1/resend", { method: "POST", body: { type: "signup", email: authEmail } });
+                      setAuthError("Confirmation email resent!");
+                      setTimeout(() => setAuthError(""), 3000);
+                    } catch { setAuthError("Could not resend. Please try again."); setTimeout(() => setAuthError(""), 3000); }
+                  }} className="mt-4 text-xs text-slate-400 hover:text-emerald-600 transition-colors">Didn't get the email? Resend</button>
+                  {authError && <p className={`mt-3 text-xs text-center ${authError.includes("resent") ? "text-emerald-600" : "text-red-500"}`}>{authError}</p>}
+                  <button onClick={() => { setAuthView("signup"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
                 </motion.div>
               ) : authView === "forgot" ? (
                 <motion.div key="forgot" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
