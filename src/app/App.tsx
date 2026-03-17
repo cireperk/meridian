@@ -1927,10 +1927,20 @@ export default function App() {
                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
                       </div>
                     ) : filteredVaultDocs.length === 0 ? (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 text-center">
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 text-center px-4">
                         <FolderLock className="w-10 h-10 text-slate-200 mb-3" strokeWidth={1.5} />
-                        <p className="text-sm text-slate-400 mb-1">{vaultCategory === "all" ? "No documents yet" : "No documents in this category"}</p>
-                        <p className="text-xs text-slate-300">Upload your first document to get started</p>
+                        {vaultCategory === "all" ? (
+                          <>
+                            <p className="text-sm text-slate-400 mb-1">No documents yet</p>
+                            <p className="text-xs text-slate-300 mb-4 max-w-[260px] leading-relaxed">Upload your divorce decree so Meridian can answer questions using your exact terms and schedule.</p>
+                            <Button size="sm" onClick={() => vaultFileRef.current?.click()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Upload decree</Button>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-slate-400 mb-1">No documents in this category</p>
+                            <p className="text-xs text-slate-300">Upload a document to get started</p>
+                          </>
+                        )}
                       </motion.div>
                     ) : (
                       <div className="space-y-3">
