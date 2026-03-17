@@ -1108,6 +1108,8 @@ export default function App() {
                     <span>Not legal advice</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <a href="/guides/" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Guides</a>
+                    <span className="text-[11px] text-slate-600">·</span>
                     <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</button>
                     <span className="text-[11px] text-slate-600">·</span>
                     <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Terms of Service</button>
