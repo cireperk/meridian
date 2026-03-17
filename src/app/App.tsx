@@ -760,7 +760,8 @@ export default function App() {
     const abort = new AbortController(); coachAbortRef.current = abort;
     let finalText = "";
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: COACH_SYSTEM_PROMPT, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
+      const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content.slice(0, 6000)}`).join("") || "";
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       try {
