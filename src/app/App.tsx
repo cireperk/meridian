@@ -184,7 +184,6 @@ export default function App() {
   const coachAbortRef = useRef<AbortController | null>(null);
   const [coachSessions, setCoachSessions] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_coach_sessions") || "null"); if (c?.length) return c; return []; } catch { return []; } });
   const [activeCoachSessionId, setActiveCoachSessionId] = useState<string | null>(null);
-  const [showCoachHistory, setShowCoachHistory] = useState(false);
   const [coachDeleteConfirmId, setCoachDeleteConfirmId] = useState<string | null>(null);
   const activeCoachSession = coachSessions.find((s) => s.id === activeCoachSessionId);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
@@ -322,7 +321,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setShowCoachHistory(false); setCoachResult(""); setCoachInput(""); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -1507,16 +1506,6 @@ export default function App() {
                       )}
                     </motion.div>
                   )}
-                  {activeTab === "coach" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
-                      {coachSessions.length > 0 && (
-                        <Button variant="ghost" size="sm" onClick={() => { setShowCoachHistory(!showCoachHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showCoachHistory && "text-emerald-600 bg-emerald-50")} aria-label="Coach history"><Clock className="w-4 h-4" /></Button>
-                      )}
-                      {(activeCoachSessionId || showCoachHistory) && (
-                        <Button variant="ghost" size="sm" onClick={() => { setActiveCoachSessionId(null); setShowCoachHistory(false); setCoachResult(""); setCoachInput(""); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
-                      )}
-                    </motion.div>
-                  )}
                 </AnimatePresence>
                 <button onClick={() => setActiveTab("profile")} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
                   <User className="w-4 h-4" strokeWidth={activeTab === "profile" ? 2 : 1.5} />
@@ -1667,62 +1656,6 @@ export default function App() {
                 {/* LEARN */}
                 {activeTab === "coach" && (
                   <motion.div key="coach" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <AnimatePresence mode="popLayout">
-                      {showCoachHistory ? (
-                        <motion.div key="coach-history" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="flex flex-col">
-                          <h2 className="text-lg font-light text-slate-700 mb-4">Past coaching sessions</h2>
-                          {coachSessions.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-center">
-                              <MessageSquare className="w-8 h-8 text-slate-200 mb-3" strokeWidth={1.5} />
-                              <p className="text-sm text-slate-400">No sessions yet</p>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-2">
-                              {coachSessions.map((s, idx) => {
-                                const date = s.createdAt ? new Date(s.createdAt) : null;
-                                const now = new Date();
-                                const diffMs = date ? now.getTime() - date.getTime() : 0;
-                                const diffMins = Math.floor(diffMs / 60000);
-                                const diffHrs = Math.floor(diffMins / 60);
-                                const diffDays = Math.floor(diffHrs / 24);
-                                const timeAgo = !date ? "" : diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : diffDays < 7 ? `${diffDays}d ago` : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                                const deleteSession = () => { setCoachSessions((prev) => prev.filter((x) => x.id !== s.id)); if (activeCoachSessionId === s.id) { setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); } if (session?.token) dbDelete("conversations", `id=eq.${s.id}`, session.token).catch(() => {}); };
-                                return (
-                                  <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03, duration: 0.3 }}>
-                                    <button
-                                      onClick={() => { setActiveCoachSessionId(s.id); setShowCoachHistory(false); setCoachMode(s.mode); setCoachInput(s.input); setCoachResult(s.result); }}
-                                      className={cn("w-full text-left p-4 rounded-xl border transition-all", s.id === activeCoachSessionId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50")}>
-                                      <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-0.5">
-                                            <span className={cn("text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded", s.mode === "respond" ? "bg-blue-50 text-blue-500" : "bg-purple-50 text-purple-500")}>{s.mode === "respond" ? "Response" : "Draft"}</span>
-                                          </div>
-                                          <div className="text-sm font-medium text-slate-700 truncate">{s.title || "Untitled"}</div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                          <span className="text-[11px] text-slate-300">{timeAgo}</span>
-                                          {coachDeleteConfirmId === s.id ? (
-                                            <button className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all"
-                                              onClick={(e) => { e.stopPropagation(); deleteSession(); setCoachDeleteConfirmId(null); }}>
-                                              Delete
-                                            </button>
-                                          ) : (
-                                            <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                                              onClick={(e) => { e.stopPropagation(); setCoachDeleteConfirmId(s.id); setTimeout(() => setCoachDeleteConfirmId((prev) => prev === s.id ? null : prev), 3000); }}>
-                                              <Trash2 size={12} />
-                                            </button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  </motion.div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </motion.div>
-                      ) : (
-                        <motion.div key="coach-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }}>
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
                     <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
 
@@ -1819,9 +1752,51 @@ export default function App() {
                     )}
                       </>
                     )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+
+                    {/* Recent sessions */}
+                    {coachSessions.length > 0 && !coachLoading && (
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8 pt-6 border-t border-slate-100">
+                        <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Recent sessions</p>
+                        <div className="flex flex-col gap-2">
+                          {coachSessions.slice(0, 5).map((s) => {
+                            const date = s.createdAt ? new Date(s.createdAt) : null;
+                            const now = new Date();
+                            const diffMs = date ? now.getTime() - date.getTime() : 0;
+                            const diffMins = Math.floor(diffMs / 60000);
+                            const diffHrs = Math.floor(diffMins / 60);
+                            const diffDays = Math.floor(diffHrs / 24);
+                            const timeAgo = !date ? "" : diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : diffDays < 7 ? `${diffDays}d ago` : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                            const deleteSession = () => { setCoachSessions((prev) => prev.filter((x) => x.id !== s.id)); if (activeCoachSessionId === s.id) { setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); } if (session?.token) dbDelete("conversations", `id=eq.${s.id}`, session.token).catch(() => {}); };
+                            return (
+                              <button key={s.id}
+                                onClick={() => { setActiveCoachSessionId(s.id); setCoachMode(s.mode); setCoachInput(s.input); setCoachResult(s.result); }}
+                                className={cn("w-full text-left p-3 rounded-xl border transition-all", s.id === activeCoachSessionId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50")}>
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <span className={cn("text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0", s.mode === "respond" ? "bg-blue-50 text-blue-500" : "bg-purple-50 text-purple-500")}>{s.mode === "respond" ? "Response" : "Draft"}</span>
+                                    <span className="text-sm text-slate-600 truncate">{s.title || "Untitled"}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className="text-[11px] text-slate-300">{timeAgo}</span>
+                                    {coachDeleteConfirmId === s.id ? (
+                                      <button className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all"
+                                        onClick={(e) => { e.stopPropagation(); deleteSession(); setCoachDeleteConfirmId(null); }}>
+                                        Delete
+                                      </button>
+                                    ) : (
+                                      <button className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        onClick={(e) => { e.stopPropagation(); setCoachDeleteConfirmId(s.id); setTimeout(() => setCoachDeleteConfirmId((prev) => prev === s.id ? null : prev), 3000); }}>
+                                        <Trash2 size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
                   </motion.div>
                 )}
 
