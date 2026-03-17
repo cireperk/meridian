@@ -968,7 +968,7 @@ export default function App() {
                   {[
                     "Your conversations never end up in court.",
                     "No one sees your data. Not even us.",
-                    "Free to start.  No catch.  No credit card required.",
+                    "Try free for 3 days. No credit card required.",
                   ].map((line, i) => (
                     <motion.p key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                       className="text-lg sm:text-xl font-light text-slate-800">
