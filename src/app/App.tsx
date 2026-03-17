@@ -1513,7 +1513,7 @@ export default function App() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden">
 
             {/* Trial banner */}
-            {isTrialActive && !isSubscribed && trialDaysLeft < TRIAL_DAYS && (
+            {isTrialActive && !isSubscribed && (
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <span className="text-xs text-slate-500">
                   {trialDaysLeft === 0 ? "Your trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
@@ -1619,7 +1619,18 @@ export default function App() {
                             <MessageSquare className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
                           </motion.div>
                           <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Welcome back, ${firstName}.` : "Welcome back."}</h2>
-                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-6">Let's take the high road today.</p>
+                          <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-4">Let's take the high road today.</p>
+                          {isTrialActive && !isSubscribed && (
+                            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }} className="w-full max-w-sm bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-3.5 mb-5">
+                              <p className="text-[13px] text-emerald-700 leading-relaxed">
+                                {trialDaysLeft === 0
+                                  ? "Your free trial ends today. We're here whenever you need us."
+                                  : trialDaysLeft === 1
+                                    ? "1 day left in your free trial. Explore everything — chat, coaching, your vault."
+                                    : `You have ${trialDaysLeft} days free — here's how to make the most of them. Ask anything, upload your decree, or try the Coach.`}
+                              </p>
+                            </motion.div>
+                          )}
                           {/* Auto-scrolling action pills carousel */}
                           <div ref={(el) => {
                             if (!el) return;
