@@ -301,46 +301,41 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_sub_status"); setConversations([]); setActiveConvId(null); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
-  const justSubscribedRef = useRef(false);
 
   const checkSubscription = useCallback(async (token: string, userId: string) => {
-    // Once we've detected a successful checkout, never downgrade for this session
-    if (justSubscribedRef.current) return;
-
-    // If returning from Stripe checkout, grant access immediately then verify with Stripe and write to DB
+    // 1. If returning from Stripe checkout — grant access, persist locally, sync DB in background
     if (window.location.hash.includes("subscription=success")) {
       window.history.replaceState(null, "", window.location.pathname);
-      justSubscribedRef.current = true;
+      localStorage.setItem("m_sub_status", "active");
       setSubscription({ status: "active", trialEnd: null, loading: false });
       setShowSubscribeSuccess(true);
       setTimeout(() => setShowSubscribeSuccess(false), 4000);
-      // Verify with Stripe and persist to DB in background so future loads work
       fetch("/api/stripe-verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
       return;
     }
+
+    // 2. Check localStorage first — this survives app restarts regardless of DB/API state
+    const cachedStatus = localStorage.getItem("m_sub_status");
+    if (cachedStatus === "active" || cachedStatus === "trialing") {
+      setSubscription({ status: cachedStatus, trialEnd: null, loading: false });
+      // Still try to sync DB in background (non-blocking)
+      fetch("/api/stripe-verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
+      return;
+    }
+
+    // 3. Fall back to DB check (for trial calculation and DB-synced subscriptions)
     try {
-      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at,stripe_customer_id`, token);
+      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
       if (Array.isArray(p) && p[0]?.created_at) {
         const createdAt = new Date(p[0].created_at);
         const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-
-        // If DB has no subscription but user has a Stripe customer, verify directly with Stripe
-        if (!p[0].subscription_status && p[0].stripe_customer_id) {
-          try {
-            const vRes = await fetch("/api/stripe-verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
-            const vData = await vRes.json();
-            if (vData.status) {
-              setSubscription({ status: vData.status, trialEnd: trialEnd.toISOString(), loading: false });
-              return;
-            }
-          } catch {}
-        }
-
-        setSubscription({ status: p[0].subscription_status || null, trialEnd: trialEnd.toISOString(), loading: false });
+        const status = p[0].subscription_status || null;
+        if (status) localStorage.setItem("m_sub_status", status);
+        setSubscription({ status, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
         setSubscription({ status: null, trialEnd: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), loading: false });
       }
