@@ -598,6 +598,7 @@ export default function App() {
       }
       if (!text || !text.trim()) { throw new Error("No text found — the file may be scanned or image-based."); }
       setDecreeText(text);
+      decreeUploadedThisSession.current = true;
       // Also save to vault as a decree document
       if (session?.token && session?.user?.id) {
         try {
@@ -678,8 +679,10 @@ export default function App() {
   useEffect(() => { if (activeTab === "vault" || activeTab === "chat") loadVaultDocs(); }, [activeTab]);
 
   // Migrate legacy decree (localStorage/profiles) into vault documents table
+  // Only runs for decrees loaded from localStorage/profiles (not freshly uploaded ones)
+  const decreeUploadedThisSession = useRef(false);
   useEffect(() => {
-    if (!session?.token || !session?.user?.id || !decreeText) return;
+    if (!session?.token || !session?.user?.id || !decreeText || decreeUploadedThisSession.current) return;
     (async () => {
       try {
         const existing = await dbSelect("documents", `user_id=eq.${session.user.id}&category=eq.decree`, session.token);
@@ -1657,8 +1660,9 @@ export default function App() {
                           <h2 className="text-lg font-light tracking-tight text-slate-700 mb-1.5">{firstName ? `Welcome back, ${firstName}.` : "Welcome back."}</h2>
                           <p className="text-sm text-slate-400 max-w-xs leading-relaxed mb-4">Let's take the high road today.</p>
                           {isTrialActive && !isSubscribed && !trialBannerSeen && (
-                            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }} onAnimationComplete={() => {
-                              setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1");
+                            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.4 }} ref={() => {
+                              // Mark as seen in background (persists cross-device) but keep showing for this session
+                              localStorage.setItem("m_trial_banner_seen", "1");
                               if (session?.token && session?.user?.id) { dbUpsert("conversations", { id: "_trial_banner_seen", user_id: session.user.id, title: "_flag", messages: [], updated_at: new Date().toISOString() }, session.token).catch(() => {}); }
                             }} className="w-full max-w-sm bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-3.5 mb-5">
                               <p className="text-[13px] text-emerald-700 leading-relaxed">
