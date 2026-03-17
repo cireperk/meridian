@@ -1880,7 +1880,7 @@ export default function App() {
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
                       <div className="space-y-2">
                         {[
-                          { id: "privacy", icon: Shield, label: "Privacy & Data", content: "Your conversations and documents are encrypted and stored securely. Meridian never shares your personal information with third parties. You can delete your account and all associated data at any time by contacting support." },
+                          { id: "privacy", icon: Shield, label: "Privacy & Data", content: <>Your conversations and documents are encrypted and stored securely. Meridian never shares your personal information with third parties. You can delete your account and all associated data at any time by contacting us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a>.</> },
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: "Have a question or running into an issue? Reach out to us at support@getmeridian.app and we'll get back to you within 24 hours." },
                           { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a grounding companion for anyone navigating divorce and co-parenting. Built with care, designed for calm and clarity. Meridian is not a law firm and does not provide legal advice." },
                         ].map((item) => (
