@@ -998,6 +998,40 @@ export default function App() {
               </div>
             </div>
 
+            {/* ===== SECTION 4.75: FAQ ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <div className="max-w-lg w-full">
+                <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">Common questions</motion.p>
+                <div className="space-y-3">
+                  {[
+                    { q: "Is Meridian a therapist or a lawyer?", a: "Neither. Meridian is an AI companion that helps you think clearly, communicate calmly, and understand your documents. It\u2019s not a substitute for professional advice \u2014 but it\u2019s there for you at 2am when your lawyer isn\u2019t." },
+                    { q: "What does the AI actually do?", a: "It can help you understand your divorce decree in plain English, draft calm co-parenting messages, talk through tough situations, and keep your important dates organized \u2014 all in one private place." },
+                    { q: "Is my data private?", a: "Completely. Your conversations and documents are encrypted and never shared with anyone \u2014 not your ex, not a court, not even us. Meridian is built for you alone." },
+                    { q: "Is it really free?", a: "You get a full 3-day free trial with no credit card required. After that, a subscription keeps everything running. You can cancel anytime." },
+                    { q: "Can my ex see what I write here?", a: "No. There is no shared access, no co-parent portal, no way for anyone else to see your account. This is your private space." },
+                  ].map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                      <button onClick={() => setExpandedSetting(expandedSetting === `faq-${i}` ? null : `faq-${i}`)} className="w-full p-5 text-left flex items-start justify-between gap-3">
+                        <span className="text-sm font-medium text-slate-700">{item.q}</span>
+                        <motion.div animate={{ rotate: expandedSetting === `faq-${i}` ? 45 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 mt-0.5">
+                          <Plus className="w-4 h-4 text-slate-400" />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence>
+                        {expandedSetting === `faq-${i}` && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+                            <p className="px-5 pb-5 pt-0 text-[13px] text-slate-500 leading-relaxed">{item.a}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* ===== SECTION 5: Your Story + Final CTA ===== */}
             <div className="min-h-[100dvh] flex items-center justify-center px-6 pt-24 pb-12 relative z-10">
               <motion.div className="max-w-lg text-center" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
