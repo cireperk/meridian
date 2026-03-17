@@ -40,6 +40,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ ...tokenData, isNew: false });
   }
 
+  // Sign-in failed — check if it's an unconfirmed user
+  const tokenErr = await tokenRes.json().catch(() => ({}));
+  if (tokenErr.error === "invalid_grant" && tokenErr.error_description?.includes("Email not confirmed")) {
+    return res.status(200).json({ needsConfirmation: true, email });
+  }
+
   // Sign-in failed — try creating the user
   // Enforce password requirements for new accounts
   if (password.length < 8) {
@@ -52,39 +58,26 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Password must include a number" });
   }
 
-  const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-    method: "POST",
-    headers: adminHeaders,
-    body: JSON.stringify({ email, password, email_confirm: true }),
-  });
-  const createData = await createRes.json();
-
-  if (!createRes.ok) {
-    // User exists but wrong password
-    if (createData.msg?.includes("already") || createData.message?.includes("already")) {
-      return res.status(401).json({ error: "Incorrect password" });
-    }
-    return res.status(createRes.status).json({ error: createData.msg || createData.message || "Signup failed" });
-  }
-
-  // Explicitly set password (admin POST doesn't always persist it)
-  await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${createData.id}`, {
-    method: "PUT",
-    headers: adminHeaders,
-    body: JSON.stringify({ password }),
-  });
-
-  // Sign in the new user to get tokens
-  const newTokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+  // Use regular signup endpoint so Supabase sends confirmation email
+  const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
     headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  const newTokenData = await newTokenRes.json();
+  const signupData = await signupRes.json();
 
-  if (!newTokenRes.ok) {
-    return res.status(newTokenRes.status).json({ error: newTokenData.error_description || "Auth failed" });
+  if (!signupRes.ok) {
+    if (signupData.msg?.includes("already") || signupData.message?.includes("already")) {
+      return res.status(401).json({ error: "Incorrect password" });
+    }
+    return res.status(signupRes.status).json({ error: signupData.msg || signupData.message || "Signup failed" });
   }
 
-  return res.status(200).json({ ...newTokenData, isNew: true });
+  // If Supabase returns a session, email confirmation is disabled — sign them in
+  if (signupData.access_token) {
+    return res.status(200).json({ ...signupData, isNew: true });
+  }
+
+  // Email confirmation is enabled — user needs to confirm
+  return res.status(200).json({ needsConfirmation: true, email, isNew: true });
 }
