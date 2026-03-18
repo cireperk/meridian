@@ -1,5 +1,13 @@
 {
-  "appId": "com.meridian.app",
+  "appId": "com.mymeridianapp.web",
   "appName": "Meridian",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://www.mymeridianapp.com",
+    "cleartext": false
+  },
+  "ios": {
+    "scheme": "Meridian",
+    "contentInset": "automatic"
+  }
 }

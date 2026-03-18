@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 import { marked } from "marked";
+import { Capacitor } from "@capacitor/core";
+import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Mail } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -175,6 +177,7 @@ export default function App() {
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
+  const [selectedPlan, setSelectedPlan] = useState("yearly");
   const TRIAL_DAYS = 3;
   const [trialBannerSeen, setTrialBannerSeen] = useState(() => localStorage.getItem("m_trial_banner_seen") === "1");
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
@@ -415,8 +418,51 @@ export default function App() {
   const hasAccess = isTrialActive || isSubscribed;
   const trialDaysLeft = subscription.trialEnd ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
 
+  const isNative = Capacitor.isNativePlatform();
+
+  // Initialize RevenueCat on native platforms
+  useEffect(() => {
+    if (!isNative) return;
+    Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+    Purchases.configure({ apiKey: "test_EAgZImPtabhyiJkYFeEhyjBsBzm" });
+    if (session?.user?.id) {
+      Purchases.logIn({ appUserID: session.user.id }).catch(() => {});
+    }
+  }, [isNative, session?.user?.id]);
+
+  // Check RevenueCat subscription status on native
+  useEffect(() => {
+    if (!isNative || !session?.user?.id) return;
+    Purchases.getCustomerInfo().then(({ customerInfo }) => {
+      const isActive = customerInfo.entitlements.active["meridian_pro"] !== undefined;
+      if (isActive && subscription.status !== "active") {
+        setSubscription((s) => ({ ...s, status: "active", loading: false }));
+        dbUpdate("profiles", session.user.id, { subscription_status: "active" }, session.token!).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [isNative, session?.user?.id]);
+
   const handleSubscribe = async () => {
     if (!session?.token) { console.error("Subscribe: no token"); return; }
+    if (isNative) {
+      try {
+        const offerings = await Purchases.getOfferings();
+        const packages = offerings.current?.availablePackages || [];
+        const pkg = packages.find((p: any) => selectedPlan === "yearly" ? p.packageType === "ANNUAL" : p.packageType === "MONTHLY") || packages[0];
+        if (!pkg) { alert("No subscription available. Please try again later."); return; }
+        const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+        if (customerInfo.entitlements.active["meridian_pro"]) {
+          setSubscription({ status: "active", trialEnd: null, loading: false });
+          localStorage.setItem("m_sub_status", "active");
+          dbUpdate("profiles", session.user!.id, { subscription_status: "active" }, session.token).catch(() => {});
+        }
+      } catch (err: any) {
+        if (err.code !== "1" && err.code !== "PURCHASE_CANCELLED") {
+          alert("Purchase failed. Please try again.");
+        }
+      }
+      return;
+    }
     try {
       const res = await fetch("/api/stripe-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
       const data = await res.json();
@@ -427,6 +473,11 @@ export default function App() {
 
   const handleManageSubscription = async () => {
     if (!session?.token) return;
+    if (isNative) {
+      // On iOS, subscriptions are managed in Settings → Apple ID → Subscriptions
+      window.open("https://apps.apple.com/account/subscriptions", "_blank");
+      return;
+    }
     try {
       const res = await fetch("/api/stripe-portal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
       const data = await res.json();
@@ -1542,22 +1593,48 @@ export default function App() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-sm w-full text-center">
               <Logo size="lg" className="mx-auto mb-6" />
               <h2 className="text-2xl font-light tracking-tight text-slate-800 mb-2">Your free trial has ended</h2>
-              <p className="text-sm text-slate-500 mb-8 leading-relaxed">Continue having Meridian walk with you for just $4.99/month. Cancel anytime.</p>
-              <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm mb-6">
-                <div className="flex items-baseline justify-center gap-1 mb-1">
-                  <span className="text-3xl font-light text-slate-800">$4.99</span>
-                  <span className="text-sm text-slate-400">/month</span>
-                </div>
-                <p className="text-xs text-slate-400 mb-5">Unlimited access to everything</p>
-                <ul className="text-sm text-slate-600 space-y-2.5 text-left mb-6">
-                  {["Unlimited AI conversations", "Communication coach", "Document vault", "Calendar & scheduling"].map((f, i) => (
-                    <li key={i} className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" />{f}</li>
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed">Continue having Meridian walk with you. Cancel anytime.</p>
+              {isNative ? (
+                <div className="space-y-3 mb-6">
+                  {[
+                    { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: "$3.33/mo" },
+                    { id: "monthly", label: "Monthly", price: "$4.99", period: "/month", badge: null, perMonth: null },
+                  ].map((plan) => (
+                    <button key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={cn("w-full rounded-2xl border-2 p-4 text-left transition-all relative", selectedPlan === plan.id ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white")}>
+                      {plan.badge && <span className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wide bg-emerald-500 text-white px-2 py-0.5 rounded-full">{plan.badge}</span>}
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-light text-slate-800">{plan.price}</span>
+                        <span className="text-sm text-slate-400">{plan.period}</span>
+                      </div>
+                      {plan.perMonth && <p className="text-xs text-emerald-600 mt-0.5">{plan.perMonth}</p>}
+                    </button>
                   ))}
-                </ul>
-                <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
-                  Subscribe
-                </Button>
-              </div>
+                  <ul className="text-sm text-slate-600 space-y-2.5 text-left my-5 px-1">
+                    {["Unlimited AI conversations", "Communication coach", "Document vault", "Calendar & scheduling"].map((f, i) => (
+                      <li key={i} className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" />{f}</li>
+                    ))}
+                  </ul>
+                  <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
+                    Subscribe
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm mb-6">
+                  <div className="flex items-baseline justify-center gap-1 mb-1">
+                    <span className="text-3xl font-light text-slate-800">$4.99</span>
+                    <span className="text-sm text-slate-400">/month</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mb-5">Unlimited access to everything</p>
+                  <ul className="text-sm text-slate-600 space-y-2.5 text-left mb-6">
+                    {["Unlimited AI conversations", "Communication coach", "Document vault", "Calendar & scheduling"].map((f, i) => (
+                      <li key={i} className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" />{f}</li>
+                    ))}
+                  </ul>
+                  <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
+                    Subscribe
+                  </Button>
+                </div>
+              )}
               <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Sign out</button>
             </motion.div>
           </div>
