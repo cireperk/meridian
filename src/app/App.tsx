@@ -1215,7 +1215,7 @@ export default function App() {
               <h1 className="text-2xl font-light tracking-tight text-slate-800">Privacy Policy</h1>
               <button onClick={() => setShowPrivacy(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-6">Effective March 16, 2026</p>
+            <p className="text-xs text-slate-400 mb-6">Effective January 2026</p>
             <div className="space-y-6 text-sm text-slate-600 leading-relaxed">
               <p>Meridian is built for people navigating one of the hardest chapters of their lives. We believe your privacy isn't just a feature — it's a right. This policy explains exactly what we collect, why, and what we'll never do.</p>
 
@@ -1284,7 +1284,7 @@ export default function App() {
               <h1 className="text-2xl font-light tracking-tight text-slate-800">Terms of Service</h1>
               <button onClick={() => setShowTerms(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-slate-400 mb-6">Effective March 16, 2026</p>
+            <p className="text-xs text-slate-400 mb-6">Effective January 2026</p>
             <div className="space-y-6 text-sm text-slate-600 leading-relaxed">
               <p>Welcome to Meridian. By using our app, you agree to these terms. Please read them carefully — they're written in plain language because we believe you deserve clarity, especially right now.</p>
 
