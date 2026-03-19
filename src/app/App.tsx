@@ -164,7 +164,7 @@ type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
 export default function App() {
   // --- Auth ---
   const [session, setSession] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_session") || "null"); } catch { return null; } });
-  const [authView, setAuthView] = useState("main");
+  const [authView, setAuthView] = useState(Capacitor.isNativePlatform() ? "signin" : "main");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
@@ -486,7 +486,7 @@ export default function App() {
   };
 
   // --- Splash ---
-  const [showSplash, setShowSplash] = useState(() => !localStorage.getItem("m_session"));
+  const [showSplash, setShowSplash] = useState(() => isNative ? false : !localStorage.getItem("m_session"));
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
@@ -1577,9 +1577,11 @@ export default function App() {
                     <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? (authView === "signin" ? "Signing in..." : "Creating account...") : (authView === "signin" ? "Sign In" : "Create Account")}</Button>
                   </div>
                   <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(""); setAuthPassword(""); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
-                  <button onClick={() => { setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
-                    <ArrowLeft className="w-3 h-3" /> Back
-                  </button>
+                  {!isNative && (
+                    <button onClick={() => { setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                      <ArrowLeft className="w-3 h-3" /> Back
+                    </button>
+                  )}
                 </motion.div>
               ) : null}
             </AnimatePresence>
