@@ -424,7 +424,7 @@ export default function App() {
   useEffect(() => {
     if (!isNative) return;
     Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
-    Purchases.configure({ apiKey: "test_EAgZImPtabhyiJkYFeEhyjBsBzm" });
+    Purchases.configure({ apiKey: "appl_zjhHqHWWBLBxnLORAmRXUwlfUSZ" });
     if (session?.user?.id) {
       Purchases.logIn({ appUserID: session.user.id }).catch(() => {});
     }
