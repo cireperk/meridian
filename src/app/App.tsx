@@ -1311,7 +1311,7 @@ export default function App() {
 
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">Deleting your data</h2>
-                <p>You can delete individual conversations, documents, and calendar events at any time. To delete your entire account and all associated data, contact us at <a href="mailto:privacy@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridian.app</a> and we'll remove everything within 48 hours.</p>
+                <p>You can delete individual conversations, documents, and calendar events at any time. To delete your entire account and all associated data, contact us at <a href="mailto:support@mymeridianapp.com" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">support@mymeridianapp.com</a> and we'll remove everything within 48 hours.</p>
               </div>
 
               <div>
@@ -1320,7 +1320,7 @@ export default function App() {
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:privacy@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridian.app</a></p>
+                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:support@mymeridianapp.com" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">support@mymeridianapp.com</a></p>
               </div>
             </div>
           </div>
@@ -1384,7 +1384,7 @@ export default function App() {
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:terms@mymeridian.app" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">terms@mymeridian.app</a></p>
+                <p className="text-slate-400 text-xs">Questions? Reach us at <a href="mailto:support@mymeridianapp.com" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">support@mymeridianapp.com</a></p>
               </div>
             </div>
           </div>
