@@ -685,13 +685,18 @@ export default function App() {
       if (!text || !text.trim()) { throw new Error("No text found — the file may be scanned or image-based."); }
       setDecreeText(text);
       decreeUploadedThisSession.current = true;
-      // Also save to vault as a decree document
+      // Also save to vault as a decree document + trigger extraction
       if (session?.token && session?.user?.id) {
         try {
           const storagePath = `${session.user.id}/${crypto.randomUUID()}_${file.name}`;
           await dbStorageUpload("documents", storagePath, file, session.token);
-          await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: text.slice(0, 500000) || null }, token: session.token });
+          const docResult = await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: "decree", file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: text.slice(0, 500000) || null }, token: session.token });
           await loadVaultDocs();
+          // Trigger decree intelligence extraction
+          if (FEATURE_DECREE_INTELLIGENCE) {
+            const docId = Array.isArray(docResult) ? docResult[0]?.id : docResult?.id;
+            if (docId) triggerExtraction(text.slice(0, 500000), docId);
+          }
         } catch {}
       }
     } catch (err: any) {
@@ -1522,10 +1527,50 @@ export default function App() {
                         <span className="text-xs text-emerald-500/70">This only takes a moment</span>
                       </motion.div>
                     ) : decreeFileName && decreeText ? (
-                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700">
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}><Check size={28} className="text-emerald-500" /></motion.div>
-                        <span className="text-sm font-medium">{decreeFileName}</span>
-                        {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
+                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700 overflow-hidden">
+                        <div className="py-6 px-6 flex flex-col items-center gap-2">
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}><Check size={28} className="text-emerald-500" /></motion.div>
+                          <span className="text-sm font-medium">{decreeFileName}</span>
+                          {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
+                        </div>
+                        {FEATURE_DECREE_INTELLIGENCE && extractionLoading && !decreeExtraction && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-4 flex flex-col items-center gap-2">
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                            <span className="text-xs font-medium text-emerald-600">Analyzing your decree...</span>
+                          </motion.div>
+                        )}
+                        {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.4 }} className="w-full border-t border-emerald-200 bg-white/60 px-5 py-4">
+                            <p className="text-xs font-medium text-emerald-700 mb-3 text-center">Here's what we found</p>
+                            <div className="space-y-2">
+                              {decreeExtraction.custody_type && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Custody</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.child_support?.amount && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Support</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">${decreeExtraction.child_support.amount}/mo{decreeExtraction.child_support.payer ? ` from ${decreeExtraction.child_support.payer}` : ""}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.geographic_restriction?.restricted && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Geo</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.geographic_restriction.area || "Restricted"}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.children?.length > 0 && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Children</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.children.map((c: any) => c.name).filter(Boolean).join(", ") || `${decreeExtraction.children.length} listed`}</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-3 text-center">You can view and edit the full summary anytime</p>
+                          </motion.div>
+                        )}
                       </motion.div>
                     ) : (
                       <motion.button key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all mb-4 text-slate-400">
