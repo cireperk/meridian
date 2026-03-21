@@ -1215,22 +1215,19 @@ export default function App() {
                   <p className="text-slate-800 font-medium">That's why I built Meridian.</p>
                 </div>
 
-                {/* Video card */}
-                <button onClick={openVideo} className="w-full rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 text-left group hover:shadow-xl hover:shadow-slate-900/20 transition-all duration-500 mb-10 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 group-hover:border-emerald-500/30 transition-all duration-500">
-                      <Play className="w-5 h-5 text-emerald-400 ml-0.5" fill="currentColor" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white/90 text-sm font-medium mb-0.5">A message from our founder</p>
-                      <p className="text-white/40 text-xs">Eric — 1 min watch</p>
-                    </div>
+                {/* Founder video */}
+                <div className="w-full rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10">
+                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src="https://www.youtube.com/embed/wlnhSIS11I8?rel=0&modestbranding=1"
+                      title="A message from our founder"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
                   </div>
-                  <p className="relative z-10 text-white/50 text-[13px] italic leading-relaxed mt-4 border-t border-white/5 pt-4">
-                    "Divorce is hard. When you thought this was the end, you found co-parenting is even harder, and I hope you use this app to navigate those waters."
-                  </p>
-                </button>
+                </div>
 
                 {/* Final CTA */}
                 <div className="flex flex-col items-center gap-3">
