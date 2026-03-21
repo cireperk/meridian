@@ -1,5 +1,4 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1024" height="1024" fill="#FFFFFF"/>
   <path d="M430 140 Q464 512, 430 884" stroke="url(#g)" stroke-width="40" stroke-linecap="round" fill="none"/>
   <path d="M594 140 Q628 512, 594 884" stroke="url(#g)" stroke-width="40" stroke-linecap="round" fill="none"/>
   <defs>
