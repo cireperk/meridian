@@ -1305,29 +1305,16 @@ export default function App() {
               </div>
               <button onClick={dismissVideo} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-white/50 hover:text-white transition-all"><X className="w-4 h-4" /></button>
             </div>
-            {/* Video */}
-            <div className="relative flex-1 min-h-0 bg-black cursor-pointer" onClick={togglePlayPause}>
-              <video ref={videoRef} className="w-full h-full object-contain block" src="/welcome.mp4" playsInline autoPlay muted onTimeUpdate={() => { const v = videoRef.current; if (v && v.duration) setVideoProgress((v.currentTime / v.duration) * 100); }} onEnded={() => { setVideoProgress(100); setVideoEnded(true); }} />
-              {(videoPaused || videoEnded) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                  <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                    <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* Controls */}
-            <div className="px-4 py-3 bg-slate-800/80 border-t border-white/5 shrink-0" onClick={(e) => e.stopPropagation()}>
-              <input type="range" min="0" max="100" step="0.1" value={videoProgress} onChange={(e) => { const v = videoRef.current; if (v && v.duration) { const pct = Number(e.target.value); v.currentTime = (pct / 100) * v.duration; setVideoProgress(pct); } }} className="w-full h-1 mb-3 appearance-none bg-white/10 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-md" style={{ background: `linear-gradient(to right, #10b981 ${videoProgress}%, rgba(255,255,255,0.1) ${videoProgress}%)` }} />
-              <div className="flex items-center gap-3">
-                <button onClick={() => { if (videoEnded) { const v = videoRef.current; if (v) { v.currentTime = 0; setVideoEnded(false); setVideoProgress(0); setVideoPaused(false); v.play().catch(() => {}); } } else { togglePlayPause(); } }} className="text-white/70 hover:text-white transition-colors">
-                  {videoPaused || videoEnded ? <Play className="w-5 h-5" fill="white" /> : <Pause className="w-5 h-5" fill="white" />}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); const v = videoRef.current; if (v) { v.muted = !v.muted; setVideoMuted(v.muted); } }} className="text-white/70 hover:text-white transition-colors">
-                  {videoMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </button>
-                <span className="text-white/40 text-xs font-mono">{videoRef.current ? `${Math.floor((videoRef.current.currentTime || 0) / 60)}:${String(Math.floor((videoRef.current.currentTime || 0) % 60)).padStart(2, "0")}` : "0:00"} / {videoRef.current?.duration ? `${Math.floor(videoRef.current.duration / 60)}:${String(Math.floor(videoRef.current.duration % 60)).padStart(2, "0")}` : "0:00"}</span>
-              </div>
+            {/* YouTube embed */}
+            <div className="relative flex-1 min-h-0 bg-black">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/wlnhSIS11I8?autoplay=1&rel=0&modestbranding=1"
+                title="A message from our founder"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
             </div>
           </div>
         </div>
