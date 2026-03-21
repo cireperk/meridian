@@ -2559,11 +2559,11 @@ export default function App() {
                 )}
 
                 {/* Sections */}
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {/* Custody */}
                   {decreeExtraction.custody_type && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Custody</h4>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Custody</h4>
                       {editingField === "custody_type" ? (
                         <div className="flex gap-2">
                           <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
@@ -2585,16 +2585,18 @@ export default function App() {
                   {/* Holiday Schedule */}
                   {decreeExtraction.holiday_schedule?.length > 0 && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Holiday Schedule</h4>
-                      <div className="space-y-2">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Holiday Schedule</h4>
+                      <div className="space-y-3">
                         {decreeExtraction.holiday_schedule.map((h: any, i: number) => (
-                          <div key={i} className="flex items-start justify-between text-sm">
-                            <span className="text-slate-600 font-medium">{h.holiday}</span>
-                            <div className="text-right">
-                              {h.even_years && <span className="text-xs text-slate-400">Even: {h.even_years}</span>}
-                              {h.even_years && h.odd_years && <span className="text-xs text-slate-300 mx-1">·</span>}
-                              {h.odd_years && <span className="text-xs text-slate-400">Odd: {h.odd_years}</span>}
-                            </div>
+                          <div key={i} className="border-b border-slate-50 pb-2.5 last:border-0 last:pb-0">
+                            <span className="text-sm text-slate-700 font-medium block mb-1">{h.holiday}</span>
+                            {(h.even_years || h.odd_years) && (
+                              <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                                {h.even_years && <span className="text-xs text-slate-400"><span className="text-slate-300">Even:</span> {h.even_years}</span>}
+                                {h.odd_years && <span className="text-xs text-slate-400"><span className="text-slate-300">Odd:</span> {h.odd_years}</span>}
+                              </div>
+                            )}
+                            {h.notes && <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{h.notes}</p>}
                           </div>
                         ))}
                       </div>
@@ -2604,8 +2606,8 @@ export default function App() {
                   {/* Child Support */}
                   {decreeExtraction.child_support && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Child Support</h4>
-                      <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Child Support</h4>
+                      <div className="space-y-2">
                         {decreeExtraction.child_support.amount && (
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-400">Amount</span>
@@ -2634,7 +2636,7 @@ export default function App() {
                   {/* Geographic Restriction */}
                   {decreeExtraction.geographic_restriction?.restricted && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Geographic Restriction</h4>
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Geographic Restriction</h4>
                       {editingField === "geographic_restriction" ? (
                         <div className="flex gap-2">
                           <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
@@ -2656,8 +2658,8 @@ export default function App() {
                   {/* Medical / Dental Rights */}
                   {(decreeExtraction.medical_decision_rights || decreeExtraction.dental_decision_rights) && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Decision Rights</h4>
-                      <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Decision Rights</h4>
+                      <div className="space-y-2">
                         {decreeExtraction.medical_decision_rights && (
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-400">Medical</span>
@@ -2700,24 +2702,24 @@ export default function App() {
                   {/* Pickup / Dropoff */}
                   {decreeExtraction.pickup_dropoff && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Pickup & Dropoff</h4>
-                      <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Pickup & Dropoff</h4>
+                      <div className="space-y-2.5">
                         {decreeExtraction.pickup_dropoff.location && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-400">Location</span>
-                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.location}</span>
+                          <div>
+                            <span className="text-[11px] text-slate-400 block mb-0.5">Location</span>
+                            <span className="text-sm text-slate-700">{decreeExtraction.pickup_dropoff.location}</span>
                           </div>
                         )}
                         {decreeExtraction.pickup_dropoff.weekday_time && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-400">Weekday</span>
-                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.weekday_time}</span>
+                          <div>
+                            <span className="text-[11px] text-slate-400 block mb-0.5">Weekday</span>
+                            <span className="text-sm text-slate-700">{decreeExtraction.pickup_dropoff.weekday_time}</span>
                           </div>
                         )}
                         {decreeExtraction.pickup_dropoff.weekend_time && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-400">Weekend</span>
-                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.weekend_time}</span>
+                          <div>
+                            <span className="text-[11px] text-slate-400 block mb-0.5">Weekend</span>
+                            <span className="text-sm text-slate-700">{decreeExtraction.pickup_dropoff.weekend_time}</span>
                           </div>
                         )}
                         {decreeExtraction.pickup_dropoff.details && (
@@ -2730,12 +2732,12 @@ export default function App() {
                   {/* Children */}
                   {decreeExtraction.children?.length > 0 && (
                     <div className="border border-slate-100 rounded-xl p-4">
-                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Children</h4>
-                      <div className="space-y-1.5">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Children</h4>
+                      <div className="space-y-2">
                         {decreeExtraction.children.map((child: any, i: number) => (
-                          <div key={i} className="flex justify-between text-sm">
+                          <div key={i} className="flex justify-between items-center text-sm">
                             <span className="text-slate-700 font-medium">{child.name || "Unnamed"}</span>
-                            {child.birthdate && <span className="text-slate-400">{child.birthdate}</span>}
+                            {child.birthdate && <span className="text-xs text-slate-400">{new Date(child.birthdate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
                           </div>
                         ))}
                       </div>
