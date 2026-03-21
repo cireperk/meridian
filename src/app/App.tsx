@@ -1216,8 +1216,8 @@ export default function App() {
                 </div>
 
                 {/* Founder video */}
-                <div className="w-full max-w-[320px] mx-auto rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10">
-                  <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
+                <div className="w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10 bg-black">
+                  <div className="relative w-full" style={{ paddingBottom: "100%" }}>
                     <iframe
                       className="absolute inset-0 w-full h-full"
                       src="https://www.youtube.com/embed/VVKPQ5heaaM?rel=0&modestbranding=1"
