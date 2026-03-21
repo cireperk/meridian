@@ -1526,7 +1526,7 @@ export default function App() {
                     {uploading ? (
                       <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-8 h-8 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
-                        <span className="text-sm font-medium text-emerald-700">Reading your document...</span>
+                        <span className="text-sm font-medium text-emerald-700">Uploading your document...</span>
                         <span className="text-xs text-emerald-500/70">This only takes a moment</span>
                       </motion.div>
                     ) : decreeFileName && decreeText ? (
