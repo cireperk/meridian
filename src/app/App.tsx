@@ -1911,42 +1911,44 @@ export default function App() {
                           {/* Decree Intelligence Summary Card */}
                           {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
                             <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }} onClick={() => setShowDecreeSummary(true)}
-                              className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl px-5 py-4 mb-5 text-left hover:border-emerald-200 hover:shadow-sm transition-all group">
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
-                                  <FileText className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
+                              className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl p-4 mb-5 text-left hover:border-emerald-200 hover:shadow-sm transition-all group">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
+                                    <FileText className="w-3 h-3 text-emerald-500" strokeWidth={1.5} />
+                                  </div>
+                                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Your Decree</span>
                                 </div>
-                                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Your Decree at a Glance</span>
+                                <div className="flex items-center gap-0.5 text-emerald-500 group-hover:text-emerald-600 transition-colors">
+                                  <span className="text-[11px] font-medium">Details</span>
+                                  <ChevronRight className="w-3 h-3" />
+                                </div>
                               </div>
-                              <div className="space-y-1.5">
+                              <div className="grid grid-cols-2 gap-2">
                                 {decreeExtraction.custody_type && (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">Custody</span>
-                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+                                    <span className="text-[10px] text-slate-400 block mb-0.5">Custody</span>
+                                    <span className="text-[12px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
                                   </div>
                                 )}
                                 {decreeExtraction.child_support?.amount && (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">Child Support</span>
-                                    <span className="text-xs font-medium text-slate-700">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
+                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+                                    <span className="text-[10px] text-slate-400 block mb-0.5">Child Support</span>
+                                    <span className="text-[12px] font-medium text-slate-700 leading-snug">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
                                   </div>
                                 )}
                                 {decreeExtraction.geographic_restriction?.area && (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">Geographic</span>
-                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.geographic_restriction.area}</span>
+                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+                                    <span className="text-[10px] text-slate-400 block mb-0.5">Geographic</span>
+                                    <span className="text-[12px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.geographic_restriction.area}</span>
                                   </div>
                                 )}
                                 {decreeExtraction.children?.length > 0 && (
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-slate-400">Children</span>
-                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.children.length} {decreeExtraction.children.length === 1 ? "child" : "children"}</span>
+                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
+                                    <span className="text-[10px] text-slate-400 block mb-0.5">Children</span>
+                                    <span className="text-[12px] font-medium text-slate-700 leading-snug">{decreeExtraction.children.map((c: any) => c.name?.split(" ")[0]).filter(Boolean).join(", ") || `${decreeExtraction.children.length}`}</span>
                                   </div>
                                 )}
-                              </div>
-                              <div className="flex items-center gap-1 mt-3 text-emerald-500 group-hover:text-emerald-600 transition-colors">
-                                <span className="text-xs font-medium">View full summary</span>
-                                <ChevronRight className="w-3 h-3" />
                               </div>
                             </motion.button>
                           )}
