@@ -845,12 +845,14 @@ export default function App() {
   const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
 
   // --- Decree Intelligence ---
+  const extractionLoaded = useRef(false);
   const loadExtraction = useCallback(async () => {
     if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !session?.user?.id) return;
     try {
-      const rows = await dbSelect("decree_extractions", `user_id=eq.${session.user.id}&status=eq.complete&order=created_at.desc&limit=1`, session.token);
+      const rows = await dbSelect("decree_extractions", `user_id=eq.${session.user.id}&order=created_at.desc&limit=1`, session.token);
       if (rows?.length) setDecreeExtraction(rows[0]);
     } catch {}
+    extractionLoaded.current = true;
   }, [session?.token, session?.user?.id]);
 
   useEffect(() => { if (FEATURE_DECREE_INTELLIGENCE && session?.token) loadExtraction(); }, [loadExtraction]);
@@ -858,7 +860,7 @@ export default function App() {
   // Auto-trigger extraction for existing decrees that haven't been analyzed yet
   const autoExtractTriggered = useRef(false);
   useEffect(() => {
-    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || extractionLoading || decreeExtraction || autoExtractTriggered.current) return;
+    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !extractionLoaded.current || extractionLoading || decreeExtraction || autoExtractTriggered.current) return;
     const decree = vaultDocs.find((d: any) => d.category === "decree" && d.text_content);
     if (decree) {
       autoExtractTriggered.current = true;
