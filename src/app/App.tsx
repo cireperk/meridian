@@ -1583,10 +1583,14 @@ export default function App() {
                         <button onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-slate-400 mb-3">
                           <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
                         </button>
-                        <div className="flex flex-col gap-1.5 px-2">
-                          <div className="flex items-start gap-2"><FolderLock size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Stored encrypted — only you can access it</span></div>
-                          <div className="flex items-start gap-2"><Eye size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Never read by humans — only used to help you</span></div>
-                          <div className="flex items-start gap-2"><Shield size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Never used to train AI or shared with anyone</span></div>
+                        <div className="flex flex-col items-center gap-2 mt-1">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-center gap-1"><FolderLock size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Encrypted<br/>storage</span></div>
+                            <div className="w-px h-8 bg-slate-200" />
+                            <div className="flex flex-col items-center gap-1"><Eye size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never read<br/>by humans</span></div>
+                            <div className="w-px h-8 bg-slate-200" />
+                            <div className="flex flex-col items-center gap-1"><Shield size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never shared<br/>or sold</span></div>
+                          </div>
                         </div>
                       </motion.div>
                     )}
