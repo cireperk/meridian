@@ -2547,9 +2547,6 @@ export default function App() {
                     <X className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
-                {decreeExtraction.user_edits && Object.keys(decreeExtraction.user_edits).length > 0 && (
-                  <p className="text-[11px] text-emerald-500 mb-4">You've corrected some fields — your edits are saved.</p>
-                )}
 
                 {/* Plain-Language Summary */}
                 {decreeExtraction.raw_summary && (
@@ -2564,18 +2561,7 @@ export default function App() {
                   {decreeExtraction.custody_type && (
                     <div className="border border-slate-100 rounded-xl p-4">
                       <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Custody</h4>
-                      {editingField === "custody_type" ? (
-                        <div className="flex gap-2">
-                          <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
-                          <button onClick={() => handleFieldEdit("custody_type", editingValue)} className="text-xs text-emerald-600 font-medium">Save</button>
-                          <button onClick={() => setEditingField(null)} className="text-xs text-slate-400">Cancel</button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-slate-700">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
-                          <button onClick={() => { setEditingField("custody_type"); setEditingValue(decreeExtraction.custody_type); }} className="opacity-0 group-hover:opacity-100 transition-opacity"><Edit3 className="w-3 h-3 text-slate-300" /></button>
-                        </div>
-                      )}
+                      <span className="text-sm text-slate-700">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
                       {decreeExtraction.custody_schedule?.details && (
                         <p className="text-xs text-slate-400 mt-2 leading-relaxed">{decreeExtraction.custody_schedule.details}</p>
                       )}
@@ -2637,18 +2623,7 @@ export default function App() {
                   {decreeExtraction.geographic_restriction?.restricted && (
                     <div className="border border-slate-100 rounded-xl p-4">
                       <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Geographic Restriction</h4>
-                      {editingField === "geographic_restriction" ? (
-                        <div className="flex gap-2">
-                          <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
-                          <button onClick={() => handleFieldEdit("geographic_restriction", { ...decreeExtraction.geographic_restriction, area: editingValue })} className="text-xs text-emerald-600 font-medium">Save</button>
-                          <button onClick={() => setEditingField(null)} className="text-xs text-slate-400">Cancel</button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between group">
-                          <span className="text-sm text-slate-700">{decreeExtraction.geographic_restriction.area}</span>
-                          <button onClick={() => { setEditingField("geographic_restriction"); setEditingValue(decreeExtraction.geographic_restriction.area || ""); }} className="opacity-0 group-hover:opacity-100 transition-opacity"><Edit3 className="w-3 h-3 text-slate-300" /></button>
-                        </div>
-                      )}
+                      <span className="text-sm text-slate-700">{decreeExtraction.geographic_restriction.area}</span>
                       {decreeExtraction.geographic_restriction.details && (
                         <p className="text-xs text-slate-400 mt-2 leading-relaxed">{decreeExtraction.geographic_restriction.details}</p>
                       )}
