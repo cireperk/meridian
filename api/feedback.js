@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) {
     console.log("[FEEDBACK]", new Date().toISOString(), email || "anon", feedback.trim());
-    return res.status(200).json({ ok: true, method: "logged" });
+    return res.status(200).json({ ok: true });
   }
 
   try {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: "Meridian Feedback <onboarding@resend.dev>",
-        to: "support@mymeridianapp.com",
+        to: "eric@mymeridianapp.com",
         reply_to: email || undefined,
         subject: `Feedback from ${email || "anonymous user"}`,
         html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px;">
@@ -37,14 +37,12 @@ export default async function handler(req, res) {
     });
 
     if (!emailRes.ok) {
-      const err = await emailRes.text();
-      console.error("Resend error:", err);
-      return res.status(200).json({ ok: true, method: "logged" });
+      console.error("Resend error:", await emailRes.text());
     }
 
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Feedback email error:", err);
-    return res.status(200).json({ ok: true, method: "logged" });
+    return res.status(200).json({ ok: true });
   }
 }
