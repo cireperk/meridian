@@ -1216,11 +1216,11 @@ export default function App() {
                 </div>
 
                 {/* Founder video */}
-                <div className="w-full rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10">
-                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                <div className="w-full max-w-[320px] mx-auto rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10">
+                  <div className="relative w-full" style={{ paddingBottom: "177.78%" }}>
                     <iframe
                       className="absolute inset-0 w-full h-full"
-                      src="https://www.youtube.com/embed/wlnhSIS11I8?rel=0&modestbranding=1"
+                      src="https://www.youtube.com/embed/VVKPQ5heaaM?rel=0&modestbranding=1"
                       title="A message from our founder"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1306,7 +1306,7 @@ export default function App() {
             <div className="relative flex-1 min-h-0 bg-black">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/wlnhSIS11I8?autoplay=1&rel=0&modestbranding=1"
+                src="https://www.youtube.com/embed/VVKPQ5heaaM?autoplay=1&rel=0&modestbranding=1"
                 title="A message from our founder"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
