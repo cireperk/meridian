@@ -850,6 +850,17 @@ export default function App() {
 
   useEffect(() => { if (FEATURE_DECREE_INTELLIGENCE && session?.token) loadExtraction(); }, [loadExtraction]);
 
+  // Auto-trigger extraction for existing decrees that haven't been analyzed yet
+  const autoExtractTriggered = useRef(false);
+  useEffect(() => {
+    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || extractionLoading || decreeExtraction || autoExtractTriggered.current) return;
+    const decree = vaultDocs.find((d: any) => d.category === "decree" && d.text_content);
+    if (decree) {
+      autoExtractTriggered.current = true;
+      triggerExtraction(decree.text_content.slice(0, 500000), decree.id);
+    }
+  }, [vaultDocs, session?.token, extractionLoading, decreeExtraction]);
+
   const triggerExtraction = async (textContent: string, documentId: string) => {
     if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !session?.user?.id) return;
     setExtractionLoading(true);
