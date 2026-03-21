@@ -1,0 +1,9 @@
+<svg width="512" height="640" viewBox="0 0 512 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mark -->
+  <path d="M210 48 Q232 224, 210 400" stroke="white" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <path d="M302 48 Q324 224, 302 400" stroke="white" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <!-- Wordmark -->
+  <text x="256" y="520" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="88" font-weight="300" letter-spacing="-1.5" fill="white">Meridian</text>
+  <!-- Tagline -->
+  <text x="256" y="576" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="400" letter-spacing="3" fill="rgba(255,255,255,0.6)">CALM THROUGH CHANGE</text>
+</svg>

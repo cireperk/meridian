@@ -1,0 +1,7 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mark -->
+  <path d="M72 40 Q92 160, 72 280" stroke="white" stroke-width="20" stroke-linecap="round" fill="none"/>
+  <path d="M168 40 Q188 160, 168 280" stroke="white" stroke-width="20" stroke-linecap="round" fill="none"/>
+  <!-- Wordmark -->
+  <text x="240" y="196" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="120" font-weight="300" letter-spacing="-2" fill="white">Meridian</text>
+</svg>
