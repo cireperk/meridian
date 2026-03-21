@@ -105,7 +105,7 @@ const formatTime12 = (t: string) => {
 };
 
 // --- Feature flags ---
-const FEATURE_DECREE_INTELLIGENCE = false;
+const FEATURE_DECREE_INTELLIGENCE = true;
 
 // --- System prompt ---
 const SYSTEM_PROMPT = `You're Meridian — think of yourself as a calm, wise friend who's been through divorce and co-parenting. You talk like a real person, not a chatbot.
