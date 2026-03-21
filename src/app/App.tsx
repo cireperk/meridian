@@ -1518,7 +1518,10 @@ export default function App() {
                   <button onClick={() => setAuthView("onboard-modes")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
                   <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed max-w-[300px]">When Meridian has your decree, it can answer questions using your actual terms — custody schedules, financial obligations, and more.</p>
-                  <p className="text-xs text-slate-400 mb-6 text-center">Your document stays private and is never shared.</p>
+                  <div className="flex items-center gap-1.5 mb-6">
+                    <Shield size={12} className="text-emerald-500 shrink-0" />
+                    <p className="text-xs text-slate-400 text-center">Your document is encrypted, never shared, and never used to train AI.</p>
+                  </div>
                   <AnimatePresence mode="wait">
                     {uploading ? (
                       <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
@@ -1534,9 +1537,12 @@ export default function App() {
                           {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
                         </div>
                         {FEATURE_DECREE_INTELLIGENCE && extractionLoading && !decreeExtraction && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-4 flex flex-col items-center gap-2">
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
-                            <span className="text-xs font-medium text-emerald-600">Analyzing your decree...</span>
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-4 flex flex-col items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                              <span className="text-xs font-medium text-emerald-600">Summarizing key details...</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 text-center leading-relaxed">Feel free to continue — your summary will be ready when you get in.</span>
                           </motion.div>
                         )}
                         {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
@@ -1573,9 +1579,16 @@ export default function App() {
                         )}
                       </motion.div>
                     ) : (
-                      <motion.button key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all mb-4 text-slate-400">
-                        <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
-                      </motion.button>
+                      <motion.div key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full mb-4">
+                        <button onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-slate-400 mb-3">
+                          <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
+                        </button>
+                        <div className="flex flex-col gap-1.5 px-2">
+                          <div className="flex items-start gap-2"><FolderLock size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Stored encrypted — only you can access it</span></div>
+                          <div className="flex items-start gap-2"><Eye size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Never read by humans — only used to help you</span></div>
+                          <div className="flex items-start gap-2"><Shield size={11} className="text-slate-400 mt-0.5 shrink-0" /><span className="text-[11px] text-slate-400 leading-snug">Never used to train AI or shared with anyone</span></div>
+                        </div>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                   {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mb-3 w-full">{uploadError}</div>}
