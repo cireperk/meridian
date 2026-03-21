@@ -104,6 +104,9 @@ const formatTime12 = (t: string) => {
   return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
 };
 
+// --- Feature flags ---
+const FEATURE_DECREE_INTELLIGENCE = false;
+
 // --- System prompt ---
 const SYSTEM_PROMPT = `You're Meridian — think of yourself as a calm, wise friend who's been through divorce and co-parenting. You talk like a real person, not a chatbot.
 
@@ -552,6 +555,12 @@ export default function App() {
   const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
   const [vaultUploadCategory, setVaultUploadCategory] = useState<string | null>(null);
   const vaultFileRef = useRef<HTMLInputElement>(null);
+  // Decree Intelligence state
+  const [decreeExtraction, setDecreeExtraction] = useState<any>(null);
+  const [extractionLoading, setExtractionLoading] = useState(false);
+  const [showDecreeSummary, setShowDecreeSummary] = useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
   // Calendar state
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calEvents, setCalEvents] = useState<any[]>([]);
@@ -795,10 +804,15 @@ export default function App() {
       setVaultUploadProgress("processing");
       let textContent: string | null = null;
       try { textContent = await extractFileText(file); } catch {}
-      await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 500000) || null }, token: session.token });
+      const docResult = await sbFetch("/rest/v1/documents", { method: "POST", body: { user_id: session.user.id, category: vaultUploadCategory, file_name: file.name, file_size: file.size, mime_type: file.type, storage_path: storagePath, text_content: textContent?.slice(0, 500000) || null }, token: session.token });
       setVaultUploadProgress("done");
       await new Promise(r => setTimeout(r, 1200));
       await loadVaultDocs();
+      // Trigger decree intelligence extraction in background
+      if (FEATURE_DECREE_INTELLIGENCE && vaultUploadCategory === "decree" && textContent) {
+        const docId = Array.isArray(docResult) ? docResult[0]?.id : docResult?.id;
+        if (docId) triggerExtraction(textContent.slice(0, 500000), docId);
+      }
     } catch (err: any) { showToastMsg(err?.message || "Upload failed. Please try again.", true); }
     finally { setVaultUploading(false); setVaultUploadProgress(null); setVaultUploadCategory(null); if (vaultFileRef.current) vaultFileRef.current.value = ""; }
   };
@@ -824,6 +838,49 @@ export default function App() {
   };
 
   const filteredVaultDocs = vaultCategory === "all" ? vaultDocs : vaultDocs.filter(d => d.category === vaultCategory);
+
+  // --- Decree Intelligence ---
+  const loadExtraction = useCallback(async () => {
+    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !session?.user?.id) return;
+    try {
+      const rows = await dbSelect("decree_extractions", `user_id=eq.${session.user.id}&status=eq.complete&order=created_at.desc&limit=1`, session.token);
+      if (rows?.length) setDecreeExtraction(rows[0]);
+    } catch {}
+  }, [session?.token, session?.user?.id]);
+
+  useEffect(() => { if (FEATURE_DECREE_INTELLIGENCE && session?.token) loadExtraction(); }, [loadExtraction]);
+
+  const triggerExtraction = async (textContent: string, documentId: string) => {
+    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !session?.user?.id) return;
+    setExtractionLoading(true);
+    try {
+      // Create pending row
+      await sbFetch("/rest/v1/decree_extractions", { method: "POST", body: { user_id: session.user.id, document_id: documentId, status: "extracting" }, token: session.token });
+      // Call extraction API
+      const res = await fetch("/api/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text_content: textContent }) });
+      if (!res.ok) throw new Error("Extraction failed");
+      const fields = await res.json();
+      // Update extraction row
+      const updated = await dbUpdate("decree_extractions", `user_id=eq.${session.user.id}&status=eq.extracting`, { ...fields, status: "complete", extracted_at: new Date().toISOString() }, session.token);
+      if (updated?.[0]) setDecreeExtraction(updated[0]);
+      else await loadExtraction();
+      showToastMsg("Your decree has been analyzed");
+    } catch {
+      // Mark as failed
+      await dbUpdate("decree_extractions", `user_id=eq.${session.user.id}&status=eq.extracting`, { status: "failed" }, session.token).catch(() => {});
+    } finally { setExtractionLoading(false); }
+  };
+
+  const handleFieldEdit = async (field: string, value: any) => {
+    if (!session?.token || !decreeExtraction?.id) return;
+    try {
+      const updates: any = { [field]: value, user_edits: { ...(decreeExtraction.user_edits || {}), [field]: true }, updated_at: new Date().toISOString() };
+      await dbUpdate("decree_extractions", `id=eq.${decreeExtraction.id}`, updates, session.token);
+      setDecreeExtraction((prev: any) => ({ ...prev, ...updates }));
+    } catch {}
+    setEditingField(null);
+    setEditingValue("");
+  };
 
   // --- Coach ---
   const handleCoachSend = async () => {
@@ -1781,6 +1838,56 @@ export default function App() {
                               </p>
                             </motion.div>
                           )}
+                          {/* Decree Intelligence Summary Card */}
+                          {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
+                            <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }} onClick={() => setShowDecreeSummary(true)}
+                              className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl px-5 py-4 mb-5 text-left hover:border-emerald-200 hover:shadow-sm transition-all group">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
+                                  <FileText className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
+                                </div>
+                                <span className="text-xs font-medium uppercase tracking-wider text-slate-400">Your Decree at a Glance</span>
+                              </div>
+                              <div className="space-y-1.5">
+                                {decreeExtraction.custody_type && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">Custody</span>
+                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                                  </div>
+                                )}
+                                {decreeExtraction.child_support?.amount && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">Child Support</span>
+                                    <span className="text-xs font-medium text-slate-700">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
+                                  </div>
+                                )}
+                                {decreeExtraction.geographic_restriction?.area && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">Geographic</span>
+                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.geographic_restriction.area}</span>
+                                  </div>
+                                )}
+                                {decreeExtraction.children?.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-slate-400">Children</span>
+                                    <span className="text-xs font-medium text-slate-700">{decreeExtraction.children.length} {decreeExtraction.children.length === 1 ? "child" : "children"}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-3 text-emerald-500 group-hover:text-emerald-600 transition-colors">
+                                <span className="text-xs font-medium">View full summary</span>
+                                <ChevronRight className="w-3 h-3" />
+                              </div>
+                            </motion.button>
+                          )}
+                          {FEATURE_DECREE_INTELLIGENCE && extractionLoading && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl px-5 py-4 mb-5">
+                              <div className="flex items-center gap-3">
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full" />
+                                <span className="text-sm text-slate-400">Analyzing your decree...</span>
+                              </div>
+                            </motion.div>
+                          )}
                           {/* Auto-scrolling action pills carousel */}
                           <div ref={(el) => {
                             if (!el) return;
@@ -2344,6 +2451,224 @@ export default function App() {
             )}
           </AnimatePresence>
 
+          {/* Decree Intelligence Summary Modal */}
+          {FEATURE_DECREE_INTELLIGENCE && showDecreeSummary && decreeExtraction && (
+            <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => { setShowDecreeSummary(false); setEditingField(null); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-light text-slate-700">Decree Summary</h3>
+                  <button onClick={() => { setShowDecreeSummary(false); setEditingField(null); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+                {decreeExtraction.user_edits && Object.keys(decreeExtraction.user_edits).length > 0 && (
+                  <p className="text-[11px] text-emerald-500 mb-4">You've corrected some fields — your edits are saved.</p>
+                )}
+
+                {/* Plain-Language Summary */}
+                {decreeExtraction.raw_summary && (
+                  <div className="mb-5 p-4 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-xl border border-emerald-100/40">
+                    <p className="text-sm text-slate-600 leading-relaxed">{decreeExtraction.raw_summary}</p>
+                  </div>
+                )}
+
+                {/* Sections */}
+                <div className="space-y-4">
+                  {/* Custody */}
+                  {decreeExtraction.custody_type && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Custody</h4>
+                      {editingField === "custody_type" ? (
+                        <div className="flex gap-2">
+                          <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
+                          <button onClick={() => handleFieldEdit("custody_type", editingValue)} className="text-xs text-emerald-600 font-medium">Save</button>
+                          <button onClick={() => setEditingField(null)} className="text-xs text-slate-400">Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-slate-700">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                          <button onClick={() => { setEditingField("custody_type"); setEditingValue(decreeExtraction.custody_type); }} className="opacity-0 group-hover:opacity-100 transition-opacity"><Edit3 className="w-3 h-3 text-slate-300" /></button>
+                        </div>
+                      )}
+                      {decreeExtraction.custody_schedule?.details && (
+                        <p className="text-xs text-slate-400 mt-2 leading-relaxed">{decreeExtraction.custody_schedule.details}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Holiday Schedule */}
+                  {decreeExtraction.holiday_schedule?.length > 0 && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Holiday Schedule</h4>
+                      <div className="space-y-2">
+                        {decreeExtraction.holiday_schedule.map((h: any, i: number) => (
+                          <div key={i} className="flex items-start justify-between text-sm">
+                            <span className="text-slate-600 font-medium">{h.holiday}</span>
+                            <div className="text-right">
+                              {h.even_years && <span className="text-xs text-slate-400">Even: {h.even_years}</span>}
+                              {h.even_years && h.odd_years && <span className="text-xs text-slate-300 mx-1">·</span>}
+                              {h.odd_years && <span className="text-xs text-slate-400">Odd: {h.odd_years}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Child Support */}
+                  {decreeExtraction.child_support && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Child Support</h4>
+                      <div className="space-y-1.5">
+                        {decreeExtraction.child_support.amount && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Amount</span>
+                            <span className="text-slate-700 font-medium">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
+                          </div>
+                        )}
+                        {decreeExtraction.child_support.payer && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Paid by</span>
+                            <span className="text-slate-700">{decreeExtraction.child_support.payer}</span>
+                          </div>
+                        )}
+                        {decreeExtraction.child_support.due_day && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Due</span>
+                            <span className="text-slate-700">{decreeExtraction.child_support.due_day === 1 ? "1st" : `${decreeExtraction.child_support.due_day}th`} of each month</span>
+                          </div>
+                        )}
+                        {decreeExtraction.child_support.details && (
+                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{decreeExtraction.child_support.details}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Geographic Restriction */}
+                  {decreeExtraction.geographic_restriction?.restricted && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Geographic Restriction</h4>
+                      {editingField === "geographic_restriction" ? (
+                        <div className="flex gap-2">
+                          <input value={editingValue} onChange={(e) => setEditingValue(e.target.value)} className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-300" />
+                          <button onClick={() => handleFieldEdit("geographic_restriction", { ...decreeExtraction.geographic_restriction, area: editingValue })} className="text-xs text-emerald-600 font-medium">Save</button>
+                          <button onClick={() => setEditingField(null)} className="text-xs text-slate-400">Cancel</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between group">
+                          <span className="text-sm text-slate-700">{decreeExtraction.geographic_restriction.area}</span>
+                          <button onClick={() => { setEditingField("geographic_restriction"); setEditingValue(decreeExtraction.geographic_restriction.area || ""); }} className="opacity-0 group-hover:opacity-100 transition-opacity"><Edit3 className="w-3 h-3 text-slate-300" /></button>
+                        </div>
+                      )}
+                      {decreeExtraction.geographic_restriction.details && (
+                        <p className="text-xs text-slate-400 mt-2 leading-relaxed">{decreeExtraction.geographic_restriction.details}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Medical / Dental Rights */}
+                  {(decreeExtraction.medical_decision_rights || decreeExtraction.dental_decision_rights) && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Decision Rights</h4>
+                      <div className="space-y-1.5">
+                        {decreeExtraction.medical_decision_rights && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Medical</span>
+                            <span className="text-slate-700">{decreeExtraction.medical_decision_rights.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                          </div>
+                        )}
+                        {decreeExtraction.dental_decision_rights && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Dental</span>
+                            <span className="text-slate-700">{decreeExtraction.dental_decision_rights.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Right of First Refusal */}
+                  {decreeExtraction.right_of_first_refusal?.enabled && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Right of First Refusal</h4>
+                      <p className="text-sm text-slate-700">
+                        {decreeExtraction.right_of_first_refusal.hours_threshold
+                          ? `Applies when a parent will be away for ${decreeExtraction.right_of_first_refusal.hours_threshold}+ hours`
+                          : "Enabled"}
+                      </p>
+                      {decreeExtraction.right_of_first_refusal.details && (
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">{decreeExtraction.right_of_first_refusal.details}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Communication Requirements */}
+                  {decreeExtraction.communication_requirements && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Communication</h4>
+                      <p className="text-sm text-slate-700 leading-relaxed">{decreeExtraction.communication_requirements}</p>
+                    </div>
+                  )}
+
+                  {/* Pickup / Dropoff */}
+                  {decreeExtraction.pickup_dropoff && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Pickup & Dropoff</h4>
+                      <div className="space-y-1.5">
+                        {decreeExtraction.pickup_dropoff.location && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Location</span>
+                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.location}</span>
+                          </div>
+                        )}
+                        {decreeExtraction.pickup_dropoff.weekday_time && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Weekday</span>
+                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.weekday_time}</span>
+                          </div>
+                        )}
+                        {decreeExtraction.pickup_dropoff.weekend_time && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-400">Weekend</span>
+                            <span className="text-slate-700">{decreeExtraction.pickup_dropoff.weekend_time}</span>
+                          </div>
+                        )}
+                        {decreeExtraction.pickup_dropoff.details && (
+                          <p className="text-xs text-slate-400 mt-1 leading-relaxed">{decreeExtraction.pickup_dropoff.details}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Children */}
+                  {decreeExtraction.children?.length > 0 && (
+                    <div className="border border-slate-100 rounded-xl p-4">
+                      <h4 className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-2">Children</h4>
+                      <div className="space-y-1.5">
+                        {decreeExtraction.children.map((child: any, i: number) => (
+                          <div key={i} className="flex justify-between text-sm">
+                            <span className="text-slate-700 font-medium">{child.name || "Unnamed"}</span>
+                            {child.birthdate && <span className="text-slate-400">{child.birthdate}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Re-analyze button */}
+                <button onClick={() => {
+                  const decree = vaultDocs.find(d => d.category === "decree" && d.text_content);
+                  if (decree) { setShowDecreeSummary(false); triggerExtraction(decree.text_content, decree.id); }
+                }} className="w-full mt-6 py-3 text-sm text-slate-400 hover:text-emerald-600 transition-colors">
+                  Re-analyze decree
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+
           {/* Vault category picker */}
           <AnimatePresence>
             {vaultUploadCategory === "picking" && (
@@ -2429,6 +2754,16 @@ export default function App() {
                     </div>
                     <button onClick={() => { setVaultViewDoc(null); if (vaultViewUrl) { URL.revokeObjectURL(vaultViewUrl); setVaultViewUrl(null); } }} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><X className="w-4 h-4" /></button>
                   </div>
+                  {/* Decree Intelligence in vault detail */}
+                  {FEATURE_DECREE_INTELLIGENCE && vaultViewDoc.category === "decree" && decreeExtraction?.status === "complete" && (
+                    <button onClick={() => setShowDecreeSummary(true)} className="w-full mb-3 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 border border-emerald-100/40 rounded-xl px-4 py-3 flex items-center justify-between hover:border-emerald-200 transition-all">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-emerald-500" strokeWidth={1.5} />
+                        <span className="text-sm text-emerald-700 font-medium">View decree summary</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-emerald-400" />
+                    </button>
+                  )}
                   <div className="flex-1 overflow-auto rounded-xl border border-slate-200/60 bg-slate-50/50 min-h-[200px]">
                     {!vaultViewUrl ? (
                       <div className="flex items-center justify-center h-48">
