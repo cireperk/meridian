@@ -1,29 +1,22 @@
 <svg width="1128" height="191" viewBox="0 0 1128 191" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Light warm background -->
-  <rect width="1128" height="191" fill="#FDFCFB"/>
-  <!-- Subtle decorative curves -->
-  <path d="M-30 15 Q60 95, -30 175" stroke="#10b98110" stroke-width="50" stroke-linecap="round" fill="none"/>
-  <path d="M50 15 Q140 95, 50 175" stroke="#10b98108" stroke-width="50" stroke-linecap="round" fill="none"/>
-  <path d="M990 10 Q1060 95, 990 180" stroke="#10b98108" stroke-width="50" stroke-linecap="round" fill="none"/>
-  <path d="M1070 10 Q1140 95, 1070 180" stroke="#10b98110" stroke-width="50" stroke-linecap="round" fill="none"/>
-  <!-- Bottom accent line -->
-  <rect x="0" y="186" width="1128" height="5" fill="url(#accent)"/>
-  <!-- Logo mark -->
-  <path d="M430 38 Q444 95, 430 153" stroke="url(#mg)" stroke-width="10" stroke-linecap="round" fill="none"/>
-  <path d="M468 38 Q482 95, 468 153" stroke="url(#mg)" stroke-width="10" stroke-linecap="round" fill="none"/>
-  <!-- Wordmark -->
-  <text x="510" y="110" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="52" font-weight="300" letter-spacing="-1" fill="#1e293b">Meridian</text>
-  <!-- Tagline -->
-  <text x="564" y="143" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="400" letter-spacing="2.5" fill="#94a3b8">CALM AND CLARITY THROUGH DIVORCE</text>
+  <!-- Deep teal base -->
+  <rect width="1128" height="191" fill="#0f2b26"/>
+  <!-- Soft aurora-like washes -->
+  <ellipse cx="280" cy="60" rx="500" ry="120" fill="#10b981" opacity="0.12"/>
+  <ellipse cx="800" cy="130" rx="500" ry="120" fill="#0d9488" opacity="0.1"/>
+  <ellipse cx="564" cy="0" rx="700" ry="90" fill="#14b8a6" opacity="0.06"/>
+  <!-- Flowing lines -->
+  <path d="M-50 130 Q200 40, 500 80 Q800 120, 1180 50" stroke="url(#dl1)" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.2"/>
+  <path d="M-50 150 Q300 70, 600 100 Q900 130, 1180 60" stroke="url(#dl1)" stroke-width="0.7" stroke-linecap="round" fill="none" opacity="0.12"/>
+  <path d="M-50 110 Q150 60, 400 75 Q700 95, 1000 40 Q1100 30, 1180 45" stroke="url(#dl2)" stroke-width="0.5" stroke-linecap="round" fill="none" opacity="0.1"/>
   <defs>
-    <linearGradient id="mg" x1="450" y1="38" x2="450" y2="153" gradientUnits="userSpaceOnUse">
+    <linearGradient id="dl1" x1="0" y1="0" x2="1128" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#10b981"/>
-      <stop offset="100%" stop-color="#0d9488"/>
-    </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1128" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0d9488"/>
-      <stop offset="50%" stop-color="#10b981"/>
       <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+    <linearGradient id="dl2" x1="0" y1="0" x2="1128" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#10b981"/>
     </linearGradient>
   </defs>
 </svg>
