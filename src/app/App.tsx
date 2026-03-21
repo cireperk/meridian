@@ -1910,58 +1910,6 @@ export default function App() {
                               </p>
                             </motion.div>
                           )}
-                          {/* Decree Intelligence Summary Card */}
-                          {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
-                            <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }} onClick={() => setShowDecreeSummary(true)}
-                              className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl p-4 mb-5 text-left hover:border-emerald-200 hover:shadow-sm transition-all group">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
-                                    <FileText className="w-3 h-3 text-emerald-500" strokeWidth={1.5} />
-                                  </div>
-                                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Your Decree</span>
-                                </div>
-                                <div className="flex items-center gap-0.5 text-emerald-500 group-hover:text-emerald-600 transition-colors">
-                                  <span className="text-[11px] font-medium">Details</span>
-                                  <ChevronRight className="w-3 h-3" />
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                {decreeExtraction.custody_type && (
-                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
-                                    <span className="text-[10px] text-slate-400 block mb-0.5">Custody</span>
-                                    <span className="text-[12px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
-                                  </div>
-                                )}
-                                {decreeExtraction.child_support?.amount && (
-                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
-                                    <span className="text-[10px] text-slate-400 block mb-0.5">Child Support</span>
-                                    <span className="text-[12px] font-medium text-slate-700 leading-snug">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
-                                  </div>
-                                )}
-                                {decreeExtraction.geographic_restriction?.area && (
-                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
-                                    <span className="text-[10px] text-slate-400 block mb-0.5">Geographic</span>
-                                    <span className="text-[12px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.geographic_restriction.area}</span>
-                                  </div>
-                                )}
-                                {decreeExtraction.children?.length > 0 && (
-                                  <div className="bg-slate-50/80 rounded-lg px-3 py-2">
-                                    <span className="text-[10px] text-slate-400 block mb-0.5">Children</span>
-                                    <span className="text-[12px] font-medium text-slate-700 leading-snug">{decreeExtraction.children.map((c: any) => c.name?.split(" ")[0]).filter(Boolean).join(", ") || `${decreeExtraction.children.length}`}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.button>
-                          )}
-                          {FEATURE_DECREE_INTELLIGENCE && extractionLoading && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-sm bg-white border border-slate-200/60 rounded-2xl px-5 py-4 mb-5">
-                              <div className="flex items-center gap-3">
-                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full" />
-                                <span className="text-sm text-slate-400">Analyzing your decree...</span>
-                              </div>
-                            </motion.div>
-                          )}
                           {/* Auto-scrolling action pills carousel */}
                           <div ref={(el) => {
                             if (!el) return;
@@ -2298,6 +2246,62 @@ export default function App() {
                         </button>
                       ))}
                     </div>
+
+                    {/* Decree Intelligence Summary Card */}
+                    {FEATURE_DECREE_INTELLIGENCE && (vaultCategory === "all" || vaultCategory === "decree") && decreeExtraction?.status === "complete" && (
+                      <motion.button initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} onClick={() => setShowDecreeSummary(true)}
+                        className="w-full bg-white border border-slate-200/60 rounded-2xl p-4 mb-4 text-left hover:border-emerald-200 hover:shadow-sm transition-all group">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
+                              <FileText className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.5} />
+                            </div>
+                            <div>
+                              <span className="text-[13px] font-medium text-slate-700 block leading-tight">Your Decree at a Glance</span>
+                              <span className="text-[10px] text-slate-400">Key terms extracted from your document</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-0.5 text-emerald-500 group-hover:text-emerald-600 transition-colors shrink-0">
+                            <span className="text-[11px] font-medium">View all</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {decreeExtraction.custody_type && (
+                            <div className="bg-slate-50/80 rounded-lg px-3 py-2.5">
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Custody</span>
+                              <span className="text-[13px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                            </div>
+                          )}
+                          {decreeExtraction.child_support?.amount && (
+                            <div className="bg-slate-50/80 rounded-lg px-3 py-2.5">
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Child Support</span>
+                              <span className="text-[13px] font-medium text-slate-700 leading-snug">${decreeExtraction.child_support.amount.toLocaleString()}/mo</span>
+                            </div>
+                          )}
+                          {decreeExtraction.geographic_restriction?.area && (
+                            <div className="bg-slate-50/80 rounded-lg px-3 py-2.5">
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Geographic</span>
+                              <span className="text-[13px] font-medium text-slate-700 leading-snug line-clamp-2">{decreeExtraction.geographic_restriction.area}</span>
+                            </div>
+                          )}
+                          {decreeExtraction.children?.length > 0 && (
+                            <div className="bg-slate-50/80 rounded-lg px-3 py-2.5">
+                              <span className="text-[10px] text-slate-400 block mb-0.5">Children</span>
+                              <span className="text-[13px] font-medium text-slate-700 leading-snug">{decreeExtraction.children.map((c: any) => c.name?.split(" ")[0]).filter(Boolean).join(", ") || `${decreeExtraction.children.length}`}</span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.button>
+                    )}
+                    {FEATURE_DECREE_INTELLIGENCE && (vaultCategory === "all" || vaultCategory === "decree") && extractionLoading && (
+                      <div className="w-full bg-white border border-slate-200/60 rounded-2xl px-5 py-4 mb-4">
+                        <div className="flex items-center gap-3">
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full" />
+                          <span className="text-sm text-slate-400">Analyzing your decree...</span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Document list */}
                     {vaultLoading ? (
