@@ -2308,6 +2308,13 @@ export default function App() {
                             <p className="text-sm text-slate-400 mb-1">No documents yet</p>
                             <p className="text-xs text-slate-300 mb-4 max-w-[260px] leading-relaxed">Upload your divorce decree so Meridian can answer questions using your exact terms and schedule.</p>
                             <Button size="sm" onClick={() => { setVaultUploadCategory("decree"); setTimeout(() => vaultFileRef.current?.click(), 100); }} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Upload decree</Button>
+                            <div className="flex items-center gap-4 mt-8">
+                              <div className="flex flex-col items-center gap-1"><FolderLock size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Encrypted<br/>storage</span></div>
+                              <div className="w-px h-8 bg-slate-200" />
+                              <div className="flex flex-col items-center gap-1"><Eye size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never read<br/>by humans</span></div>
+                              <div className="w-px h-8 bg-slate-200" />
+                              <div className="flex flex-col items-center gap-1"><Shield size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never shared<br/>or sold</span></div>
+                            </div>
                           </>
                         ) : (
                           <>
