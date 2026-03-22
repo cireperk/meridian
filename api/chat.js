@@ -23,7 +23,8 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const data = await response.json();
-      return res.status(response.status).json(data);
+      const isRateLimit = response.status === 429;
+      return res.status(response.status).json({ ...data, isRateLimit });
     }
 
     res.setHeader("Content-Type", "text/event-stream");

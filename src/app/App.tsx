@@ -714,15 +714,27 @@ export default function App() {
     if (!convId) { convId = `conv_${Date.now()}`; setConversations((prev) => [{ id: convId, title: userMsg.slice(0, 50), messages: [], createdAt: new Date().toISOString() }, ...prev]); setActiveConvId(convId); }
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
-    // Build vault docs context (includes decree if uploaded)
-    const vaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("");
+    // Build vault docs context (includes decree if uploaded) — cap at ~50k chars to avoid rate limits
+    const MAX_CONTEXT_CHARS = 50000;
+    let vaultContext = ""; let contextLen = 0;
+    for (const d of vaultDocs.filter(d => d.text_content)) {
+      const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`;
+      if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
+      vaultContext += chunk; contextLen += chunk.length;
+    }
     const docsContext = vaultContext || "\n\nNo documents uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
     const abort = new AbortController(); abortRef.current = abort;
     try {
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+      let res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+      if (res.status === 429) {
+        updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "Give me just a moment..." }]); setLoading(false);
+        await new Promise(r => setTimeout(r, 6000));
+        updateConvMessages((prev: any[]) => { const u = [...prev]; u.pop(); return u; }); setLoading(true);
+        res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+      }
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "" }]); setLoading(false); setStreaming(true);
