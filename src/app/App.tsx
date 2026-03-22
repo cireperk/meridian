@@ -735,7 +735,8 @@ export default function App() {
       if (!fullText) updateConvMessages((prev: any[]) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
     } catch (e: any) {
       if (e.name === "AbortError") return;
-      const errMsg = "I'm having trouble connecting right now. Please check your internet connection and try again.";
+      console.error("Chat error:", e);
+      const errMsg = "Something went wrong — please try again in a moment.";
       updateConvMessages((prev: any[]) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant" && !last.content) { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: errMsg }; return u; }

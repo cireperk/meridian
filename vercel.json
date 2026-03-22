@@ -1,4 +1,12 @@
 {
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 60
+    },
+    "api/extract.js": {
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/sw.js",
