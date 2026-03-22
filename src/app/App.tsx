@@ -714,13 +714,39 @@ export default function App() {
     if (!convId) { convId = `conv_${Date.now()}`; setConversations((prev) => [{ id: convId, title: userMsg.slice(0, 50), messages: [], createdAt: new Date().toISOString() }, ...prev]); setActiveConvId(convId); }
     setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
     setLoading(true);
-    // Build vault docs context (includes decree if uploaded) — cap at ~50k chars to avoid rate limits
-    const MAX_CONTEXT_CHARS = 50000;
-    let vaultContext = ""; let contextLen = 0;
-    for (const d of vaultDocs.filter(d => d.text_content)) {
+    // Build vault docs context — use extraction summary for decrees (much smaller), raw text for other docs
+    const MAX_CONTEXT_CHARS = 20000;
+    let vaultContext = "";
+    // If we have a decree extraction, use the compact summary instead of raw decree text
+    if (decreeExtraction?.status === "complete") {
+      const parts = [`\n\n[DECREE SUMMARY]`];
+      if (decreeExtraction.raw_summary) parts.push(decreeExtraction.raw_summary);
+      if (decreeExtraction.custody_type) parts.push(`Custody: ${decreeExtraction.custody_type}`);
+      if (decreeExtraction.custody_schedule?.details) parts.push(`Schedule: ${decreeExtraction.custody_schedule.details}`);
+      if (decreeExtraction.child_support) parts.push(`Child Support: ${JSON.stringify(decreeExtraction.child_support)}`);
+      if (decreeExtraction.holiday_schedule) parts.push(`Holidays: ${JSON.stringify(decreeExtraction.holiday_schedule)}`);
+      if (decreeExtraction.geographic_restriction) parts.push(`Geographic Restriction: ${JSON.stringify(decreeExtraction.geographic_restriction)}`);
+      if (decreeExtraction.children) parts.push(`Children: ${JSON.stringify(decreeExtraction.children)}`);
+      if (decreeExtraction.medical_decision_rights) parts.push(`Medical Rights: ${decreeExtraction.medical_decision_rights}`);
+      if (decreeExtraction.right_of_first_refusal) parts.push(`Right of First Refusal: ${JSON.stringify(decreeExtraction.right_of_first_refusal)}`);
+      if (decreeExtraction.pickup_dropoff) parts.push(`Pickup/Dropoff: ${JSON.stringify(decreeExtraction.pickup_dropoff)}`);
+      if (decreeExtraction.communication_requirements) parts.push(`Communication: ${decreeExtraction.communication_requirements}`);
+      vaultContext += parts.join("\n");
+    }
+    // Add non-decree docs (capped)
+    let contextLen = vaultContext.length;
+    for (const d of vaultDocs.filter(d => d.text_content && d.category !== "decree")) {
       const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`;
       if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
       vaultContext += chunk; contextLen += chunk.length;
+    }
+    // If no extraction and decree exists, use truncated raw text
+    if (!decreeExtraction) {
+      for (const d of vaultDocs.filter(d => d.text_content && d.category === "decree")) {
+        const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (Decree)]\n${d.text_content}`;
+        if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
+        vaultContext += chunk; contextLen += chunk.length;
+      }
     }
     const docsContext = vaultContext || "\n\nNo documents uploaded yet.";
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
@@ -731,7 +757,7 @@ export default function App() {
       let res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
       if (res.status === 429) {
         updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "Give me just a moment..." }]); setLoading(false);
-        await new Promise(r => setTimeout(r, 6000));
+        await new Promise(r => setTimeout(r, 15000));
         updateConvMessages((prev: any[]) => { const u = [...prev]; u.pop(); return u; }); setLoading(true);
         res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
       }
