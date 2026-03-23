@@ -172,8 +172,14 @@ export default function App() {
 
   // On mount: restore session from native storage if localStorage was cleared
   useEffect(() => {
-    if (session) { setSessionRestored(true); return; }
+    const ls = localStorage.getItem("m_session");
+    const hasLS = !!ls && ls !== "null";
+    if (session) {
+      alert(`DEBUG: localStorage=${hasLS}, session=YES, native=${Capacitor.isNativePlatform()}, platform=${Capacitor.getPlatform()}`);
+      setSessionRestored(true); return;
+    }
     Preferences.get({ key: "m_session" }).then(({ value }) => {
+      alert(`DEBUG: localStorage=${hasLS}, prefs=${!!value}, native=${Capacitor.isNativePlatform()}, platform=${Capacitor.getPlatform()}`);
       if (value) {
         try {
           const s = JSON.parse(value);
@@ -181,7 +187,7 @@ export default function App() {
         } catch {}
       }
       setSessionRestored(true);
-    }).catch(() => setSessionRestored(true));
+    }).catch((err) => { alert(`DEBUG: prefs error: ${err?.message || err}`); setSessionRestored(true); });
   }, []);
 
   // Save session to native storage whenever it changes (but only after initial restore)
