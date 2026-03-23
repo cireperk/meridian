@@ -595,6 +595,7 @@ export default function App() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackChatMessage, setFeedbackChatMessage] = useState("");
 
   const [editName, setEditName] = useState("");
 
@@ -789,7 +790,7 @@ export default function App() {
 
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim() || feedbackSending) return; setFeedbackSending(true);
-    try { const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feedback: feedbackText.trim(), userId: session?.user?.id, email: session?.user?.email }) }); if (!res.ok) throw new Error(); setFeedbackSent(true); setTimeout(() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); }, 1800); }
+    try { const res = await fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feedback: feedbackText.trim(), userId: session?.user?.id, email: session?.user?.email, chatMessage: feedbackChatMessage || undefined }) }); if (!res.ok) throw new Error(); setFeedbackSent(true); setTimeout(() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); setFeedbackChatMessage(""); }, 1800); }
     catch { alert("Failed to send feedback. Please try again."); } finally { setFeedbackSending(false); }
   };
 
@@ -1977,7 +1978,7 @@ export default function App() {
                                       <button onClick={() => setThumbs(p => ({ ...p, [i]: p[i] === "up" ? undefined as any : "up" }))} className={cn("p-1 rounded transition-all", thumbs[i] === "up" ? "text-emerald-500" : "text-slate-300 hover:text-slate-500")}>
                                         <ThumbsUp size={10} />
                                       </button>
-                                      <button onClick={() => setThumbs(p => ({ ...p, [i]: p[i] === "down" ? undefined as any : "down" }))} className={cn("p-1 rounded transition-all", thumbs[i] === "down" ? "text-red-400" : "text-slate-300 hover:text-slate-500")}>
+                                      <button onClick={() => { setThumbs(p => ({ ...p, [i]: p[i] === "down" ? undefined as any : "down" })); if (thumbs[i] !== "down") { setFeedbackChatMessage(msg.content); setShowFeedback(true); } }} className={cn("p-1 rounded transition-all", thumbs[i] === "down" ? "text-red-400" : "text-slate-300 hover:text-slate-500")}>
                                         <ThumbsDown size={10} />
                                       </button>
                                     </div>
@@ -2876,15 +2877,16 @@ export default function App() {
           {/* Feedback modal */}
           <AnimatePresence>
             {showFeedback && (
-              <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => !feedbackSending && setShowFeedback(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => { if (!feedbackSending) { setShowFeedback(false); setFeedbackChatMessage(""); } }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
                   <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
                   {feedbackSent ? (
                     <div className="flex flex-col items-center py-6"><Check size={32} className="text-emerald-500 mb-3" /><span className="text-base font-semibold text-slate-800">Thank you!</span><span className="text-sm text-slate-400">Your feedback helps us improve.</span></div>
                   ) : (<>
-                    <h3 className="text-lg font-semibold text-slate-800 mb-1">Send Feedback</h3>
-                    <p className="text-sm text-slate-400 mb-4">Tell us what's working, what's not, or what you'd love to see.</p>
-                    <textarea className="w-full border border-slate-200/60 rounded-xl px-4 py-3 text-base text-slate-800 bg-slate-50/80 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none placeholder:text-slate-400" placeholder="Your feedback..." value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} rows={4} autoFocus />
+                    <h3 className="text-lg font-semibold text-slate-800 mb-1">{feedbackChatMessage ? "What went wrong?" : "Send Feedback"}</h3>
+                    <p className="text-sm text-slate-400 mb-4">{feedbackChatMessage ? "Help us improve — tell us what was wrong with this response." : "Tell us what's working, what's not, or what you'd love to see."}</p>
+                    {feedbackChatMessage && <div className="bg-slate-50 border border-slate-200/60 rounded-xl px-4 py-3 mb-3 text-sm text-slate-500 max-h-24 overflow-y-auto line-clamp-4">{feedbackChatMessage.slice(0, 300)}{feedbackChatMessage.length > 300 ? "..." : ""}</div>}
+                    <textarea className="w-full border border-slate-200/60 rounded-xl px-4 py-3 text-base text-slate-800 bg-slate-50/80 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none placeholder:text-slate-400" placeholder={feedbackChatMessage ? "What was incorrect or unhelpful?" : "Your feedback..."} value={feedbackText} onChange={(e) => setFeedbackText(e.target.value)} rows={4} autoFocus />
                     <Button onClick={handleFeedbackSubmit} disabled={!feedbackText.trim() || feedbackSending} className="w-full mt-3 h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{feedbackSending ? "Sending..." : "Submit Feedback"}</Button>
                   </>)}
                 </motion.div>
