@@ -1749,7 +1749,8 @@ export default function App() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-sm w-full text-center">
               <Logo size="lg" className="mx-auto mb-6" />
               <h2 className="text-2xl font-light tracking-tight text-slate-800 mb-2">Your free trial has ended</h2>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed">Continue having Meridian walk with you. Cancel anytime.</p>
+              <h3 className="text-base font-medium text-slate-700 mb-1">Meridian Pro</h3>
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed">Unlimited access to all features. Cancel anytime.</p>
               {(isNative || isIOS) ? (
                 <div className="space-y-3 mb-6">
                   {[
@@ -1774,8 +1775,8 @@ export default function App() {
                     Subscribe
                   </Button>
                   <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
-                    {selectedPlan === "yearly" ? "Meridian Pro — $39.99/year ($3.33/mo). " : "Meridian Pro — $4.99/month. "}
-                    Auto-renews until canceled. Cancel anytime in Settings.
+                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year ($3.33/mo) · " : "Meridian Pro · $4.99/month · "}
+                    Includes unlimited AI conversations, communication coach, document vault, and calendar for the subscription period. Subscription auto-renews until canceled. Manage or cancel anytime in your device Settings.
                   </p>
                 </div>
               ) : (
@@ -1794,7 +1795,7 @@ export default function App() {
                     Subscribe
                   </Button>
                   <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
-                    Meridian Pro — $4.99/month. Auto-renews until canceled. Cancel anytime in Settings.
+                    Meridian Pro · $4.99/month · Includes unlimited AI conversations, communication coach, document vault, and calendar for the subscription period. Subscription auto-renews until canceled. Cancel anytime.
                   </p>
                 </div>
               )}
