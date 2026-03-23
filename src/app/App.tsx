@@ -2470,9 +2470,14 @@ export default function App() {
                     <div className="flex flex-col gap-2">
                       {isSubscribed ? (
                         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-4 text-center">
-                          <p className="text-sm text-emerald-800 font-medium mb-0.5">You're a Meridian member</p>
-                          <p className="text-xs text-emerald-600/70 mb-3">Thank you for being here. We're glad you're on this journey with us.</p>
+                          <p className="text-sm text-emerald-800 font-medium mb-0.5">Meridian Pro</p>
+                          <p className="text-xs text-emerald-600/70 mb-2">Unlimited AI conversations, communication coach, document vault, and calendar. $4.99/month or $39.99/year. Auto-renews until canceled.</p>
                           <button onClick={handleManageSubscription} className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors font-medium underline underline-offset-2 decoration-emerald-300">Manage subscription</button>
+                          <div className="flex items-center justify-center gap-2 mt-3">
+                            <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-emerald-500/70 underline underline-offset-2">Terms of Use (EULA)</a>
+                            <span className="text-emerald-300">·</span>
+                            <button onClick={() => setShowPrivacy(true)} className="text-[10px] text-emerald-500/70 underline underline-offset-2">Privacy Policy</button>
+                          </div>
                         </div>
                       ) : (
                         <button onClick={handleSubscribe} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
