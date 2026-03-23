@@ -1458,7 +1458,9 @@ export default function App() {
                 <h2 className="text-base font-medium text-slate-800 mb-2">Subscription & billing</h2>
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li>Meridian offers a <strong>3-day free trial</strong> for new users.</li>
-                  <li>After the trial, the service costs <strong>$4.99/month</strong>, billed monthly.</li>
+                  <li>After the trial, Meridian Pro is available at <strong>$4.99/month</strong> or <strong>$39.99/year</strong>.</li>
+                  <li>Subscriptions <strong>automatically renew</strong> at the end of each billing period unless canceled at least 24 hours before the renewal date.</li>
+                  <li>On iOS, payment is charged to your Apple ID account. Manage or cancel your subscription in your device's Settings → Apple ID → Subscriptions.</li>
                   <li>You can cancel anytime. Cancellation takes effect at the end of your current billing period.</li>
                 </ul>
               </div>
