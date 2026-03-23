@@ -449,8 +449,11 @@ export default function App() {
   const handleSubscribe = async () => {
     if (!session?.token) { console.error("Subscribe: no token"); return; }
     if (isNative || isIOS) {
-      if (!isNative) { alert("Please download the Meridian app from the App Store to subscribe."); return; }
       try {
+        if (!isNative) {
+          await Purchases.configure({ apiKey: "appl_zjhHqHWWBLBxnLORAmRXUwlfUSZ" });
+          if (session.user?.id) await Purchases.logIn({ appUserID: session.user.id }).catch(() => {});
+        }
         const offerings = await Purchases.getOfferings();
         const packages = offerings.current?.availablePackages || [];
         const pkg = packages.find((p: any) => selectedPlan === "yearly" ? p.packageType === "ANNUAL" : p.packageType === "MONTHLY") || packages[0];
@@ -463,7 +466,7 @@ export default function App() {
         }
       } catch (err: any) {
         if (err.code !== "1" && err.code !== "PURCHASE_CANCELLED") {
-          alert("Purchase failed. Please try again.");
+          alert("Unable to connect to the App Store. Please try again.");
         }
       }
       return;
