@@ -414,6 +414,9 @@ export default function App() {
 
   useEffect(() => {
     if (session?.token && session?.user?.id) checkSubscription(session.token, session.user.id);
+    // Safety: if subscription check hangs, stop loading after 5s so user isn't stuck
+    const t = setTimeout(() => setSubscription((s) => s.loading ? { ...s, loading: false } : s), 5000);
+    return () => clearTimeout(t);
   }, [session?.token, session?.user?.id, checkSubscription]);
 
   const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
@@ -1746,7 +1749,11 @@ export default function App() {
             </AnimatePresence>
           </motion.div>
         </div>
-      ) : !showSplash && !subscription.loading && !hasAccess ? (
+      ) : !showSplash && subscription.loading ? (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-40">
+          <Logo size="md" className="mb-4 animate-pulse" />
+        </div>
+      ) : !showSplash && !hasAccess ? (
         <>
           {/* ==================== PAYWALL ==================== */}
           <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white z-40">
