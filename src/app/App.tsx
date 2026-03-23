@@ -478,8 +478,7 @@ export default function App() {
 
   const handleManageSubscription = async () => {
     if (!session?.token) return;
-    if (isNative) {
-      // On iOS, subscriptions are managed in Settings → Apple ID → Subscriptions
+    if (isNative || isIOS) {
       window.open("https://apps.apple.com/account/subscriptions", "_blank");
       return;
     }
