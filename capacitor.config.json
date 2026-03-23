@@ -3,7 +3,7 @@
   "appName": "Meridian",
   "webDir": "dist",
   "server": {
-    "url": "https://www.mymeridianapp.com",
+    "url": "https://www.mymeridianapp.com?native=1",
     "cleartext": false
   },
   "ios": {

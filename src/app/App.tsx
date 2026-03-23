@@ -421,7 +421,7 @@ export default function App() {
   const hasAccess = isTrialActive || isSubscribed;
   const trialDaysLeft = subscription.trialEnd ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
 
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = Capacitor.isNativePlatform() || new URLSearchParams(window.location.search).has("native");
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
   // Initialize RevenueCat on native platforms
