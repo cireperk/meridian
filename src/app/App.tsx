@@ -441,7 +441,7 @@ export default function App() {
   useEffect(() => {
     if (!isNative || !session?.user?.id) return;
     Purchases.getCustomerInfo().then(({ customerInfo }) => {
-      const isActive = customerInfo.entitlements.active["meridian_pro"] !== undefined;
+      const isActive = customerInfo.entitlements.active["Meridian Pro"] !== undefined;
       if (isActive && subscription.status !== "active") {
         setSubscription((s) => ({ ...s, status: "active", loading: false }));
         dbUpdate("profiles", session.user.id, { subscription_status: "active" }, session.token!).catch(() => {});
@@ -462,7 +462,7 @@ export default function App() {
         const pkg = packages.find((p: any) => selectedPlan === "yearly" ? p.packageType === "ANNUAL" : p.packageType === "MONTHLY") || packages[0];
         if (!pkg) { alert("No subscription available. Please try again later."); return; }
         const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
-        if (customerInfo.entitlements.active["meridian_pro"]) {
+        if (customerInfo.entitlements.active["Meridian Pro"]) {
           setSubscription({ status: "active", trialEnd: null, loading: false });
           localStorage.setItem("m_sub_status", "active");
           dbUpdate("profiles", session.user!.id, { subscription_status: "active" }, session.token).catch(() => {});
