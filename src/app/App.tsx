@@ -1801,10 +1801,12 @@ export default function App() {
                   </p>
                 </div>
               )}
-              <div className="flex items-center justify-center gap-3 mt-2 mb-1">
-                <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use</button>
+              <div className="flex items-center justify-center gap-3 mt-2 mb-1 flex-wrap">
+                <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
                 <span className="text-slate-300">·</span>
                 <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                <span className="text-slate-300">·</span>
+                <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
               </div>
               <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mt-1">Sign out</button>
             </motion.div>
