@@ -422,6 +422,7 @@ export default function App() {
   const trialDaysLeft = subscription.trialEnd ? Math.max(0, Math.ceil((new Date(subscription.trialEnd).getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
 
   const isNative = Capacitor.isNativePlatform();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
   // Initialize RevenueCat on native platforms
   useEffect(() => {
@@ -447,7 +448,8 @@ export default function App() {
 
   const handleSubscribe = async () => {
     if (!session?.token) { console.error("Subscribe: no token"); return; }
-    if (isNative) {
+    if (isNative || isIOS) {
+      if (!isNative) { alert("Please download the Meridian app from the App Store to subscribe."); return; }
       try {
         const offerings = await Purchases.getOfferings();
         const packages = offerings.current?.availablePackages || [];
@@ -1749,7 +1751,7 @@ export default function App() {
               <Logo size="lg" className="mx-auto mb-6" />
               <h2 className="text-2xl font-light tracking-tight text-slate-800 mb-2">Your free trial has ended</h2>
               <p className="text-sm text-slate-500 mb-6 leading-relaxed">Continue having Meridian walk with you. Cancel anytime.</p>
-              {isNative ? (
+              {(isNative || isIOS) ? (
                 <div className="space-y-3 mb-6">
                   {[
                     { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: "$3.33/mo" },
