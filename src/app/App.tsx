@@ -168,19 +168,11 @@ type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
 export default function App() {
   // --- Auth ---
   const [session, setSession] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_session") || "null"); } catch { return null; } });
+  const [sessionRestored, setSessionRestored] = useState(false);
 
-  // Sync session to native storage (localStorage can be cleared by WKWebView)
+  // On mount: restore session from native storage if localStorage was cleared
   useEffect(() => {
-    if (session?.token) {
-      Preferences.set({ key: "m_session", value: JSON.stringify(session) }).catch(() => {});
-    } else if (session === null) {
-      Preferences.remove({ key: "m_session" }).catch(() => {});
-    }
-  }, [session]);
-
-  // Restore session from native storage if localStorage was cleared
-  useEffect(() => {
-    if (session) return;
+    if (session) { setSessionRestored(true); return; }
     Preferences.get({ key: "m_session" }).then(({ value }) => {
       if (value) {
         try {
@@ -188,8 +180,17 @@ export default function App() {
           if (s?.token) { setSession(s); localStorage.setItem("m_session", value); }
         } catch {}
       }
-    }).catch(() => {});
+      setSessionRestored(true);
+    }).catch(() => setSessionRestored(true));
   }, []);
+
+  // Save session to native storage whenever it changes (but only after initial restore)
+  useEffect(() => {
+    if (!sessionRestored) return;
+    if (session?.token) {
+      Preferences.set({ key: "m_session", value: JSON.stringify(session) }).catch(() => {});
+    }
+  }, [session, sessionRestored]);
   const [authView, setAuthView] = useState(Capacitor.isNativePlatform() ? "signin" : "main");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
@@ -272,7 +273,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session?.refresh_token) return;
+    if (!sessionRestored || !session?.refresh_token) return;
     authRefreshToken(session.refresh_token).then((data: any) => {
       if (data?.access_token) {
         const s = { ...session, token: data.access_token, refresh_token: data.refresh_token }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
@@ -332,7 +333,7 @@ export default function App() {
       setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations");
       Preferences.remove({ key: "m_session" }).catch(() => {});
     });
-  }, []);
+  }, [sessionRestored]);
 
   const handleAuth = async () => {
     setAuthError(""); setAuthLoading(true);
@@ -402,7 +403,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setTrialBannerSeen(false); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setTrialBannerSeen(false); setAuthView("main"); setShowSplash(true); setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
