@@ -15,9 +15,6 @@ marked.setOptions({ breaks: true, gfm: true });
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
 
-// --- API base URL (local bundling needs absolute URL for serverless functions) ---
-const API_BASE = Capacitor.isNativePlatform() ? "https://www.mymeridianapp.com" : "";
-
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -32,7 +29,7 @@ const sbFetch = async (path: string, { method = "GET", body, token }: any = {}) 
 };
 
 const authSubmit = async (email: string, password: string) => {
-  const res = await fetch(`${API_BASE}/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+  const res = await fetch(`/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Auth failed");
   return data;
@@ -385,7 +382,7 @@ export default function App() {
       setSubscription({ status: "active", trialEnd: null, loading: false });
       setShowSubscribeSuccess(true);
       setTimeout(() => setShowSubscribeSuccess(false), 4000);
-      fetch(`${API_BASE}/api/stripe-verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
+      fetch(`/api/stripe-verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
       return;
     }
 
@@ -394,7 +391,7 @@ export default function App() {
     if (cachedStatus === "active" || cachedStatus === "trialing") {
       setSubscription({ status: cachedStatus, trialEnd: null, loading: false });
       // Still try to sync DB in background (non-blocking)
-      fetch(`${API_BASE}/api/stripe-verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
+      fetch(`/api/stripe-verify`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).catch(() => {});
       return;
     }
 
@@ -475,7 +472,7 @@ export default function App() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/stripe-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
+      const res = await fetch(`/api/stripe-checkout`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; }
       else { console.error("Stripe checkout error:", data); alert("Something went wrong. Please try again."); }
@@ -489,7 +486,7 @@ export default function App() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/stripe-portal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
+      const res = await fetch(`/api/stripe-portal`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: session.token }) });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
     } catch {}
@@ -762,12 +759,12 @@ export default function App() {
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
     const abort = new AbortController(); abortRef.current = abort;
     try {
-      let res = await fetch(`${API_BASE}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+      let res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
       if (res.status === 429) {
         updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "Give me just a moment..." }]); setLoading(false);
         await new Promise(r => setTimeout(r, 15000));
         updateConvMessages((prev: any[]) => { const u = [...prev]; u.pop(); return u; }); setLoading(true);
-        res = await fetch(`${API_BASE}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+        res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
       }
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
@@ -797,7 +794,7 @@ export default function App() {
 
   const handleFeedbackSubmit = async () => {
     if (!feedbackText.trim() || feedbackSending) return; setFeedbackSending(true);
-    try { const res = await fetch(`${API_BASE}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feedback: feedbackText.trim(), userId: session?.user?.id, email: session?.user?.email, chatMessage: feedbackChatMessage || undefined }) }); if (!res.ok) throw new Error(); setFeedbackSent(true); setTimeout(() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); setFeedbackChatMessage(""); }, 1800); }
+    try { const res = await fetch(`/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ feedback: feedbackText.trim(), userId: session?.user?.id, email: session?.user?.email, chatMessage: feedbackChatMessage || undefined }) }); if (!res.ok) throw new Error(); setFeedbackSent(true); setTimeout(() => { setShowFeedback(false); setFeedbackText(""); setFeedbackSent(false); setFeedbackChatMessage(""); }, 1800); }
     catch { alert("Failed to send feedback. Please try again."); } finally { setFeedbackSending(false); }
   };
 
@@ -922,7 +919,7 @@ export default function App() {
       // Create pending row
       await sbFetch("/rest/v1/decree_extractions", { method: "POST", body: { user_id: session.user.id, document_id: documentId, status: "extracting" }, token: session.token });
       // Call extraction API
-      const res = await fetch(`${API_BASE}/api/extract`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text_content: textContent }) });
+      const res = await fetch(`/api/extract`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text_content: textContent }) });
       if (!res.ok) throw new Error("Extraction failed");
       const fields = await res.json();
       // Update extraction row
@@ -960,7 +957,7 @@ export default function App() {
     let finalText = "";
     try {
       const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
-      const res = await fetch(`${API_BASE}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
+      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       try {
