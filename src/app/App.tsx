@@ -469,7 +469,7 @@ export default function App() {
         }
       } catch (err: any) {
         if (err.code !== "1" && err.code !== "PURCHASE_CANCELLED") {
-          alert("Unable to connect to the App Store. Please try again.");
+          alert(`App Store error: ${err.message || err.code || JSON.stringify(err)}`);
         }
       }
       return;
