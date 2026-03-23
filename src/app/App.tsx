@@ -1772,6 +1772,10 @@ export default function App() {
                   <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
                     Subscribe
                   </Button>
+                  <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
+                    {selectedPlan === "yearly" ? "Meridian Pro — $39.99/year ($3.33/mo). " : "Meridian Pro — $4.99/month. "}
+                    Auto-renews until canceled. Cancel anytime in Settings.
+                  </p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm mb-6">
@@ -1788,9 +1792,17 @@ export default function App() {
                   <Button onClick={handleSubscribe} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
                     Subscribe
                   </Button>
+                  <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
+                    Meridian Pro — $4.99/month. Auto-renews until canceled. Cancel anytime in Settings.
+                  </p>
                 </div>
               )}
-              <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Sign out</button>
+              <div className="flex items-center justify-center gap-3 mt-2 mb-1">
+                <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use</button>
+                <span className="text-slate-300">·</span>
+                <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+              </div>
+              <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mt-1">Sign out</button>
             </motion.div>
           </div>
         </>
