@@ -4,6 +4,7 @@ import mammoth from "mammoth";
 import { marked } from "marked";
 import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
+import { Preferences } from "@capacitor/preferences";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Mail } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -167,6 +168,28 @@ type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
 export default function App() {
   // --- Auth ---
   const [session, setSession] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_session") || "null"); } catch { return null; } });
+
+  // Sync session to native storage (localStorage can be cleared by WKWebView)
+  useEffect(() => {
+    if (session?.token) {
+      Preferences.set({ key: "m_session", value: JSON.stringify(session) }).catch(() => {});
+    } else if (session === null) {
+      Preferences.remove({ key: "m_session" }).catch(() => {});
+    }
+  }, [session]);
+
+  // Restore session from native storage if localStorage was cleared
+  useEffect(() => {
+    if (session) return;
+    Preferences.get({ key: "m_session" }).then(({ value }) => {
+      if (value) {
+        try {
+          const s = JSON.parse(value);
+          if (s?.token) { setSession(s); localStorage.setItem("m_session", value); }
+        } catch {}
+      }
+    }).catch(() => {});
+  }, []);
   const [authView, setAuthView] = useState(Capacitor.isNativePlatform() ? "signin" : "main");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
