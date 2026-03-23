@@ -318,9 +318,19 @@ export default function App() {
           }).catch(() => {});
         }
       }
-    }).catch(() => {
-      // Refresh token is invalid/expired — clear session, let app redirect to auth
+    }).catch(async () => {
+      // Retry once after 2s in case of cold-start network delay
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const retry = await authRefreshToken(session.refresh_token);
+        if (retry?.access_token) {
+          const s = { ...session, token: retry.access_token, refresh_token: retry.refresh_token }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+          return;
+        }
+      } catch {}
+      // Only clear session if retry also failed
       setSession(null); localStorage.removeItem("m_session"); localStorage.removeItem("m_conversations");
+      Preferences.remove({ key: "m_session" }).catch(() => {});
     });
   }, []);
 
