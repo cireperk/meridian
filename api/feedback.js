@@ -14,9 +14,10 @@ export default async function handler(req, res) {
   const JIRA_PROJECT_KEY = process.env.JIRA_PROJECT_KEY;
 
   if (!JIRA_BASE_URL || !JIRA_EMAIL || !JIRA_API_TOKEN || !JIRA_PROJECT_KEY) {
-    console.log("[FEEDBACK]", new Date().toISOString(), email || "anon", feedback.trim());
-    return res.status(200).json({ ok: true });
+    console.log("[FEEDBACK] Missing env vars:", { JIRA_BASE_URL: !!JIRA_BASE_URL, JIRA_EMAIL: !!JIRA_EMAIL, JIRA_API_TOKEN: !!JIRA_API_TOKEN, JIRA_PROJECT_KEY: !!JIRA_PROJECT_KEY });
+    return res.status(200).json({ ok: true, debug: "missing env vars" });
   }
+  console.log("[FEEDBACK] Using:", { JIRA_BASE_URL, JIRA_EMAIL, JIRA_PROJECT_KEY });
 
   const summary = feedback.trim().slice(0, 100) + (feedback.trim().length > 100 ? "..." : "");
   const descriptionParts = [
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
     if (!jiraRes.ok) {
       const errText = await jiraRes.text();
       console.error("Jira error:", jiraRes.status, errText);
-      return res.status(500).json({ error: "Failed to create Jira issue" });
+      return res.status(500).json({ error: "Failed to create Jira issue", details: errText, status: jiraRes.status });
     }
 
     const data = await jiraRes.json();
