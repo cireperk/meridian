@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     "Content-Type": "application/json",
   };
 
-  const { email, password } = req.body;
+  const { email, password, intent } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -50,8 +50,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ needsConfirmation: true, email });
   }
 
-  // Sign-in failed — try creating the user
-  // Enforce password requirements for new accounts
+  // Sign-in failed — if user intended to sign in, don't silently create an account
+  if (intent === "signin") {
+    return res.status(401).json({ error: "Invalid email or password" });
+  }
+
+  // Sign-up flow — enforce password requirements for new accounts
   if (password.length < 8) {
     return res.status(400).json({ error: "Password must be at least 8 characters" });
   }

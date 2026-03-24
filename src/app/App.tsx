@@ -30,8 +30,8 @@ const sbFetch = async (path: string, { method = "GET", body, token }: any = {}) 
   return text ? JSON.parse(text) : null;
 };
 
-const authSubmit = async (email: string, password: string) => {
-  const res = await fetch(`/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+const authSubmit = async (email: string, password: string, intent: string) => {
+  const res = await fetch(`/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, intent }) });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Auth failed");
   return data;
@@ -360,7 +360,7 @@ export default function App() {
   const handleAuth = async () => {
     setAuthError(""); setAuthLoading(true);
     try {
-      const data = await authSubmit(authEmail, authPassword);
+      const data = await authSubmit(authEmail, authPassword, authView);
       if (data.needsConfirmation) { setAuthView("confirm-email"); setAuthLoading(false); return; }
       if (data.isNew) { setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
       else {
