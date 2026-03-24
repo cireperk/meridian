@@ -5,6 +5,7 @@ import { marked } from "marked";
 import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
+import { App as CapApp } from "@capacitor/app";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Mail } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -224,15 +225,12 @@ export default function App() {
   const activeCoachSession = coachSessions.find((s) => s.id === activeCoachSessionId);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
 
-  // Handle OAuth callback (Google sign-in redirect)
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.includes("access_token=")) return;
-    const params = new URLSearchParams(hash.substring(1));
+  // Process OAuth tokens from hash fragment
+  const processOAuthTokens = useCallback(async (hash: string) => {
+    const params = new URLSearchParams(hash.includes("#") ? hash.substring(hash.indexOf("#") + 1) : hash);
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
     if (!accessToken) return;
-    window.history.replaceState(null, "", window.location.pathname);
     (async () => {
       try {
         const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` } });
@@ -275,6 +273,25 @@ export default function App() {
         }
       } catch (err: any) { setAuthError("Google sign-in failed. Please try again."); setShowSplash(false); setAuthView("main"); }
     })();
+  }, []);
+
+  // Handle OAuth callback — check hash on page load
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes("access_token=")) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    processOAuthTokens(hash);
+  }, []);
+
+  // Handle Universal Link callback — iOS app opened via URL after OAuth redirect
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const listener = CapApp.addListener("appUrlOpen", (event: { url: string }) => {
+      if (event.url.includes("access_token=")) {
+        processOAuthTokens(event.url);
+      }
+    });
+    return () => { listener.then((l) => l.remove()); };
   }, []);
 
   useEffect(() => {

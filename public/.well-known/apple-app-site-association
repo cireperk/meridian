@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "7W3KRS6DAW.com.mymeridianapp.web",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
