@@ -2529,16 +2529,18 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => setShowSubscribeModal(true)} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
-                          {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
-                        </button>
-                        <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
-                          <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
-                          <span className="text-slate-300">·</span>
-                          <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
-                          <span className="text-slate-300">·</span>
-                          <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
-                        </div>
+                        <>
+                          <button onClick={() => setShowSubscribeModal(true)} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
+                            {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
+                          </button>
+                          <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
+                            <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
+                            <span className="text-slate-300">·</span>
+                            <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                            <span className="text-slate-300">·</span>
+                            <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
+                          </div>
+                        </>
                       )}
                       <button onClick={() => setShowFeedback(true)} className="w-full py-2.5 text-xs text-slate-400 hover:text-emerald-600 transition-colors">Share feedback</button>
                       <button onClick={() => setShowSignOutConfirm(true)} className="w-full py-3 border border-slate-200 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2">
