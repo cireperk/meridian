@@ -209,6 +209,7 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
   const [selectedPlan, setSelectedPlan] = useState("yearly");
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const TRIAL_DAYS = 3;
   const [trialBannerSeen, setTrialBannerSeen] = useState(() => localStorage.getItem("m_trial_banner_seen") === "1");
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
@@ -1887,7 +1888,7 @@ export default function App() {
                 <span className="text-xs text-slate-500">
                   {trialDaysLeft === 0 ? "Your trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
                 </span>
-                <button onClick={handleSubscribe} className="text-xs font-medium text-emerald-600 hover:text-emerald-700 active:text-emerald-800 transition-colors px-3 py-1 rounded-lg hover:bg-emerald-50 active:bg-emerald-100">
+                <button onClick={() => setShowSubscribeModal(true)} className="text-xs font-medium text-emerald-600 hover:text-emerald-700 active:text-emerald-800 transition-colors px-3 py-1 rounded-lg hover:bg-emerald-50 active:bg-emerald-100">
                   Subscribe
                 </button>
               </div>
@@ -2528,7 +2529,7 @@ export default function App() {
                           </div>
                         </div>
                       ) : (
-                        <button onClick={handleSubscribe} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
+                        <button onClick={() => setShowSubscribeModal(true)} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
                           {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
                         </button>
                       )}
@@ -2975,6 +2976,61 @@ export default function App() {
                   <div className="flex gap-2.5">
                     <Button variant="secondary" onClick={() => setShowSignOutConfirm(false)} className="flex-1">Cancel</Button>
                     <Button onClick={() => { setShowSignOutConfirm(false); handleSignOut(); }} className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">Sign Out</Button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Subscribe Modal */}
+          <AnimatePresence>
+            {showSubscribeModal && (
+              <motion.div className="fixed inset-0 z-[300] bg-black/30 flex items-end justify-center" onClick={() => setShowSubscribeModal(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}>
+                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+                  <div className="text-center mb-5">
+                    <Logo size="md" className="mx-auto mb-3" />
+                    <h3 className="text-xl font-light text-slate-800 mb-1">Meridian Pro</h3>
+                    <p className="text-sm text-slate-500">Unlimited access to all features. Cancel anytime.</p>
+                  </div>
+
+                  <div className="space-y-3 mb-5">
+                    {[
+                      { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: "$3.33/mo" },
+                      { id: "monthly", label: "Monthly", price: "$4.99", period: "/month", badge: null, perMonth: null },
+                    ].map((plan) => (
+                      <button key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={cn("w-full rounded-2xl border-2 p-4 text-left transition-all relative", selectedPlan === plan.id ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white")}>
+                        {plan.badge && <span className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wide bg-emerald-500 text-white px-2 py-0.5 rounded-full">{plan.badge}</span>}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xl font-light text-slate-800">{plan.price}</span>
+                          <span className="text-sm text-slate-400">{plan.period}</span>
+                        </div>
+                        {plan.perMonth && <p className="text-xs text-emerald-600 mt-0.5">{plan.perMonth}</p>}
+                      </button>
+                    ))}
+                  </div>
+
+                  <ul className="text-sm text-slate-600 space-y-2.5 text-left mb-5 px-1">
+                    {["Unlimited AI conversations", "Communication coach", "Document vault", "Calendar & scheduling"].map((f, i) => (
+                      <li key={i} className="flex items-center gap-2.5"><Check className="w-4 h-4 text-emerald-500 shrink-0" />{f}</li>
+                    ))}
+                  </ul>
+
+                  <Button onClick={() => { setShowSubscribeModal(false); handleSubscribe(); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 rounded-xl text-base font-medium">
+                    Subscribe
+                  </Button>
+
+                  <p className="text-[10px] text-slate-400 mt-3 leading-relaxed text-center">
+                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year ($3.33/mo) · " : "Meridian Pro · $4.99/month · "}
+                    Includes unlimited AI conversations, communication coach, document vault, and calendar for the subscription period. Subscription auto-renews until canceled. Manage or cancel anytime in your device Settings.
+                  </p>
+
+                  <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
+                    <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
+                    <span className="text-slate-300">·</span>
+                    <button onClick={() => { setShowSubscribeModal(false); setShowPrivacy(true); }} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                    <span className="text-slate-300">·</span>
+                    <button onClick={() => { setShowSubscribeModal(false); setShowTerms(true); }} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
                   </div>
                 </motion.div>
               </motion.div>
