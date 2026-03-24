@@ -1805,7 +1805,7 @@ export default function App() {
               {(isNative || isIOS) ? (
                 <div className="space-y-3 mb-6">
                   {[
-                    { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: "$3.33/mo" },
+                    { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: null },
                     { id: "monthly", label: "Monthly", price: "$4.99", period: "/month", badge: null, perMonth: null },
                   ].map((plan) => (
                     <button key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={cn("w-full rounded-2xl border-2 p-4 text-left transition-all relative", selectedPlan === plan.id ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white")}>
@@ -1826,7 +1826,7 @@ export default function App() {
                     Subscribe
                   </Button>
                   <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
-                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year ($3.33/mo) · " : "Meridian Pro · $4.99/month · "}
+                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year · " : "Meridian Pro · $4.99/month · "}
                     Includes unlimited AI conversations, communication coach, document vault, and calendar for the subscription period. Subscription auto-renews until canceled. Manage or cancel anytime in your device Settings.
                   </p>
                 </div>
@@ -3005,7 +3005,7 @@ export default function App() {
 
                   <div className="space-y-3 mb-5">
                     {[
-                      { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: "$3.33/mo" },
+                      { id: "yearly", label: "Yearly", price: "$39.99", period: "/year", badge: "Save 33%", perMonth: null },
                       { id: "monthly", label: "Monthly", price: "$4.99", period: "/month", badge: null, perMonth: null },
                     ].map((plan) => (
                       <button key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={cn("w-full rounded-2xl border-2 p-4 text-left transition-all relative", selectedPlan === plan.id ? "border-emerald-500 bg-emerald-50/30" : "border-slate-200 bg-white")}>
@@ -3030,7 +3030,7 @@ export default function App() {
                   </Button>
 
                   <p className="text-[10px] text-slate-400 mt-3 leading-relaxed text-center">
-                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year ($3.33/mo) · " : "Meridian Pro · $4.99/month · "}
+                    {selectedPlan === "yearly" ? "Meridian Pro · $39.99/year · " : "Meridian Pro · $4.99/month · "}
                     Includes unlimited AI conversations, communication coach, document vault, and calendar for the subscription period. Subscription auto-renews until canceled. Manage or cancel anytime in your device Settings.
                   </p>
 
