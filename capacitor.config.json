@@ -8,6 +8,7 @@
   },
   "ios": {
     "scheme": "Meridian",
-    "contentInset": "never"
+    "contentInset": "never",
+    "backgroundColor": "#ffffff"
   }
 }
