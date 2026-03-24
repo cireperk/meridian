@@ -871,6 +871,8 @@ export default function App() {
   }, [session?.token, session?.user?.id]);
 
   useEffect(() => { if (activeTab === "vault" || activeTab === "chat") loadVaultDocs(); }, [activeTab]);
+  // Also load vault docs on session init so chat always has context
+  useEffect(() => { if (session?.token) loadVaultDocs(); }, [session?.token]);
 
   // Migrate legacy decree (localStorage/profiles) into vault documents table
   // Only runs for decrees loaded from localStorage/profiles (not freshly uploaded ones)
@@ -931,6 +933,18 @@ export default function App() {
       await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { method: "DELETE", headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.token}` } });
       await dbDelete("documents", `id=eq.${doc.id}`, session.token);
       setVaultDocs(prev => prev.filter(d => d.id !== doc.id));
+      // If deleting a decree, clear legacy profile data + extraction so it doesn't get re-created
+      if (doc.category === "decree") {
+        setDecreeText(""); setDecreeFileName(""); setDecreePages(0);
+        localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages");
+        dbUpdate("profiles", `id=eq.${session.user.id}`, { decree_text: null, decree_name: null, decree_pages: 0 }, session.token).catch(() => {});
+        // Clean up decree extraction
+        const remaining = vaultDocs.filter(d => d.id !== doc.id && d.category === "decree");
+        if (remaining.length === 0) {
+          dbDelete("decree_extractions", `user_id=eq.${session.user.id}`, session.token).catch(() => {});
+          setDecreeExtraction(null);
+        }
+      }
     } catch {}
     setVaultDeleteId(null);
   };
