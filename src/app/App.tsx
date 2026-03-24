@@ -1879,7 +1879,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 z-10 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
 
             {/* Trial banner */}
             {isTrialActive && !isSubscribed && trialDaysLeft < TRIAL_DAYS && (
