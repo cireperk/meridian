@@ -2533,6 +2533,7 @@ export default function App() {
                           <button onClick={() => setShowSubscribeModal(true)} className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl text-sm font-medium hover:from-emerald-600 hover:to-teal-600 transition-all">
                             {isTrialActive ? `Subscribe — ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial` : "Subscribe — $4.99/mo"}
                           </button>
+                          <p className="text-[11px] text-slate-400 mt-2 leading-relaxed text-center">Meridian Pro provides unlimited access to AI conversations, communication coach, document vault, and calendar. $4.99/month or $39.99/year. Auto-renews until canceled.</p>
                           <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
                             <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
                             <span className="text-slate-300">·</span>
