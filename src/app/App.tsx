@@ -1109,7 +1109,7 @@ export default function App() {
 
   // ============================================================
   return (
-    <div style={{ height: "100dvh", overflow: "hidden", background: "#fff" }}>
+    <>
       <input ref={fileRef} type="file" accept=".txt,.md,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
       <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
 
@@ -1879,7 +1879,7 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="h-full flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top)" }}>
 
             {/* Trial banner */}
             {isTrialActive && !isSubscribed && trialDaysLeft < TRIAL_DAYS && (
@@ -2987,6 +2987,6 @@ export default function App() {
           </AnimatePresence>
         </>
       )}
-    </div>
+    </>
   );
 }

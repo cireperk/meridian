@@ -8,6 +8,6 @@
   },
   "ios": {
     "scheme": "Meridian",
-    "contentInset": "automatic"
+    "contentInset": "never"
   }
 }
