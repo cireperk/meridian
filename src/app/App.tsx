@@ -2985,7 +2985,7 @@ export default function App() {
           {/* Subscribe Modal */}
           <AnimatePresence>
             {showSubscribeModal && (
-              <motion.div className="fixed inset-0 z-[300] bg-black/30 flex items-end justify-center" onClick={() => setShowSubscribeModal(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div className="fixed inset-0 z-[300] bg-black/30 flex items-end justify-center" onPointerUp={(e) => { if (e.target === e.currentTarget) setShowSubscribeModal(false); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}>
                   <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
                   <div className="text-center mb-5">
