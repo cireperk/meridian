@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-itunes-app" content="app-id=6760792373">
   <title>Meridian — Calm and clarity through divorce and co-parenting</title>
   <meta name="description" content="Meridian walks with you through divorce, co-parenting, and everything you're rebuilding. AI-powered support, document storage, message coaching, and custody tools — private and available 24/7.">
   <meta name="keywords" content="divorce app, co-parenting app, custody schedule, divorce support, co-parenting communication, divorce coach, custody help, divorce AI, co-parenting tools">
@@ -98,9 +99,21 @@
     footer a:hover { color: #10b981; }
     footer .trust { font-size: 12px; color: #94a3b8; margin-bottom: 12px; }
 
+    .app-store-badge { display: inline-block; margin-top: 16px; }
+    .app-store-badge img { height: 44px; }
+    .web-fallback { display: block; margin-top: 10px; font-size: 13px; color: #94a3b8; text-decoration: none; }
+    .web-fallback:hover { color: #10b981; }
+
+    /* Desktop: green button primary, App Store badge secondary */
+    .mobile-primary { display: none; }
+    .desktop-primary { display: block; }
+
     @media (max-width: 480px) {
       .hero h1 { font-size: 28px; }
       .features { grid-template-columns: 1fr; }
+      /* Mobile: App Store badge primary, web link secondary */
+      .mobile-primary { display: block; }
+      .desktop-primary { display: none; }
     }
   </style>
 </head>
@@ -119,7 +132,21 @@
   <div class="hero">
     <h1>Hard chapter.<br><em>Not the last one.</em></h1>
     <p>Meridian walks with you through divorce, co-parenting, and everything you're rebuilding.</p>
-    <a href="/#signup" class="cta-btn">Start here</a>
+    <!-- Mobile: App Store primary -->
+    <div class="mobile-primary">
+      <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" class="app-store-badge">
+        <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+      <a href="/#signup" class="web-fallback">or continue on web</a>
+    </div>
+    <!-- Desktop: green button primary, App Store secondary -->
+    <div class="desktop-primary">
+      <a href="/#signup" class="cta-btn">Start here</a>
+      <br>
+      <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" class="app-store-badge">
+        <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+    </div>
     <p class="hero-note">Free to start. Private forever.</p>
   </div>
 
@@ -207,7 +234,21 @@
 
   <div class="final-cta">
     <p>Whenever you're ready.</p>
-    <a href="/#signup" class="cta-btn">Take the first step</a>
+    <!-- Mobile: App Store primary -->
+    <div class="mobile-primary">
+      <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" class="app-store-badge">
+        <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+      <a href="/#signup" class="web-fallback">or continue on web</a>
+    </div>
+    <!-- Desktop: green button primary, App Store secondary -->
+    <div class="desktop-primary">
+      <a href="/#signup" class="cta-btn">Take the first step</a>
+      <br>
+      <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" class="app-store-badge">
+        <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store">
+      </a>
+    </div>
     <p class="price">Free for 3 days, then $4.99/mo. Cancel anytime.</p>
   </div>
 
