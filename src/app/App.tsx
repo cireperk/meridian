@@ -1298,9 +1298,22 @@ export default function App() {
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
-                <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
-                  Start here
-                </Button>
+                {/* Mobile: App Store primary */}
+                <div className="flex flex-col items-center gap-2 sm:hidden">
+                  <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
+                    <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-11" />
+                  </a>
+                  <button onClick={enterApp} className="text-[13px] text-slate-400 hover:text-emerald-500 transition-colors">or continue on web</button>
+                </div>
+                {/* Desktop: green button primary, App Store secondary */}
+                <div className="hidden sm:flex flex-col items-center gap-4">
+                  <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
+                    Start here
+                  </Button>
+                  <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
+                    <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-10" />
+                  </a>
+                </div>
                 <p className="text-[11px] text-slate-400 -mt-2">Free to start. Private forever.</p>
               </motion.div>
 
@@ -1451,9 +1464,22 @@ export default function App() {
                 {/* Final CTA */}
                 <div className="flex flex-col items-center gap-3">
                   <p className="text-lg sm:text-xl font-light text-slate-800 mb-2">Whenever you're ready.</p>
-                  <Button size="lg" onClick={enterApp} className="h-13 px-10 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
-                    Take the first step
-                  </Button>
+                  {/* Mobile: App Store primary */}
+                  <div className="flex flex-col items-center gap-2 sm:hidden">
+                    <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
+                      <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-11" />
+                    </a>
+                    <button onClick={enterApp} className="text-[13px] text-slate-400 hover:text-emerald-500 transition-colors">or continue on web</button>
+                  </div>
+                  {/* Desktop: green button primary, App Store secondary */}
+                  <div className="hidden sm:flex flex-col items-center gap-4">
+                    <Button size="lg" onClick={enterApp} className="h-13 px-10 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
+                      Take the first step
+                    </Button>
+                    <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
+                      <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-10" />
+                    </a>
+                  </div>
                   <p className="text-[11px] text-slate-400">Free for 3 days, then $4.99/mo. Cancel anytime.</p>
                 </div>
 
