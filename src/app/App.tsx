@@ -215,10 +215,13 @@ export default function App() {
   const [trialBannerSeen, setTrialBannerSeen] = useState(() => localStorage.getItem("m_trial_banner_seen") === "1");
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
   const [coachInput, setCoachInput] = useState("");
-  const [coachResult, setCoachResult] = useState("");
+  const [coachMessages, setCoachMessages] = useState<Array<{ role: string; content: string }>>([]);
+  const [coachStreaming, setCoachStreaming] = useState("");
   const [coachLoading, setCoachLoading] = useState(false);
   const [coachCopied, setCoachCopied] = useState(false);
+  const [coachFollowUp, setCoachFollowUp] = useState("");
   const coachAbortRef = useRef<AbortController | null>(null);
+  const coachBottomRef = useRef<HTMLDivElement>(null);
   const [coachSessions, setCoachSessions] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_coach_sessions") || "null"); if (c?.length) return c; return []; } catch { return []; } });
   const [activeCoachSessionId, setActiveCoachSessionId] = useState<string | null>(null);
   const [coachDeleteConfirmId, setCoachDeleteConfirmId] = useState<string | null>(null);
@@ -256,10 +259,10 @@ export default function App() {
                 const sessions = coachRows.map((r: any) => {
                   const msgs = r.messages || [];
                   const userMsg = msgs.find((m: any) => m.role === "user");
-                  const assistantMsg = msgs.find((m: any) => m.role === "assistant");
+                  const lastAssistant = [...msgs].reverse().find((m: any) => m.role === "assistant");
                   const inputText = userMsg?.content?.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "") || "";
                   const mode = userMsg?.content?.startsWith("I received") ? "respond" : "draft";
-                  return { id: r.id, mode, input: inputText, result: assistantMsg?.content || "", title: r.title, createdAt: r.created_at };
+                  return { id: r.id, mode, messages: msgs, title: r.title, createdAt: r.created_at };
                 });
                 setCoachSessions(sessions); localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
               }
@@ -329,10 +332,8 @@ export default function App() {
                 const sessions = coachRows.map((r: any) => {
                   const msgs = r.messages || [];
                   const userMsg = msgs.find((m: any) => m.role === "user");
-                  const assistantMsg = msgs.find((m: any) => m.role === "assistant");
-                  const inputText = userMsg?.content?.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "") || "";
                   const mode = userMsg?.content?.startsWith("I received") ? "respond" : "draft";
-                  return { id: r.id, mode, input: inputText, result: assistantMsg?.content || "", title: r.title, createdAt: r.created_at };
+                  return { id: r.id, mode, messages: msgs, title: r.title, createdAt: r.created_at };
                 });
                 setCoachSessions(sessions);
                 localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
@@ -387,10 +388,8 @@ export default function App() {
               const sessions = coachRows.map((r: any) => {
                 const msgs = r.messages || [];
                 const userMsg = msgs.find((m: any) => m.role === "user");
-                const assistantMsg = msgs.find((m: any) => m.role === "assistant");
-                const inputText = userMsg?.content?.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "") || "";
                 const mode = userMsg?.content?.startsWith("I received") ? "respond" : "draft";
-                return { id: r.id, mode, input: inputText, result: assistantMsg?.content || "", title: r.title, createdAt: r.created_at };
+                return { id: r.id, mode, messages: msgs, title: r.title, createdAt: r.created_at };
               });
               setCoachSessions(sessions); localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
             }
@@ -425,7 +424,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -687,11 +686,15 @@ export default function App() {
       clearTimeout(coachSyncRef.current);
       coachSyncRef.current = setTimeout(() => {
         coachSessions.forEach((s) => {
-          dbUpsert("conversations", { id: s.id, user_id: session.user.id, title: s.title || "Coach session", messages: [{ role: "user", content: s.input }, { role: "assistant", content: s.result }], updated_at: new Date().toISOString() }, session.token).catch(() => {});
+          const msgs = s.messages || [{ role: "user", content: s.input }, { role: "assistant", content: s.result }];
+          dbUpsert("conversations", { id: s.id, user_id: session.user.id, title: s.title || "Coach session", messages: msgs, updated_at: new Date().toISOString() }, session.token).catch(() => {});
         });
       }, 1500);
     }
   }, [coachSessions]);
+  useEffect(() => {
+    if (coachStreaming || coachMessages.length > 0) coachBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [coachStreaming, coachMessages]);
   useEffect(() => {
     if (decreeText) localStorage.setItem("m_decree_text", decreeText); else localStorage.removeItem("m_decree_text");
     if (decreeFileName) localStorage.setItem("m_decree_name", decreeFileName); else localStorage.removeItem("m_decree_name");
@@ -1018,42 +1021,76 @@ export default function App() {
   };
 
   // --- Coach ---
-  const handleCoachSend = async () => {
-    if (!coachInput.trim() || coachLoading) return;
-    setCoachResult(""); setCoachLoading(true); setCoachCopied(false);
-    const savedInput = coachInput.trim();
+  const handleCoachSend = async (followUp?: string) => {
+    const isFollowUp = !!followUp;
+    const inputText = isFollowUp ? followUp.trim() : coachInput.trim();
+    if (!inputText || coachLoading) return;
+
+    setCoachLoading(true); setCoachCopied(false); setCoachStreaming("");
+
+    // Build message history
+    let msgs: Array<{ role: string; content: string }>;
+    if (isFollowUp) {
+      // Add follow-up to existing conversation
+      msgs = [...coachMessages, { role: "user", content: inputText }];
+      setCoachFollowUp("");
+    } else {
+      // First message — wrap with mode context
+      const userPrompt = coachMode === "respond"
+        ? `I received this message from my co-parent. Help me respond:\n\n"${inputText}"`
+        : `I need to send a message to my co-parent about the following:\n\n${inputText}`;
+      msgs = [{ role: "user", content: userPrompt }];
+    }
+    setCoachMessages(msgs);
+
     const savedMode = coachMode;
-    const userPrompt = coachMode === "respond"
-      ? `I received this message from my co-parent. Help me respond:\n\n"${coachInput}"`
-      : `I need to send a message to my co-parent about the following:\n\n${coachInput}`;
+    const savedInput = isFollowUp ? (coachMessages[0]?.content || inputText) : inputText;
     const abort = new AbortController(); coachAbortRef.current = abort;
     let finalText = "";
     try {
       const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
-      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: [{ role: "user", content: userPrompt }] }), signal: abort.signal });
+      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: msgs }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       try {
         while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop() || "";
-          for (const line of lines) { if (!line.startsWith("data: ")) continue; const data = line.slice(6); if (data === "[DONE]") continue; try { const parsed = JSON.parse(data); if (parsed.type === "content_block_delta" && parsed.delta?.text) { fullText += parsed.delta.text; setCoachResult(fullText); } } catch {} }
+          for (const line of lines) { if (!line.startsWith("data: ")) continue; const data = line.slice(6); if (data === "[DONE]") continue; try { const parsed = JSON.parse(data); if (parsed.type === "content_block_delta" && parsed.delta?.text) { fullText += parsed.delta.text; setCoachStreaming(fullText); } } catch {} }
         }
       } catch (e: any) { if (e.name !== "AbortError") throw e; }
       finalText = fullText;
-    } catch (err: any) { if (err.name !== "AbortError") setCoachResult("Something went wrong. Please try again."); }
+    } catch (err: any) { if (err.name !== "AbortError") setCoachStreaming("Something went wrong. Please try again."); }
     finally {
       setCoachLoading(false);
       if (finalText && finalText !== "Something went wrong. Please try again.") {
-        const sessionId = `coach_${Date.now()}`;
-        const newSession = { id: sessionId, mode: savedMode, input: savedInput, result: finalText, title: savedInput.slice(0, 50), createdAt: new Date().toISOString() };
-        setCoachSessions((prev) => [newSession, ...prev]);
-        setActiveCoachSessionId(sessionId);
+        const updatedMsgs = [...msgs, { role: "assistant", content: finalText }];
+        setCoachMessages(updatedMsgs);
+        setCoachStreaming("");
+
+        // Extract original input text for session title
+        const firstUserContent = updatedMsgs[0]?.content || "";
+        const titleText = firstUserContent.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "");
+
+        if (activeCoachSessionId) {
+          // Update existing session
+          setCoachSessions((prev) => prev.map((s) => s.id === activeCoachSessionId ? { ...s, messages: updatedMsgs, result: finalText } : s));
+        } else {
+          // Create new session
+          const sessionId = `coach_${Date.now()}`;
+          const newSession = { id: sessionId, mode: savedMode, messages: updatedMsgs, title: titleText.slice(0, 50), createdAt: new Date().toISOString() };
+          setCoachSessions((prev) => [newSession, ...prev]);
+          setActiveCoachSessionId(sessionId);
+        }
+      } else {
+        setCoachStreaming("");
       }
     }
   };
 
   const copyCoachMessage = () => {
-    const match = coachResult.match(/\*\*Your message:\*\*\s*\n([\s\S]*?)(?:\n\*\*|$)/);
-    const textToCopy = match ? match[1].trim() : coachResult;
+    // Find the latest assistant message
+    const lastAssistant = [...coachMessages].reverse().find(m => m.role === "assistant")?.content || coachStreaming;
+    const match = lastAssistant.match(/\*\*Your message:\*\*\s*\n([\s\S]*?)(?:\n\*\*|$)/);
+    const textToCopy = match ? match[1].trim() : lastAssistant;
     navigator.clipboard.writeText(textToCopy).then(() => { setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2000); }).catch(() => {});
   };
 
@@ -2107,95 +2144,132 @@ export default function App() {
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
                     <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
 
-                    {/* Mode toggle — always visible */}
-                    <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
-                      {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
-                        <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachResult(""); setCoachInput(""); setActiveCoachSessionId(null); }}
-                          className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Mode toggle — only when no active conversation */}
+                    {coachMessages.length === 0 && !coachLoading && (
+                      <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
+                        {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
+                          <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachInput(""); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); }}
+                            className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
-                    {/* Viewing a past session */}
-                    {activeCoachSession && !coachLoading && coachResult === activeCoachSession.result ? (
+                    {/* Active conversation thread */}
+                    {coachMessages.length > 0 || coachStreaming ? (
                       <div>
-                        <div className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4 mb-4">
-                          <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">{activeCoachSession.mode === "respond" ? "Their message" : "Your situation"}</label>
-                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{activeCoachSession.input}</p>
+                        {/* New session button */}
+                        <button onClick={() => { setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setCoachFollowUp(""); setActiveCoachSessionId(null); setCoachCopied(false); }}
+                          className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-emerald-600 transition-colors mb-4">
+                          <ArrowLeft className="w-3 h-3" /> New session
+                        </button>
+
+                        {/* Message thread */}
+                        <div className="space-y-4 mb-4">
+                          {coachMessages.map((msg, i) => {
+                            // Strip the mode prefix for display on first user message
+                            const displayContent = i === 0 && msg.role === "user"
+                              ? msg.content.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "")
+                              : msg.content;
+                            return msg.role === "user" ? (
+                              <div key={i} className="bg-slate-50/80 border border-slate-200/60 rounded-xl p-4">
+                                {i === 0 && <label className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mb-1.5 block">{coachMode === "respond" ? "Their message" : "Your situation"}</label>}
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{displayContent}</p>
+                              </div>
+                            ) : (
+                              <div key={i}>
+                                <div className="bg-white border border-slate-200/60 rounded-2xl p-5">
+                                  <div className="prose prose-sm prose-slate max-w-none text-[14px] leading-relaxed [&_strong]:text-slate-800 [&_p]:text-slate-600 [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) as string }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Streaming response */}
+                          {coachStreaming && (
+                            <div>
+                              <div className="bg-white border border-slate-200/60 rounded-2xl p-5">
+                                <div className="prose prose-sm prose-slate max-w-none text-[14px] leading-relaxed [&_strong]:text-slate-800 [&_p]:text-slate-600 [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: marked.parse(coachStreaming) as string }} />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Loading dots */}
+                          {coachLoading && !coachStreaming && (
+                            <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-5 py-4 shadow-sm inline-block">
+                              <div className="flex gap-1.5">
+                                {[0, 0.15, 0.3].map((d) => <motion.div key={d} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.2, repeat: Infinity, delay: d, ease: "easeInOut" }} className="w-1.5 h-1.5 rounded-full bg-emerald-400" />)}
+                              </div>
+                            </div>
+                          )}
+                          <div ref={coachBottomRef} />
                         </div>
-                        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 mb-3">
-                          <div className="prose prose-sm prose-slate max-w-none text-[14px] leading-relaxed [&_strong]:text-slate-800 [&_p]:text-slate-600 [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: marked.parse(activeCoachSession.result) as string }} />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={copyCoachMessage}
-                            className={cn("flex-1 transition-all", coachCopied ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-                            {coachCopied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy message</>}
-                          </Button>
-                        </div>
+
+                        {/* Copy + follow-up input — show after first response */}
+                        {(coachMessages.some(m => m.role === "assistant") || coachStreaming) && !coachLoading && (
+                          <div className="space-y-3">
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={copyCoachMessage}
+                                className={cn("flex-1 transition-all", coachCopied ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
+                                {coachCopied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy message</>}
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <input value={coachFollowUp} onChange={(e) => setCoachFollowUp(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && coachFollowUp.trim()) { e.preventDefault(); handleCoachSend(coachFollowUp); } }}
+                                placeholder="Ask for changes or follow up..."
+                                className="flex-1 px-4 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" />
+                              <Button onClick={() => handleCoachSend(coachFollowUp)} disabled={!coachFollowUp.trim()}
+                                className="px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl">
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <>
-                    {/* Input */}
-                    <div className="mb-4">
-                      <label className="text-xs font-medium text-slate-500 mb-2 block">
-                        {coachMode === "respond" ? "Paste the message you received" : "What do you need to communicate?"}
-                      </label>
-                      <textarea value={coachInput} onChange={(e) => setCoachInput(e.target.value)}
-                        placeholder={coachMode === "respond" ? "Paste their text message, email, or app message here..." : "e.g. I need to change the pickup time this Friday from 5pm to 6pm..."}
-                        className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none min-h-[120px]" />
-                    </div>
+                        {/* Initial input — no conversation yet */}
+                        <div className="mb-4">
+                          <label className="text-xs font-medium text-slate-500 mb-2 block">
+                            {coachMode === "respond" ? "Paste the message you received" : "What do you need to communicate?"}
+                          </label>
+                          <textarea value={coachInput} onChange={(e) => setCoachInput(e.target.value)}
+                            placeholder={coachMode === "respond" ? "Paste their text message, email, or app message here..." : "e.g. I need to change the pickup time this Friday from 5pm to 6pm..."}
+                            className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none min-h-[120px]" />
+                        </div>
 
-                    <Button onClick={handleCoachSend} disabled={!coachInput.trim() || coachLoading}
-                      className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 mb-6">
-                      {coachLoading ? (
-                        <div className="flex items-center gap-2"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Coaching...</div>
-                      ) : (
-                        <>{coachMode === "respond" ? "Coach my response" : "Draft my message"}</>
-                      )}
-                    </Button>
+                        <Button onClick={() => handleCoachSend()} disabled={!coachInput.trim() || coachLoading}
+                          className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 mb-6">
+                          {coachLoading ? (
+                            <div className="flex items-center gap-2"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> Coaching...</div>
+                          ) : (
+                            <>{coachMode === "respond" ? "Coach my response" : "Draft my message"}</>
+                          )}
+                        </Button>
 
-                    {/* Result */}
-                    <AnimatePresence>
-                      {coachResult && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                          <div className="bg-white border border-slate-200/60 rounded-2xl p-5 mb-3">
-                            <div className="prose prose-sm prose-slate max-w-none text-[14px] leading-relaxed [&_strong]:text-slate-800 [&_p]:text-slate-600 [&_p]:mb-3" dangerouslySetInnerHTML={{ __html: marked.parse(coachResult) as string }} />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={copyCoachMessage}
-                              className={cn("flex-1 transition-all", coachCopied ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>
-                              {coachCopied ? <><Check className="w-3.5 h-3.5 mr-1.5" /> Copied!</> : <><Copy className="w-3.5 h-3.5 mr-1.5" /> Copy message</>}
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => { setCoachResult(""); setCoachInput(""); setActiveCoachSessionId(null); }} className="text-slate-400 hover:text-slate-600">
-                              Clear
-                            </Button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Empty state tips */}
-                    {!coachResult && !coachLoading && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-4 space-y-3">
-                        <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">How this helps</p>
-                        {[
-                          { title: "Legally neutral", desc: "Avoid language that could be used against you" },
-                          { title: "De-escalated", desc: "Remove emotional charge without losing your point" },
-                          { title: "Child-focused", desc: "Center your kids' needs in every message" },
-                        ].map((tip, i) => (
-                          <div key={i} className="flex items-start gap-3 p-3 bg-slate-50/60 rounded-xl">
-                            <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-3 h-3 text-emerald-500" /></div>
-                            <div><div className="text-sm font-medium text-slate-600">{tip.title}</div><div className="text-xs text-slate-400">{tip.desc}</div></div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
+                        {/* Empty state tips */}
+                        {!coachLoading && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="mt-4 space-y-3">
+                            <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">How this helps</p>
+                            {[
+                              { title: "Legally neutral", desc: "Avoid language that could be used against you" },
+                              { title: "De-escalated", desc: "Remove emotional charge without losing your point" },
+                              { title: "Child-focused", desc: "Center your kids' needs in every message" },
+                            ].map((tip, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3 bg-slate-50/60 rounded-xl">
+                                <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5"><Check className="w-3 h-3 text-emerald-500" /></div>
+                                <div><div className="text-sm font-medium text-slate-600">{tip.title}</div><div className="text-xs text-slate-400">{tip.desc}</div></div>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
                       </>
                     )}
 
                     {/* Recent sessions */}
-                    {coachSessions.length > 0 && !coachLoading && (
+                    {coachSessions.length > 0 && !coachLoading && coachMessages.length === 0 && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8 pt-6 border-t border-slate-100">
                         <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Recent sessions</p>
                         <div className="flex flex-col gap-2">
@@ -2207,17 +2281,20 @@ export default function App() {
                             const diffHrs = Math.floor(diffMins / 60);
                             const diffDays = Math.floor(diffHrs / 24);
                             const timeAgo = !date ? "" : diffMins < 1 ? "Just now" : diffMins < 60 ? `${diffMins}m ago` : diffHrs < 24 ? `${diffHrs}h ago` : diffDays < 7 ? `${diffDays}d ago` : date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                            const deleteSession = () => { setCoachSessions((prev) => prev.filter((x) => x.id !== s.id)); if (activeCoachSessionId === s.id) { setActiveCoachSessionId(null); setCoachResult(""); setCoachInput(""); } if (session?.token) dbDelete("conversations", `id=eq.${s.id}`, session.token).catch(() => {}); };
+                            const deleteSession = () => { setCoachSessions((prev) => prev.filter((x) => x.id !== s.id)); if (activeCoachSessionId === s.id) { setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); } if (session?.token) dbDelete("conversations", `id=eq.${s.id}`, session.token).catch(() => {}); };
+                            const titleText = (() => { const firstMsg = s.messages?.[0]?.content || s.input || ""; return firstMsg.replace(/^I received this message from my co-parent\. Help me respond:\n\n"|^I need to send a message to my co-parent about the following:\n\n/g, "").replace(/"$/, "").slice(0, 50) || s.title || "Untitled"; })();
+                            const msgCount = s.messages?.length || 2;
                             return (
                               <button key={s.id}
-                                onClick={() => { setActiveCoachSessionId(s.id); setCoachMode(s.mode); setCoachInput(s.input); setCoachResult(s.result); }}
+                                onClick={() => { setActiveCoachSessionId(s.id); setCoachMode(s.mode); setCoachMessages(s.messages || []); setCoachStreaming(""); setCoachFollowUp(""); }}
                                 className={cn("w-full text-left p-3 rounded-xl border transition-all", s.id === activeCoachSessionId ? "bg-emerald-50/50 border-emerald-100" : "bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50")}>
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
                                     <span className={cn("text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0", s.mode === "respond" ? "bg-blue-50 text-blue-500" : "bg-purple-50 text-purple-500")}>{s.mode === "respond" ? "Response" : "Draft"}</span>
-                                    <span className="text-sm text-slate-600 truncate">{s.title || "Untitled"}</span>
+                                    <span className="text-sm text-slate-600 truncate">{titleText}</span>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
+                                    {msgCount > 2 && <span className="text-[10px] text-emerald-500 font-medium">{Math.ceil(msgCount / 2)} turns</span>}
                                     <span className="text-[11px] text-slate-300">{timeAgo}</span>
                                     {coachDeleteConfirmId === s.id ? (
                                       <button className="px-2 py-1 rounded-md text-[11px] font-medium text-white bg-red-500 hover:bg-red-600 transition-all"
