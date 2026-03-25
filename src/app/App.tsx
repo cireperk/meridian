@@ -282,12 +282,17 @@ export default function App() {
     })();
   }, []);
 
-  // Handle OAuth callback — check hash on page load
+  // Handle OAuth callback + deep link hashes on page load
   useEffect(() => {
     const hash = window.location.hash;
-    if (!hash.includes("access_token=")) return;
-    window.history.replaceState(null, "", window.location.pathname);
-    processOAuthTokens(hash);
+    if (hash.includes("access_token=")) {
+      window.history.replaceState(null, "", window.location.pathname);
+      processOAuthTokens(hash);
+    } else if (hash === "#signup" || hash === "#signin") {
+      window.history.replaceState(null, "", window.location.pathname);
+      setShowSplash(false);
+      setAuthView(hash === "#signup" ? "signup" : "signin");
+    }
   }, []);
 
   // Handle Universal Link callback — iOS app opened via URL after OAuth redirect
