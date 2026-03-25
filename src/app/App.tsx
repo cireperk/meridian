@@ -226,7 +226,7 @@ export default function App() {
   const [coachFollowUp, setCoachFollowUp] = useState("");
   const coachAbortRef = useRef<AbortController | null>(null);
   const coachBottomRef = useRef<HTMLDivElement>(null);
-  const [coachSessions, setCoachSessions] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_coach_sessions") || "null"); if (c?.length) return c; return []; } catch { return []; } });
+  const [coachSessions, setCoachSessions] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_coach_sessions") || "null"); if (c?.length) return c.map((s: any) => ({ ...s, messages: s.messages || [{ role: "user", content: s.input || "" }, { role: "assistant", content: s.result || "" }].filter(m => m.content) })); return []; } catch { return []; } });
   const [activeCoachSessionId, setActiveCoachSessionId] = useState<string | null>(null);
   const [coachDeleteConfirmId, setCoachDeleteConfirmId] = useState<string | null>(null);
   const activeCoachSession = coachSessions.find((s) => s.id === activeCoachSessionId);
