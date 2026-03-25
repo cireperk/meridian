@@ -1298,12 +1298,14 @@ export default function App() {
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
-                {/* Mobile: App Store primary */}
-                <div className="flex flex-col items-center gap-2 sm:hidden">
+                {/* Mobile: App Store primary, outlined web button secondary */}
+                <div className="flex flex-col items-center gap-3 sm:hidden w-full">
                   <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
                     <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-11" />
                   </a>
-                  <button onClick={enterApp} className="text-[13px] text-slate-400 hover:text-emerald-500 transition-colors">or continue on web</button>
+                  <button onClick={enterApp} className="w-full h-11 text-sm font-medium text-emerald-600 border border-emerald-300 hover:bg-emerald-50 rounded-2xl transition-colors">
+                    Start on web
+                  </button>
                 </div>
                 {/* Desktop: green button primary, App Store secondary */}
                 <div className="hidden sm:flex flex-col items-center gap-4">
@@ -1464,12 +1466,14 @@ export default function App() {
                 {/* Final CTA */}
                 <div className="flex flex-col items-center gap-3">
                   <p className="text-lg sm:text-xl font-light text-slate-800 mb-2">Whenever you're ready.</p>
-                  {/* Mobile: App Store primary */}
-                  <div className="flex flex-col items-center gap-2 sm:hidden">
+                  {/* Mobile: App Store primary, outlined web button secondary */}
+                  <div className="flex flex-col items-center gap-3 sm:hidden w-full max-w-xs">
                     <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373">
                       <img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" alt="Download on the App Store" className="h-11" />
                     </a>
-                    <button onClick={enterApp} className="text-[13px] text-slate-400 hover:text-emerald-500 transition-colors">or continue on web</button>
+                    <button onClick={enterApp} className="w-full h-11 text-sm font-medium text-emerald-600 border border-emerald-300 hover:bg-emerald-50 rounded-2xl transition-colors">
+                      Start on web
+                    </button>
                   </div>
                   {/* Desktop: green button primary, App Store secondary */}
                   <div className="hidden sm:flex flex-col items-center gap-4">
