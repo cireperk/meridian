@@ -2653,7 +2653,7 @@ export default function App() {
                             onBlur={() => { localStorage.setItem("m_children_names", childrenNames); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames || null }, session.token).catch(() => {}); }}
                             onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
                         </div>
-                        {!decreeText && (coparentName || childrenNames) && (
+                        {!decreeText && !vaultDocs.some(d => d.category === "decree") && (coparentName || childrenNames) && (
                           <p className="text-[11px] text-emerald-600/70 mt-1">Upload your decree in the Vault for even more personalized guidance.</p>
                         )}
                       </div>
