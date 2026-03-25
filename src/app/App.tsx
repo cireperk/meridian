@@ -988,6 +988,18 @@ export default function App() {
 
   useEffect(() => { if (FEATURE_DECREE_INTELLIGENCE && session?.token) loadExtraction(); }, [loadExtraction]);
 
+  // Auto-populate children names from decree extraction (only if field is empty)
+  useEffect(() => {
+    if (!decreeExtraction || !session?.token || !session?.user?.id) return;
+    if (!childrenNames && decreeExtraction.children?.length) {
+      const names = decreeExtraction.children.map((c: any) => c.name?.split(" ")[0]).filter(Boolean).join(", ");
+      if (names) {
+        setChildrenNames(names); localStorage.setItem("m_children_names", names);
+        dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: names }, session.token).catch(() => {});
+      }
+    }
+  }, [decreeExtraction]);
+
   // Auto-trigger extraction for existing decrees that haven't been analyzed yet
   const autoExtractTriggered = useRef(false);
   useEffect(() => {
@@ -2616,13 +2628,13 @@ export default function App() {
                       <div className="space-y-3">
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Co-parent's name</label>
-                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Jordan" value={coparentName} onChange={(e) => setCoparentName(e.target.value)}
+                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)}
                             onBlur={() => { localStorage.setItem("m_coparent_name", coparentName); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { coparent_name: coparentName || null }, session.token).catch(() => {}); }}
                             onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
                         </div>
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Children's names</label>
-                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Emma, Liam" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)}
+                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)}
                             onBlur={() => { localStorage.setItem("m_children_names", childrenNames); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames || null }, session.token).catch(() => {}); }}
                             onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
                         </div>
