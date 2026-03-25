@@ -247,8 +247,9 @@ export default function App() {
         const email = userData.email || "";
         const oauthName = userData.user_metadata?.full_name || userData.user_metadata?.name || "";
         // Check if profile exists
-        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name`, accessToken);
-        if (profile?.length && profile[0].name) {
+        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,created_at`, accessToken);
+        const isNewProfile = profile?.[0]?.created_at && (Date.now() - new Date(profile[0].created_at).getTime() < 30000);
+        if (profile?.length && profile[0].name && !isNewProfile) {
           // Existing user — sign in
           const s = { token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: profile[0].name } };
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
@@ -431,7 +432,7 @@ export default function App() {
   const handleOnboarding = async () => {
     if (!authName.trim()) return; setAuthLoading(true);
     try {
-      await sbFetch("/rest/v1/profiles", { method: "POST", body: { id: session.user.id, name: authName.trim(), email: session.user.email }, token: session.token });
+      await sbFetch("/rest/v1/profiles", { method: "POST", body: { id: session.user.id, name: authName.trim(), email: session.user.email }, token: session.token, headers: { Prefer: "resolution=merge-duplicates" } });
       const s = { ...session, user: { ...session.user, name: authName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
       setAuthView("onboard-modes");
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
