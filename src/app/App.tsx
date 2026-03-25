@@ -567,7 +567,7 @@ export default function App() {
   };
 
   // --- Splash ---
-  const [showSplash, setShowSplash] = useState(() => isNative ? false : !localStorage.getItem("m_session"));
+  const [showSplash, setShowSplash] = useState(() => isNative ? false : window.location.hash.includes("access_token=") ? false : !localStorage.getItem("m_session"));
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
