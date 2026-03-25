@@ -1247,10 +1247,13 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
-                className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
-                Sign In
-              </button>
+              <div className="flex items-center gap-5">
+                <a href="/guides/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Guides</a>
+                <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
+                  className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
+                  Sign In
+                </button>
+              </div>
             </div>
 
             {/* ===== SECTION 1: Hero ===== */}
