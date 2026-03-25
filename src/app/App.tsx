@@ -2042,7 +2042,7 @@ export default function App() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <button onClick={() => setActiveTab("profile")} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
+                <button onClick={() => { setActiveTab("profile"); if (!coparentName && !childrenNames) setExpandedSetting("my-details"); }} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
                   <User className="w-4 h-4" strokeWidth={activeTab === "profile" ? 2.5 : 2} />
                 </button>
               </div>
@@ -2659,7 +2659,7 @@ export default function App() {
                           <motion.div animate={{ rotate: expandedSetting === "my-details" ? 90 : 0 }} transition={{ duration: 0.2 }}><ChevronRight className="w-4 h-4 text-slate-400" /></motion.div>
                         </button>
                         <AnimatePresence initial={false}>
-                          {(expandedSetting === "my-details" || (!coparentName && !childrenNames)) && (
+                          {expandedSetting === "my-details" && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
                               <div className="px-4 pb-4 space-y-3">
                                 <div>
