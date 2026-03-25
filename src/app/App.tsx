@@ -2309,7 +2309,7 @@ export default function App() {
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8 pt-6 border-t border-slate-100">
                         <p className="text-xs font-medium uppercase tracking-wider text-slate-300 mb-3">Recent sessions</p>
                         <div className="flex flex-col gap-2">
-                          {coachSessions.slice(0, 5).map((s) => {
+                          {[...coachSessions].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5).map((s) => {
                             const date = s.createdAt ? new Date(s.createdAt) : null;
                             const now = new Date();
                             const diffMs = date ? now.getTime() - date.getTime() : 0;
