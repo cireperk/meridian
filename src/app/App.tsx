@@ -2042,7 +2042,7 @@ export default function App() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <button onClick={() => { setActiveTab("profile"); if (!coparentName && !childrenNames) setExpandedSetting("my-details"); }} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
+                <button onClick={() => setActiveTab("profile")} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
                   <User className="w-4 h-4" strokeWidth={activeTab === "profile" ? 2.5 : 2} />
                 </button>
               </div>
