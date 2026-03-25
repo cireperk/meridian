@@ -128,6 +128,14 @@ CRITICAL RULES:
               birthdate: { type: ["string", "null"], description: "Child's date of birth (YYYY-MM-DD)" }
             }
           }
+        },
+        parent_names: {
+          type: ["object", "null"],
+          description: "Names of both parents/parties as stated in the decree",
+          properties: {
+            petitioner: { type: ["string", "null"], description: "Full name of the petitioner" },
+            respondent: { type: ["string", "null"], description: "Full name of the respondent" }
+          }
         }
       },
       required: ["raw_summary"]

@@ -988,24 +988,36 @@ export default function App() {
 
   useEffect(() => { if (FEATURE_DECREE_INTELLIGENCE && session?.token) loadExtraction(); }, [loadExtraction]);
 
-  // Auto-populate children names from decree extraction (only if field is empty)
+  // Auto-populate My Details from decree extraction (only if fields are empty)
   useEffect(() => {
     if (!decreeExtraction || !session?.token || !session?.user?.id) return;
+    const updates: any = {};
     if (!childrenNames && decreeExtraction.children?.length) {
       const names = decreeExtraction.children.map((c: any) => c.name?.split(" ")[0]).filter(Boolean).join(", ");
-      if (names) {
-        setChildrenNames(names); localStorage.setItem("m_children_names", names);
-        dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: names }, session.token).catch(() => {});
-      }
+      if (names) { setChildrenNames(names); localStorage.setItem("m_children_names", names); updates.children_names = names; }
     }
+    if (!coparentName && decreeExtraction.parent_names) {
+      const userName = (session.user.name || "").toLowerCase().split(" ")[0];
+      const { petitioner, respondent } = decreeExtraction.parent_names;
+      const petFirst = petitioner?.split(" ")[0] || "";
+      const resFirst = respondent?.split(" ")[0] || "";
+      // Pick the name that isn't the current user
+      const coparent = petFirst.toLowerCase() === userName ? resFirst : resFirst.toLowerCase() === userName ? petFirst : resFirst || petFirst;
+      if (coparent) { setCoparentName(coparent); localStorage.setItem("m_coparent_name", coparent); updates.coparent_name = coparent; }
+    }
+    if (Object.keys(updates).length) dbUpdate("profiles", `id=eq.${session.user.id}`, updates, session.token).catch(() => {});
   }, [decreeExtraction]);
 
   // Auto-trigger extraction for existing decrees that haven't been analyzed yet
   const autoExtractTriggered = useRef(false);
   useEffect(() => {
-    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !extractionLoaded.current || extractionLoading || decreeExtraction || autoExtractTriggered.current) return;
+    if (!FEATURE_DECREE_INTELLIGENCE || !session?.token || !extractionLoaded.current || extractionLoading || autoExtractTriggered.current) return;
+    // Re-extract if no extraction exists OR if parent_names is missing (schema upgrade)
+    const needsReExtract = decreeExtraction && !decreeExtraction.parent_names;
+    if (decreeExtraction && !needsReExtract) return;
     const decree = vaultDocs.find((d: any) => d.category === "decree" && d.text_content);
     if (decree) {
+      if (needsReExtract) dbDelete("decree_extractions", `user_id=eq.${session.user.id}`, session.token).catch(() => {});
       autoExtractTriggered.current = true;
       triggerExtraction(decree.text_content.slice(0, 500000), decree.id);
     }
@@ -2624,7 +2636,7 @@ export default function App() {
                     {/* My Details */}
                     <div className="mb-6">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">My Details</h3>
-                      <p className="text-xs text-slate-400 mb-3">Helps the AI use real names instead of placeholders.</p>
+                      <p className="text-xs text-slate-400 mb-3">Used to personalize your experience.</p>
                       <div className="space-y-3">
                         <div>
                           <label className="text-xs text-slate-500 mb-1 block">Co-parent's name</label>
