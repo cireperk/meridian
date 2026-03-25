@@ -2009,7 +2009,7 @@ export default function App() {
                             </div>
                           ) : (
                             <div className="flex flex-col gap-2">
-                              {conversations.map((c, idx) => {
+                              {[...conversations].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).map((c, idx) => {
                                 const lastMsg = c.messages?.[c.messages.length - 1];
                                 const preview = lastMsg?.content?.slice(0, 80) || "";
                                 const date = c.createdAt ? new Date(c.createdAt) : null;
