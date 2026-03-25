@@ -246,10 +246,11 @@ export default function App() {
         const userId = userData.id;
         const email = userData.email || "";
         const oauthName = userData.user_metadata?.full_name || userData.user_metadata?.name || "";
-        // Check if profile exists
-        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,created_at`, accessToken);
-        const isNewProfile = profile?.[0]?.created_at && (Date.now() - new Date(profile[0].created_at).getTime() < 30000);
-        if (profile?.length && profile[0].name && !isNewProfile) {
+        const authCreatedAt = userData.created_at ? new Date(userData.created_at).getTime() : 0;
+        const isNewAuthUser = Date.now() - authCreatedAt < 60000;
+        // Check if profile exists (and user isn't brand new)
+        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name`, accessToken);
+        if (profile?.length && profile[0].name && !isNewAuthUser) {
           // Existing user — sign in
           const s = { token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: profile[0].name } };
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
