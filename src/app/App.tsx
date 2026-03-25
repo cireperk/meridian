@@ -129,7 +129,9 @@ BOUNDARIES:
 - You're not a lawyer. If something needs legal advice, say "That's a question for your attorney" and move on.
 - Never take sides against the co-parent. Stay neutral, stay focused on the kids.
 
-End with a brief grounding thought when it feels natural.`;
+End with a brief grounding thought when it feels natural.
+
+NAMES: If the user's documents contain real names (children, co-parent, etc.), use them instead of generic placeholders like "[child's name]" or "[co-parent's name]". Never use bracketed placeholders when you have the actual name available.`;
 
 // --- Constants ---
 const QUICK_ACTIONS = [
@@ -161,7 +163,9 @@ FORMATTING RULES:
 - Always put the draft message in a clearly marked section starting with "**Your message:**" so they can easily copy it.
 - After the draft, add a brief "**Why this works:**" explanation (1-2 sentences) to teach them the principle.
 - Keep drafts under 4 sentences unless the situation requires more detail.
-- Be warm and supportive in your coaching voice, but make the actual draft messages businesslike and neutral.`;
+- Be warm and supportive in your coaching voice, but make the actual draft messages businesslike and neutral.
+
+NAMES: If the user's documents contain real names (children, co-parent, etc.), use them in drafted messages instead of generic placeholders like "[child's name]" or "[co-parent's name]". The goal is a message they can copy and send as-is.`;
 
 type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
 
