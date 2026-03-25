@@ -476,10 +476,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (session?.token && session?.user?.id) checkSubscription(session.token, session.user.id);
-    // Safety: if subscription check hangs, stop loading after 5s so user isn't stuck
-    const t = setTimeout(() => setSubscription((s) => s.loading ? { ...s, loading: false } : s), 5000);
-    return () => clearTimeout(t);
+    if (session?.token && session?.user?.id) {
+      setSubscription(s => s.loading ? s : { ...s, loading: true });
+      checkSubscription(session.token, session.user.id);
+      // Safety: if subscription check hangs, stop loading after 5s so user isn't stuck
+      const t = setTimeout(() => setSubscription((s) => s.loading ? { ...s, loading: false } : s), 5000);
+      return () => clearTimeout(t);
+    }
   }, [session?.token, session?.user?.id, checkSubscription]);
 
   const isTrialActive = subscription.trialEnd ? new Date() < new Date(subscription.trialEnd) : false;
