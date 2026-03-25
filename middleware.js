@@ -1,10 +1,8 @@
-import { next } from "@vercel/edge";
-
 export default function middleware(request) {
   const url = new URL(request.url);
 
   // Only intercept the root path
-  if (url.pathname !== "/") return next();
+  if (url.pathname !== "/") return;
 
   const ua = (request.headers.get("user-agent") || "").toLowerCase();
 
@@ -21,8 +19,6 @@ export default function middleware(request) {
   if (isBot) {
     return fetch(new URL("/landing.html", request.url));
   }
-
-  return next();
 }
 
 export const config = {
