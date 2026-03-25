@@ -316,8 +316,10 @@ export default function App() {
         }
         // Load decree from DB if not in localStorage
         if (!localStorage.getItem("m_decree_text") && session.user?.id) {
-          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages`, data.access_token).then((p: any) => {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages,coparent_name,children_names`, data.access_token).then((p: any) => {
             if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
+            if (p?.[0]?.coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
+            if (p?.[0]?.children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
           }).catch(() => {});
         }
         // Load conversations + coach sessions from Supabase
@@ -371,10 +373,12 @@ export default function App() {
       else {
         let name = "";
         try {
-          const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name,decree_text,decree_name,decree_pages`, data.access_token);
+          const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name,decree_text,decree_name,decree_pages,coparent_name,children_names`, data.access_token);
           if (p?.length) {
             name = p[0].name;
             if (p[0].decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
+            if (p[0].coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
+            if (p[0].children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
           }
         } catch {}
         const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); setAuthView("main");
@@ -428,7 +432,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); localStorage.removeItem("m_coparent_name"); localStorage.removeItem("m_children_names"); setCoparentName(""); setChildrenNames(""); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -664,6 +668,8 @@ export default function App() {
   const [feedbackChatMessage, setFeedbackChatMessage] = useState("");
 
   const [editName, setEditName] = useState("");
+  const [coparentName, setCoparentName] = useState(() => localStorage.getItem("m_coparent_name") || "");
+  const [childrenNames, setChildrenNames] = useState(() => localStorage.getItem("m_children_names") || "");
 
   const fileRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -819,7 +825,8 @@ export default function App() {
         vaultContext += chunk; contextLen += chunk.length;
       }
     }
-    const docsContext = vaultContext || "\n\nNo documents uploaded yet.";
+    const namesContext = (coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
+    const docsContext = (vaultContext || "\n\nNo documents uploaded yet.") + namesContext;
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
@@ -1053,7 +1060,8 @@ export default function App() {
     let finalText = "";
     try {
       const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
-      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}`, messages: msgs }), signal: abort.signal });
+      const coachNamesContext = (coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
+      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}${coachNamesContext}`, messages: msgs }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       try {
@@ -2599,6 +2607,29 @@ export default function App() {
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Name</h3>
                       <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={editName || session?.user?.name || ""} onChange={(e) => setEditName(e.target.value)} onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }} onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); (e.target as HTMLInputElement).blur(); } }} />
                       {session?.user?.email && <div className="text-xs text-slate-400 mt-2 px-1">{session.user.email}</div>}
+                    </div>
+
+                    {/* My Details */}
+                    <div className="mb-6">
+                      <h3 className="text-sm font-medium text-slate-700 mb-3">My Details</h3>
+                      <p className="text-xs text-slate-400 mb-3">Helps the AI use real names instead of placeholders.</p>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Co-parent's name</label>
+                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Jordan" value={coparentName} onChange={(e) => setCoparentName(e.target.value)}
+                            onBlur={() => { localStorage.setItem("m_coparent_name", coparentName); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { coparent_name: coparentName || null }, session.token).catch(() => {}); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-500 mb-1 block">Children's names</label>
+                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Emma, Liam" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)}
+                            onBlur={() => { localStorage.setItem("m_children_names", childrenNames); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames || null }, session.token).catch(() => {}); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
+                        </div>
+                        {!decreeText && (coparentName || childrenNames) && (
+                          <p className="text-[11px] text-emerald-600/70 mt-1">Upload your decree in the Vault for even more personalized guidance.</p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Settings */}
