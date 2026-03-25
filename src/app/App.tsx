@@ -2629,33 +2629,44 @@ export default function App() {
                   <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</h2>
 
-                    {/* Name */}
-                    <div className="mb-6">
-                      <h3 className="text-sm font-medium text-slate-700 mb-3">Name</h3>
-                      <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={editName || session?.user?.name || ""} onChange={(e) => setEditName(e.target.value)} onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }} onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); (e.target as HTMLInputElement).blur(); } }} />
-                      {session?.user?.email && <div className="text-xs text-slate-400 mt-2 px-1">{session.user.email}</div>}
-                    </div>
-
                     {/* My Details */}
                     <div className="mb-6">
-                      <h3 className="text-sm font-medium text-slate-700 mb-3">My Details</h3>
-                      <p className="text-xs text-slate-400 mb-3">Used to personalize your experience.</p>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs text-slate-500 mb-1 block">Co-parent's name</label>
-                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)}
-                            onBlur={() => { localStorage.setItem("m_coparent_name", coparentName); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { coparent_name: coparentName || null }, session.token).catch(() => {}); }}
-                            onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
-                        </div>
-                        <div>
-                          <label className="text-xs text-slate-500 mb-1 block">Children's names</label>
-                          <input className="w-full px-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)}
-                            onBlur={() => { localStorage.setItem("m_children_names", childrenNames); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames || null }, session.token).catch(() => {}); }}
-                            onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
-                        </div>
-                        {!decreeText && !vaultDocs.some(d => d.category === "decree") && (coparentName || childrenNames) && (
-                          <p className="text-[11px] text-emerald-600/70 mt-1">Upload your decree in the Vault for even more personalized guidance.</p>
-                        )}
+                      <div className="bg-white border border-slate-200/60 rounded-xl overflow-hidden">
+                        <button onClick={() => setExpandedSetting(expandedSetting === "my-details" ? null : "my-details")} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
+                          <div className="flex items-center gap-3"><User className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">My Details</span></div>
+                          <motion.div animate={{ rotate: expandedSetting === "my-details" ? 90 : 0 }} transition={{ duration: 0.2 }}><ChevronRight className="w-4 h-4 text-slate-400" /></motion.div>
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {(expandedSetting === "my-details" || (!coparentName && !childrenNames)) && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+                              <div className="px-4 pb-4 space-y-3">
+                                <div>
+                                  <label className="text-[11px] text-slate-400 mb-1 block">Name</label>
+                                  <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={editName || session?.user?.name || ""} onChange={(e) => setEditName(e.target.value)} onBlur={() => { if (editName.trim() && editName.trim() !== session?.user?.name) handleUpdateName(editName); }} onKeyDown={(e) => { if (e.key === "Enter") { handleUpdateName(editName); (e.target as HTMLInputElement).blur(); } }} />
+                                </div>
+                                <div>
+                                  <label className="text-[11px] text-slate-400 mb-1 block">Email</label>
+                                  <div className="px-3 py-2.5 bg-slate-50/40 border border-slate-100 rounded-lg text-sm text-slate-400">{session?.user?.email || "—"}</div>
+                                </div>
+                                <div>
+                                  <label className="text-[11px] text-slate-400 mb-1 block">Co-parent's name</label>
+                                  <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)}
+                                    onBlur={() => { localStorage.setItem("m_coparent_name", coparentName); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { coparent_name: coparentName || null }, session.token).catch(() => {}); }}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
+                                </div>
+                                <div>
+                                  <label className="text-[11px] text-slate-400 mb-1 block">Children's names</label>
+                                  <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)}
+                                    onBlur={() => { localStorage.setItem("m_children_names", childrenNames); if (session?.token) dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames || null }, session.token).catch(() => {}); }}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }} />
+                                </div>
+                                {!decreeText && !vaultDocs.some(d => d.category === "decree") && (coparentName || childrenNames) && (
+                                  <p className="text-[11px] text-emerald-600/70">Upload your decree in the Vault for even more personalized guidance.</p>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
 
