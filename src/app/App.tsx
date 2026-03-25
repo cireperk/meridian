@@ -246,11 +246,9 @@ export default function App() {
         const userId = userData.id;
         const email = userData.email || "";
         const oauthName = userData.user_metadata?.full_name || userData.user_metadata?.name || "";
-        const authCreatedAt = userData.created_at ? new Date(userData.created_at).getTime() : 0;
-        const isNewAuthUser = Date.now() - authCreatedAt < 60000;
-        // Check if profile exists (and user isn't brand new)
-        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name`, accessToken);
-        if (profile?.length && profile[0].name && !isNewAuthUser) {
+        // Check if profile exists and user completed onboarding
+        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,onboarded`, accessToken);
+        if (profile?.length && profile[0].name && profile[0].onboarded) {
           // Existing user — sign in
           const s = { token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: profile[0].name } };
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
@@ -439,7 +437,7 @@ export default function App() {
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
   };
 
-  const finishOnboarding = () => setAuthView("main");
+  const finishOnboarding = () => { setAuthView("main"); if (session?.token && session?.user?.id) dbUpdate("profiles", `id=eq.${session.user.id}`, { onboarded: true }, session.token).catch(() => {}); };
 
   const handleUpdateName = async (newName: string) => {
     if (!newName.trim() || !session?.token) return;
