@@ -110,7 +110,9 @@ const formatTime12 = (t: string) => {
 const FEATURE_DECREE_INTELLIGENCE = true;
 
 // --- System prompt ---
-const SYSTEM_PROMPT = `You're Meridian — think of yourself as a calm, wise friend who's been through divorce and co-parenting. You talk like a real person, not a chatbot.
+const SYSTEM_PROMPT = `Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.
+
+You're Meridian — think of yourself as a calm, wise friend who's been through divorce and co-parenting. You talk like a real person, not a chatbot.
 
 HOW YOU SOUND:
 - Warm but direct. Say what needs to be said in 2-4 sentences, not paragraphs.
@@ -150,7 +152,9 @@ const ACTION_PROMPTS: Record<string, string> = {
   children: "I need help talking to my children about our divorce:",
 };
 
-const COACH_SYSTEM_PROMPT = `You are Meridian's Co-Parenting Communication Coach. Your role is to help users communicate with their co-parent in ways that are:
+const COACH_SYSTEM_PROMPT = `Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.
+
+You are Meridian's Co-Parenting Communication Coach. Your role is to help users communicate with their co-parent in ways that are:
 
 1. LEGALLY NEUTRAL — avoid language that could be used against them in court. No accusations, threats, ultimatums, or inflammatory language.
 2. EMOTIONALLY DE-ESCALATED — calm, measured, and non-reactive. Remove sarcasm, passive aggression, and emotional charge.
