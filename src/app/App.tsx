@@ -252,7 +252,7 @@ export default function App() {
           // Existing user — sign in
           const s = { token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: profile[0].name } };
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
-          setShowSplash(false); setAuthView("main");
+          setShowSplash(false); setAuthView("main"); setOauthProcessing(false);
           dbSelect("conversations", `user_id=eq.${userId}&order=updated_at.desc`, accessToken).then((rows: any) => {
             if (rows?.length) {
               if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
@@ -275,10 +275,10 @@ export default function App() {
         } else {
           // New user — go to onboarding
           setSession({ token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: oauthName } });
-          setAuthView("onboarding"); setShowSplash(false);
+          setAuthView("onboarding"); setShowSplash(false); setOauthProcessing(false);
           if (oauthName) setEditName(oauthName);
         }
-      } catch (err: any) { setAuthError("Google sign-in failed. Please try again."); setShowSplash(false); setAuthView("main"); }
+      } catch (err: any) { setAuthError("Sign-in failed. Please try again."); setShowSplash(false); setAuthView("main"); setOauthProcessing(false); }
     })();
   }, []);
 
@@ -567,7 +567,8 @@ export default function App() {
   };
 
   // --- Splash ---
-  const [showSplash, setShowSplash] = useState(() => isNative ? false : window.location.hash.includes("access_token=") ? false : !localStorage.getItem("m_session"));
+  const [oauthProcessing, setOauthProcessing] = useState(() => window.location.hash.includes("access_token="));
+  const [showSplash, setShowSplash] = useState(() => isNative ? false : oauthProcessing ? false : !localStorage.getItem("m_session"));
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
@@ -1227,7 +1228,12 @@ export default function App() {
       <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
 
       {/* ==================== SPLASH ==================== */}
-        {showSplash && (
+        {oauthProcessing && (
+          <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
+            <Logo size="md" className="mb-4 animate-pulse" />
+          </div>
+        )}
+        {showSplash && !oauthProcessing && (
           <div ref={splashRef} onTouchStart={onPullTouchStart} onTouchMove={onPullTouchMove} onTouchEnd={onPullTouchEnd}
             className="fixed inset-0 z-50 bg-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
             {/* Pull-to-refresh indicator — fixed overlay, doesn't push content */}
@@ -1654,7 +1660,7 @@ export default function App() {
       )}
 
       {/* ==================== AUTH ==================== */}
-      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "confirm-email" || authView.startsWith("onboard-")) && !showSplash ? (
+      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "confirm-email" || authView.startsWith("onboard-")) && !showSplash && !oauthProcessing ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden z-40">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
