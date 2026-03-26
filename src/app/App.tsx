@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Mail } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -16,6 +17,12 @@ import { Logo } from "./components/Logo";
 marked.setOptions({ breaks: true, gfm: true });
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
+
+// --- Haptics (no-ops on web automatically) ---
+const haptic = {
+  light: () => Haptics.impact({ style: ImpactStyle.Light }).catch(() => {}),
+  medium: () => Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {}),
+};
 
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -441,7 +448,7 @@ export default function App() {
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
   };
 
-  const finishOnboarding = () => { setAuthView("main"); if (session?.token && session?.user?.id) dbUpdate("profiles", `id=eq.${session.user.id}`, { onboarded: true }, session.token).catch(() => {}); };
+  const finishOnboarding = () => { haptic.medium(); setAuthView("main"); if (session?.token && session?.user?.id) dbUpdate("profiles", `id=eq.${session.user.id}`, { onboarded: true }, session.token).catch(() => {}); };
 
   const handleUpdateName = async (newName: string) => {
     if (!newName.trim() || !session?.token) return;
@@ -621,6 +628,44 @@ export default function App() {
     if (pullY > 50) { setPullRefreshing(true); setTimeout(() => window.location.reload(), 300); }
     else setPullY(0);
   };
+
+  // --- Pull-to-refresh for main app content ---
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+  const [mainPullY, setMainPullY] = useState(0);
+  const [mainPullRefreshing, setMainPullRefreshing] = useState(false);
+  const mainPullStartY = useRef(0);
+  const mainPulling = useRef(false);
+
+  const onMainPullStart = (e: React.TouchEvent) => {
+    const el = mainScrollRef.current;
+    if (el && el.scrollTop <= 0) { mainPullStartY.current = e.touches[0].clientY; mainPulling.current = true; }
+  };
+  const onMainPullMove = (e: React.TouchEvent) => {
+    if (!mainPulling.current) return;
+    const dy = Math.max(0, (e.touches[0].clientY - mainPullStartY.current) * 0.4);
+    setMainPullY(Math.min(dy, 80));
+  };
+  const onMainPullEnd = () => {
+    if (!mainPulling.current) return;
+    mainPulling.current = false;
+    if (mainPullY > 50) {
+      setMainPullRefreshing(true);
+      haptic.medium();
+      // Refresh data by re-triggering session token refresh
+      if (session?.refresh_token) {
+        authRefreshToken(session.refresh_token).then((data: any) => {
+          if (data?.access_token) {
+            const s = { ...session, token: data.access_token, refresh_token: data.refresh_token };
+            setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
+          }
+        }).catch(() => {}).finally(() => {
+          setTimeout(() => { setMainPullRefreshing(false); setMainPullY(0); }, 600);
+        });
+      } else {
+        setTimeout(() => { setMainPullRefreshing(false); setMainPullY(0); }, 600);
+      }
+    } else setMainPullY(0);
+  };
   const [videoMuted, setVideoMuted] = useState(true);
   const openVideo = () => { setShowVideo(true); setVideoProgress(0); setVideoEnded(false); setVideoPaused(false); setVideoMuted(true); };
   const dismissVideo = () => { if (videoRef.current) videoRef.current.pause(); setShowVideo(false); };
@@ -738,7 +783,7 @@ export default function App() {
 
   const resizeTextarea = useCallback(() => { const el = textareaRef.current; if (!el) return; el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }, []);
 
-  const copyToClipboard = (text: string, idx: number) => { navigator.clipboard.writeText(text).then(() => { setCopied(idx); showToastMsg("Copied!"); setTimeout(() => setCopied(null), 1500); }); };
+  const copyToClipboard = (text: string, idx: number) => { navigator.clipboard.writeText(text).then(() => { haptic.light(); setCopied(idx); showToastMsg("Copied!"); setTimeout(() => setCopied(null), 1500); }); };
 
   const extractPdfText = async (file: File) => {
     const buffer = await file.arrayBuffer();
@@ -1148,7 +1193,7 @@ export default function App() {
     const lastAssistant = [...coachMessages].reverse().find(m => m.role === "assistant")?.content || coachStreaming;
     const match = lastAssistant.match(/\*\*Your message:\*\*\s*\n([\s\S]*?)(?:\n\*\*|$)/);
     const textToCopy = match ? match[1].trim() : lastAssistant;
-    navigator.clipboard.writeText(textToCopy).then(() => { setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2000); }).catch(() => {});
+    navigator.clipboard.writeText(textToCopy).then(() => { haptic.light(); setCoachCopied(true); setTimeout(() => setCoachCopied(false), 2000); }).catch(() => {});
   };
 
   // --- Calendar ---
@@ -1258,10 +1303,23 @@ export default function App() {
             {/* Content wrapper — slides down with pull */}
             <div className="relative min-h-full bg-gradient-to-b from-white via-emerald-50/20 to-white transition-transform duration-200 ease-out"
               style={{ transform: pullY > 0 || pullRefreshing ? `translateY(${pullRefreshing ? 48 : pullY}px)` : undefined }}>
-            {/* Soft ambient background */}
+            {/* Atmospheric ambient background — slowly drifting orbs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ height: "100dvh", position: "fixed" }}>
-              <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
-              <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
+              <motion.div
+                animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.1, 0.95, 1] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-100/50 to-teal-100/40 blur-3xl"
+              />
+              <motion.div
+                animate={{ x: [0, -25, 15, 0], y: [0, 30, -25, 0], scale: [1, 0.9, 1.08, 1] }}
+                transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute bottom-[-5%] left-[-15%] w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-emerald-100/40 to-cyan-50/30 blur-3xl"
+              />
+              <motion.div
+                animate={{ x: [0, 20, -15, 0], y: [0, -20, 30, 0], opacity: [0.3, 0.5, 0.25, 0.3] }}
+                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[40%] left-[20%] w-[300px] h-[300px] rounded-full bg-gradient-to-br from-teal-100/30 to-emerald-50/20 blur-3xl"
+              />
             </div>
 
             {/* Sticky top nav */}
@@ -1708,8 +1766,8 @@ export default function App() {
       {/* ==================== AUTH ==================== */}
       {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "confirm-email" || authView.startsWith("onboard-")) && !showSplash ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden z-40">
-          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
+          <motion.div animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.1, 0.95, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-100/50 to-teal-100/40 blur-3xl pointer-events-none" />
+          <motion.div animate={{ x: [0, -25, 15, 0], y: [0, 30, -25, 0], scale: [1, 0.9, 1.08, 1] }} transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-[-5%] left-[-15%] w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-emerald-100/40 to-cyan-50/30 blur-3xl pointer-events-none" />
           <motion.div className="max-w-[380px] w-full flex flex-col items-center relative z-10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
             <div className="flex items-center gap-3 mb-12">
               <Logo size="md" />
@@ -1957,13 +2015,15 @@ export default function App() {
         </div>
       ) : !showSplash && subscription.loading ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-40">
-          <Logo size="md" className="mb-4 animate-pulse" />
+          <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}>
+            <Logo size="md" className="mb-4" />
+          </motion.div>
         </div>
       ) : !showSplash && !hasAccess ? (
         <>
           {/* ==================== PAYWALL ==================== */}
-          <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white z-40">
-            <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
+          <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white z-40 overflow-hidden">
+            <motion.div animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.1, 0.95, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-100/50 to-teal-100/40 blur-3xl pointer-events-none" />
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-sm w-full text-center">
               <Logo size="lg" className="mx-auto mb-6" />
               <h2 className="text-2xl font-light tracking-tight text-slate-800 mb-2">Your free trial has ended</h2>
@@ -2062,7 +2122,7 @@ export default function App() {
             )}
 
             {/* Header */}
-            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20">
+            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-200/40 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shrink-0 z-20">
               <div className="flex items-center gap-3">
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
@@ -2087,11 +2147,28 @@ export default function App() {
             </motion.header>
 
             {/* Content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div ref={mainScrollRef} onTouchStart={onMainPullStart} onTouchMove={onMainPullMove} onTouchEnd={onMainPullEnd} className="flex-1 min-h-0 overflow-y-auto relative">
+              {/* Pull-to-refresh indicator */}
+              <AnimatePresence>
+                {(mainPullY > 0 || mainPullRefreshing) && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center justify-center shrink-0"
+                    style={{ height: mainPullRefreshing ? 48 : mainPullY }}
+                  >
+                    <motion.div
+                      className={cn("w-5 h-5 rounded-full border-2 border-emerald-400 border-t-transparent", mainPullRefreshing && "animate-spin")}
+                      style={{ opacity: mainPullRefreshing ? 1 : Math.min(mainPullY / 50, 1), transform: mainPullRefreshing ? undefined : `rotate(${mainPullY * 4}deg)` }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <AnimatePresence mode="wait">
                 {/* CHAT */}
                 {activeTab === "chat" && (
-                  <motion.div key="chat" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
+                  <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }} className="px-6 py-4 pb-4">
                     {/* Messages */}
                     <AnimatePresence mode="popLayout">
                       {showHistory ? (
@@ -2239,20 +2316,20 @@ export default function App() {
 
                 {/* LEARN */}
                 {activeTab === "coach" && (
-                  <motion.div key="coach" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
-                    <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
+                  <motion.div key="coach" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }} className="px-6 py-6 pb-6">
+                    <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</motion.h2>
+                    <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</motion.p>
 
                     {/* Mode toggle — only when no active conversation */}
                     {coachMessages.length === 0 && !coachLoading && (
-                      <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
+                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="flex bg-slate-100 rounded-xl p-1 mb-5">
                         {([{ id: "respond" as const, label: "Respond to a message" }, { id: "draft" as const, label: "Draft a message" }]).map((m) => (
                           <button key={m.id} onClick={() => { setCoachMode(m.id); setCoachInput(""); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); }}
                             className={cn("flex-1 py-2.5 rounded-lg text-sm font-medium transition-all", coachMode === m.id ? "bg-white text-slate-800 shadow-sm" : "text-slate-500")}>
                             {m.label}
                           </button>
                         ))}
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* Active conversation thread */}
@@ -2419,9 +2496,9 @@ export default function App() {
 
                 {/* CALENDAR */}
                 {activeTab === "calendar" && (
-                  <motion.div key="calendar" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                  <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25, staggerChildren: 0.06 }} className="px-6 py-6 pb-6">
                     {/* Month header */}
-                    <div className="flex items-center justify-between mb-6">
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="flex items-center justify-between mb-6">
                       <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
                         <ChevronLeft className="w-5 h-5" />
                       </button>
@@ -2429,12 +2506,12 @@ export default function App() {
                       <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
                         <ChevronRight className="w-5 h-5" />
                       </button>
-                    </div>
+                    </motion.div>
 
                     {/* Day headers */}
-                    <div className="grid grid-cols-7 mb-2">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="grid grid-cols-7 mb-2">
                       {DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}
-                    </div>
+                    </motion.div>
 
                     {/* Calendar grid */}
                     <div className="grid grid-cols-7 gap-y-1">
@@ -2524,17 +2601,17 @@ export default function App() {
 
                 {/* VAULT */}
                 {activeTab === "vault" && (
-                  <motion.div key="vault" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <div className="flex items-center justify-between mb-6">
+                  <motion.div key="vault" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }} className="px-6 py-6 pb-6">
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="flex items-center justify-between mb-6">
                       <h2 className="text-2xl font-light tracking-tight text-slate-700">Document Vault</h2>
                       <Button size="sm" onClick={() => setVaultUploadCategory("picking")} disabled={vaultUploading}
                         className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm shadow-emerald-500/15 text-sm">
                         {vaultUploading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full" /> : <><Upload className="w-3.5 h-3.5 mr-1.5" /> Upload</>}
                       </Button>
-                    </div>
+                    </motion.div>
 
                     {/* Category filter pills */}
-                    <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-6 px-6 scrollbar-hide">
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-6 px-6 scrollbar-hide">
                       {VAULT_CATEGORIES.map(cat => (
                         <button key={cat.id} onClick={() => setVaultCategory(cat.id)}
                           className={cn("px-3.5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all shrink-0",
@@ -2543,7 +2620,7 @@ export default function App() {
                           {cat.label}
                         </button>
                       ))}
-                    </div>
+                    </motion.div>
 
                     {/* Decree Intelligence Summary Card */}
                     {FEATURE_DECREE_INTELLIGENCE && (vaultCategory === "all" || vaultCategory === "decree") && decreeExtraction?.status === "complete" && (
@@ -2686,11 +2763,11 @@ export default function App() {
 
                 {/* PROFILE */}
                 {activeTab === "profile" && (
-                  <motion.div key="profile" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</h2>
+                  <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }} className="px-6 py-6 pb-6">
+                    <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }} className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</motion.h2>
 
                     {/* My Details */}
-                    <div className="mb-6">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="mb-6">
                       <div className="bg-white border border-slate-200/60 rounded-xl overflow-hidden">
                         <button onClick={() => setExpandedSetting(expandedSetting === "my-details" ? null : "my-details")} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
                           <div className="flex items-center gap-3"><User className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">My Details</span></div>
@@ -2728,10 +2805,10 @@ export default function App() {
                           )}
                         </AnimatePresence>
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Settings */}
-                    <div className="mb-8">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
                       <div className="space-y-2">
                         {[
@@ -2754,10 +2831,10 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </motion.div>
 
                     {/* Subscription + Feedback + Sign out */}
-                    <div className="flex flex-col gap-2">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col gap-2">
                       {isSubscribed ? (
                         <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60 rounded-2xl px-5 py-4 text-center">
                           <p className="text-sm text-emerald-800 font-medium mb-0.5">Meridian Pro</p>
@@ -2788,7 +2865,7 @@ export default function App() {
                       <button onClick={() => setShowSignOutConfirm(true)} className="w-full py-3 border border-slate-200 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:border-red-200 transition-all flex items-center justify-center gap-2">
                         <LogOut size={15} /> Sign Out
                       </button>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -2796,7 +2873,7 @@ export default function App() {
 
             {/* Input - chat only, hidden when viewing history */}
             {activeTab === "chat" && !showHistory && (
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white shrink-0">
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-200/40 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shrink-0">
                 <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
                   <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-base text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "How can we get better today?" : "How can we get better today?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
                   {streaming ? (
@@ -2805,7 +2882,7 @@ export default function App() {
                     </motion.div>
                   ) : (
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button size="sm" className="rounded-full w-9 h-9 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm shadow-emerald-500/15 flex-shrink-0 p-0" onClick={() => handleSend()} disabled={!input.trim() || loading}><Send className="w-4 h-4" /></Button>
+                      <Button size="sm" className="rounded-full w-9 h-9 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm shadow-emerald-500/15 flex-shrink-0 p-0" onClick={() => { haptic.medium(); handleSend(); }} disabled={!input.trim() || loading}><Send className="w-4 h-4" /></Button>
                     </motion.div>
                   )}
                 </div>
@@ -2813,10 +2890,10 @@ export default function App() {
             )}
 
             {/* Bottom Nav */}
-            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-200/40 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
               <div className="flex items-center justify-around px-6 py-2.5">
                 {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "coach" as Tab, icon: Users, label: "Coach" }]).map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
+                  <button key={tab.id} onClick={() => { haptic.light(); setActiveTab(tab.id); }} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
                   </button>
