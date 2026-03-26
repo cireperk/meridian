@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Home } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -2147,7 +2147,7 @@ export default function App() {
             <div className="flex-1 min-h-0 overflow-y-auto">
               <AnimatePresence mode="wait">
                 {/* TODAY */}
-                {activeTab === "today" && !showFullCalendar && (
+                {activeTab === "today" && (
                   <motion.div key="today" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
                     {/* Greeting */}
                     <h2 className="text-2xl font-light tracking-tight text-slate-700">
@@ -2251,76 +2251,88 @@ export default function App() {
                       );
                     })()}
 
-                    {/* View full month */}
-                    <button onClick={() => setShowFullCalendar(true)} className="mt-6 w-full flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all">
-                      View full month <ChevronRight className="w-4 h-4" />
+                    {/* Expandable month calendar drawer */}
+                    <button onClick={() => { setShowFullCalendar(p => !p); if (!showFullCalendar) setCalSelectedDate(null); }} className="mt-6 w-full flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all">
+                      {showFullCalendar ? "Hide calendar" : "View full month"}
+                      <motion.span animate={{ rotate: showFullCalendar ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                        <ChevronDown className="w-4 h-4" />
+                      </motion.span>
                     </button>
-                  </motion.div>
-                )}
-
-                {/* FULL CALENDAR (sub-view of Today) */}
-                {activeTab === "today" && showFullCalendar && (
-                  <motion.div key="today-calendar" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    <button onClick={() => setShowFullCalendar(false)} className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4">
-                      <ArrowLeft className="w-4 h-4" /> Back to today
-                    </button>
-                    {/* Reuse calendar grid inline */}
-                    <div className="flex items-center justify-between mb-6">
-                      <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-5 h-5" /></button>
-                      <h2 className="text-lg font-light tracking-tight text-slate-700">{MONTHS[calMonth.month]} {calMonth.year}</h2>
-                      <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronRight className="w-5 h-5" /></button>
-                    </div>
-                    <div className="grid grid-cols-7 mb-2">{DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}</div>
-                    <div className="grid grid-cols-7 gap-y-1">
-                      {calDays.map((cell: any, i: number) => {
-                        const isToday = cell.dateStr === todayStr;
-                        const isSelected = cell.dateStr === calSelectedDate;
-                        const dayEvents = calEvents.filter((e: any) => e.date === cell.dateStr);
-                        const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
-                        const custody = getCustodyForDate(cell.dateStr, custodySchedule);
-                        return (
-                          <button key={i} onClick={() => setCalSelectedDate(cell.dateStr)}
-                            className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isToday && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
-                            <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isToday ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
-                            <div className="flex gap-0.5 mt-0.5">
-                              {custody && <div className={cn("w-1.5 h-1.5 rounded-full", custody === "me" ? "bg-emerald-400" : "bg-slate-300")} />}
-                              {eventTypes.map((t: any) => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
+                    <AnimatePresence>
+                      {showFullCalendar && (
+                        <motion.div
+                          key="cal-drawer"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pt-2 pb-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                              <h3 className="text-base font-light tracking-tight text-slate-700">{MONTHS[calMonth.month]} {calMonth.year}</h3>
+                              <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronRight className="w-5 h-5" /></button>
                             </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {calSelectedDate && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-medium text-slate-700">{new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h3>
-                          <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"><Plus className="w-4 h-4" /></button>
-                        </div>
-                        {selectedDateEvents.length === 0 ? (
-                          <div className="text-center py-8">
-                            <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
-                            <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {selectedDateEvents.map((evt: any) => {
-                              const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
-                              return (
-                                <button key={evt.id} onClick={() => openEditEvent(evt)} className="w-full text-left p-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-slate-300 transition-all">
-                                  <div className="flex items-start gap-3">
-                                    <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium text-slate-700">{evt.title}</div>
-                                      <div className="text-xs text-slate-400 mt-0.5">{evt.time && <span>{evt.time}</span>}{evt.notes && <span> · {evt.notes}</span>}</div>
+                            <div className="grid grid-cols-7 mb-2">{DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}</div>
+                            <div className="grid grid-cols-7 gap-y-1">
+                              {calDays.map((cell: any, i: number) => {
+                                const isToday = cell.dateStr === todayStr;
+                                const isSelected = cell.dateStr === calSelectedDate;
+                                const dayEvents = calEvents.filter((e: any) => e.date === cell.dateStr);
+                                const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
+                                const custody = getCustodyForDate(cell.dateStr, custodySchedule);
+                                return (
+                                  <button key={i} onClick={() => setCalSelectedDate(cell.dateStr === calSelectedDate ? null : cell.dateStr)}
+                                    className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isToday && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
+                                    <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isToday ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
+                                    <div className="flex gap-0.5 mt-0.5">
+                                      {custody && <div className={cn("w-1.5 h-1.5 rounded-full", custody === "me" ? "bg-emerald-400" : "bg-slate-300")} />}
+                                      {eventTypes.map((t: any) => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
                                     </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <AnimatePresence>
+                              {calSelectedDate && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                                  <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h3 className="text-sm font-medium text-slate-700">{new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h3>
+                                      <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"><Plus className="w-4 h-4" /></button>
+                                    </div>
+                                    {selectedDateEvents.length === 0 ? (
+                                      <div className="text-center py-6">
+                                        <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
+                                        <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        {selectedDateEvents.map((evt: any) => {
+                                          const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
+                                          return (
+                                            <button key={evt.id} onClick={() => openEditEvent(evt)} className="w-full text-left p-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-slate-300 transition-all">
+                                              <div className="flex items-start gap-3">
+                                                <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="text-sm font-medium text-slate-700">{evt.title}</div>
+                                                  <div className="text-xs text-slate-400 mt-0.5">{evt.time && <span>{evt.time}</span>}{evt.notes && <span> · {evt.notes}</span>}</div>
+                                                </div>
+                                              </div>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
-                                </button>
-                              );
-                            })}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                        )}
-                      </motion.div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )}
 
