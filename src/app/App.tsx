@@ -2204,28 +2204,34 @@ export default function App() {
                           </div>
                           <AnimatePresence mode="wait">
                             {!showFullCalendar ? (
-                              <motion.div key={`week-${weekOffset}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                              <motion.div
+                                key={`week-${weekOffset}`}
+                                initial={{ opacity: 0, x: 40 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -40 }}
+                                transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.15}
+                                onDragEnd={(_e: any, info: any) => { if (Math.abs(info.offset.x) > 50) { setWeekOffset(p => info.offset.x > 0 ? p - 1 : p + 1); } }}
+                              >
                                 <p className="text-[15px] text-slate-700 leading-relaxed mb-5">{summaryText}</p>
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => setWeekOffset(p => p - 1)} className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                                  <div className="grid grid-cols-7 gap-1.5 flex-1">
-                                    {custodyDays.map(d => {
-                                      const isToday = d.dateStr === todayStr;
-                                      return (
-                                        <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
-                                          <span className="text-[10px] font-medium text-slate-400 uppercase">{d.label}</span>
-                                          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                                            d.custody === "me" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500",
-                                            isToday && "ring-2 ring-offset-2 ring-slate-800"
-                                          )}>
-                                            {d.day}
-                                          </div>
-                                          <div className={cn("w-5 h-0.5 rounded-full", d.custody === "me" ? "bg-emerald-300" : "bg-transparent")} />
+                                <div className="grid grid-cols-7">
+                                  {custodyDays.map(d => {
+                                    const isToday = d.dateStr === todayStr;
+                                    return (
+                                      <div key={d.dateStr} className="flex flex-col items-center gap-2">
+                                        <span className="text-[10px] font-medium text-slate-400 uppercase">{d.label}</span>
+                                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                          d.custody === "me" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500",
+                                          isToday && "ring-2 ring-offset-2 ring-slate-800"
+                                        )}>
+                                          {d.day}
                                         </div>
-                                      );
-                                    })}
-                                  </div>
-                                  <button onClick={() => setWeekOffset(p => p + 1)} className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 transition-all"><ChevronRight className="w-4 h-4" /></button>
+                                        <div className={cn("w-5 h-0.5 rounded-full", d.custody === "me" ? "bg-emerald-300" : "bg-transparent")} />
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                                 {weekOffset !== 0 && (
                                   <button onClick={() => setWeekOffset(0)} className="mt-3 mx-auto block text-[11px] text-emerald-600 hover:text-emerald-700 transition-colors">Back to this week</button>
