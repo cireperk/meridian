@@ -673,6 +673,7 @@ export default function App() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [vaultDocs, setVaultDocs] = useState<any[]>([]);
   const [vaultLoading, setVaultLoading] = useState(false);
+  const [vaultLoaded, setVaultLoaded] = useState(false);
   const [vaultCategory, setVaultCategory] = useState("all");
   const [vaultUploading, setVaultUploading] = useState(false);
   const [vaultUploadProgress, setVaultUploadProgress] = useState<"uploading" | "processing" | "done" | null>(null);
@@ -945,7 +946,7 @@ export default function App() {
     try {
       const docs = await dbSelect("documents", `user_id=eq.${session.user.id}&order=created_at.desc`, session.token);
       setVaultDocs(docs || []);
-    } catch {} finally { setVaultLoading(false); }
+    } catch {} finally { setVaultLoading(false); setVaultLoaded(true); }
   }, [session?.token, session?.user?.id]);
 
   useEffect(() => { if (activeTab === "vault" || activeTab === "talk") loadVaultDocs(); }, [activeTab]);
@@ -2185,8 +2186,8 @@ export default function App() {
 
                     {/* Getting Started — shows when not everything is set up */}
                     {(() => {
-                      // Don't flash checklist for returning users who already completed it
-                      if (localStorage.getItem("m_setup_complete") === "1") return null;
+                      // Wait until vault docs have loaded to avoid flash
+                      if (!vaultLoaded) return null;
                       const hasDecree = !!decreeText || vaultDocs.some((d: any) => d.category === "decree");
                       const hasDetails = !!(coparentName && childrenNames);
                       const hasSchedule = !!custodySchedule;
@@ -2198,7 +2199,7 @@ export default function App() {
                         { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
                       ];
                       const completed = steps.filter(s => s.done).length;
-                      if (completed >= 4) { localStorage.setItem("m_setup_complete", "1"); return null; }
+                      if (completed >= 4) return null;
                       return (
                         <div className="mt-6 mb-2">
                           <p className="text-sm text-slate-500 mb-5">Let's set things up so we can show up for you.</p>
