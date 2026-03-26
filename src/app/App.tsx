@@ -1825,10 +1825,10 @@ export default function App() {
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
           <motion.div className="max-w-[380px] w-full flex flex-col items-center relative z-10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
-            <div className="flex items-center gap-3 mb-12">
+            <button onClick={() => setShowSplash(true)} className="flex items-center gap-3 mb-12 hover:opacity-80 transition-opacity">
               <Logo size="md" />
               <span className="font-sans font-medium text-lg tracking-normal text-slate-800">Meridian</span>
-            </div>
+            </button>
 
             <AnimatePresence mode="wait">
               {(authView === "onboarding" || authView.startsWith("onboard-")) && (
