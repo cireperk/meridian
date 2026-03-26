@@ -2183,6 +2183,61 @@ export default function App() {
                     </h2>
                     <p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
 
+                    {/* Getting Started — shows when not everything is set up */}
+                    {(() => {
+                      const hasDecree = !!decreeText || vaultDocs.some((d: any) => d.category === "decree");
+                      const hasDetails = !!(coparentName && childrenNames);
+                      const hasSchedule = !!custodySchedule;
+                      const hasChat = conversations.length > 0;
+                      const steps = [
+                        { id: "decree", done: hasDecree, label: "Upload your decree", desc: hasDecree ? (decreeExtraction ? "Analyzed and ready" : "Uploaded") : "Unlocks personalized answers and legal context", action: () => { if (!hasDecree) fileRef.current?.click(); else { setActiveTab("vault" as any); } } },
+                        { id: "details", done: hasDetails, label: "Confirm your details", desc: hasDetails ? `${coparentName} · ${childrenNames}` : (hasDecree && decreeExtraction ? "We found some details — tap to confirm" : "Co-parent and children's names"), action: () => setActiveTab("profile" as any) },
+                        { id: "schedule", done: hasSchedule, label: "Set your custody schedule", desc: hasSchedule ? "Schedule active" : "Unlocks the weekly view and handoff tracking", action: () => { if (!hasSchedule) setShowCustodySetup(true); } },
+                        { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
+                      ];
+                      const completed = steps.filter(s => s.done).length;
+                      if (completed >= 4) return null;
+                      return (
+                        <div className="mt-6 mb-2">
+                          <p className="text-sm text-slate-500 mb-5">Let's set things up so we can show up for you.</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Getting started</span>
+                            <span className="text-[11px] text-slate-400">{completed} of {steps.length} complete</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-4">
+                            <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" initial={{ width: "0%" }} animate={{ width: `${(completed / steps.length) * 100}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} />
+                          </div>
+                          <div className="space-y-2">
+                            {steps.map((step, i) => (
+                              <motion.button
+                                key={step.id}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.06, duration: 0.3 }}
+                                onClick={step.action}
+                                className={cn("w-full text-left p-4 rounded-xl border transition-all flex items-center gap-4",
+                                  step.done
+                                    ? "bg-emerald-50/40 border-emerald-100/60"
+                                    : "bg-white border-slate-200/60 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99]"
+                                )}
+                              >
+                                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all",
+                                  step.done ? "bg-emerald-500" : "border-2 border-slate-200"
+                                )}>
+                                  {step.done && <Check className="w-4 h-4 text-white" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={cn("text-sm font-medium", step.done ? "text-emerald-700" : "text-slate-700")}>{step.label}</p>
+                                  <p className={cn("text-xs mt-0.5", step.done ? "text-emerald-500" : "text-slate-400")}>{step.desc}</p>
+                                </div>
+                                {!step.done && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* This Week's Schedule */}
                     {custodySchedule ? (() => {
                       const today = new Date();
@@ -2338,13 +2393,7 @@ export default function App() {
                           </div>
                         </div>
                       );
-                    })() : (
-                      <button onClick={() => setShowCustodySetup(true)} className="mt-6 w-full bg-white border border-dashed border-slate-300 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-emerald-400 hover:bg-emerald-50/30 transition-all">
-                        <CalendarDays className="w-6 h-6 text-emerald-500" />
-                        <span className="text-sm font-medium text-slate-700">Set up your custody schedule</span>
-                        <span className="text-xs text-slate-400">See your week at a glance</span>
-                      </button>
-                    )}
+                    })() : null}
 
                     {/* Coming Up */}
                     {(() => {
@@ -2378,6 +2427,15 @@ export default function App() {
                         </div>
                       );
                     })()}
+
+                    {/* Talk prompt — shows when user hasn't chatted yet */}
+                    {conversations.length === 0 && (
+                      <button onClick={() => { setActiveTab("talk" as any); setTalkMode("chat"); }} className="mt-8 w-full bg-gradient-to-br from-emerald-50/80 to-teal-50/40 border border-emerald-100/60 rounded-2xl p-5 text-left hover:shadow-sm transition-all group">
+                        <p className="text-sm font-medium text-slate-700 mb-1">Not sure where to start?</p>
+                        <p className="text-xs text-slate-400 leading-relaxed">Tell us what's going on. A hard conversation, a confusing clause, or just a rough day. We're here.</p>
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 mt-3 group-hover:gap-1.5 transition-all">Start a conversation <ChevronRight className="w-3.5 h-3.5" /></span>
+                      </button>
+                    )}
 
                   </motion.div>
                 )}
