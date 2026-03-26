@@ -703,6 +703,7 @@ export default function App() {
   const [showCustodySetup, setShowCustodySetup] = useState(false);
   const [custodyForm, setCustodyForm] = useState({ template: "week-on-week-off", start_date: "", start_parent: "me" as "me" | "coparent", handoff_time: "6:00 PM" });
   const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
 
@@ -2160,7 +2161,7 @@ export default function App() {
                       const today = new Date();
                       const dayOfWeek = today.getDay(); // 0=Sun
                       const monday = new Date(today);
-                      monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+                      monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7) + weekOffset * 7);
                       const weekDays = Array.from({ length: 7 }, (_, i) => {
                         const d = new Date(monday);
                         d.setDate(monday.getDate() + i);
@@ -2172,6 +2173,12 @@ export default function App() {
                       const childFirst = childrenNames?.split(",")[0]?.trim() || "";
                       const cpName = coparentName || "co-parent";
                       const todayCustody = getCustodyForDate(todayStr, custodySchedule);
+                      const isCurrentWeek = weekOffset === 0;
+                      const weekLabel = isCurrentWeek ? "This week's schedule" : (() => {
+                        const monDate = new Date(monday);
+                        const sunDate = new Date(monday); sunDate.setDate(monday.getDate() + 6);
+                        return `${monDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${sunDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+                      })();
 
                       let summaryText = "";
                       if (myDays >= 5) summaryText = `It's your week${childFirst ? ` with ${childFirst}` : ""}.`;
@@ -2185,9 +2192,9 @@ export default function App() {
                       }
 
                       return (
-                        <div className="mt-6 bg-white border border-slate-200/60 rounded-2xl p-5">
+                        <div className="mt-6 bg-gradient-to-br from-emerald-50/60 to-white border border-emerald-100/60 rounded-2xl p-5">
                           <div className="flex items-center justify-between mb-3">
-                            <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : "This week's schedule"}</p>
+                            <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : weekLabel}</p>
                             {showFullCalendar && (
                               <div className="flex items-center gap-1">
                                 <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-4 h-4" /></button>
@@ -2197,24 +2204,32 @@ export default function App() {
                           </div>
                           <AnimatePresence mode="wait">
                             {!showFullCalendar ? (
-                              <motion.div key="week" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                              <motion.div key={`week-${weekOffset}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
                                 <p className="text-[15px] text-slate-700 leading-relaxed mb-5">{summaryText}</p>
-                                <div className="grid grid-cols-7 gap-1.5">
-                                  {custodyDays.map(d => {
-                                    const isToday = d.dateStr === todayStr;
-                                    return (
-                                      <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
-                                        <span className="text-[10px] font-medium text-slate-400 uppercase">{d.label}</span>
-                                        <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                                          d.custody === "me" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500",
-                                          isToday && "ring-2 ring-offset-2 ring-slate-800"
-                                        )}>
-                                          {d.day}
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => setWeekOffset(p => p - 1)} className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+                                  <div className="grid grid-cols-7 gap-1.5 flex-1">
+                                    {custodyDays.map(d => {
+                                      const isToday = d.dateStr === todayStr;
+                                      return (
+                                        <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
+                                          <span className="text-[10px] font-medium text-slate-400 uppercase">{d.label}</span>
+                                          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                            d.custody === "me" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500",
+                                            isToday && "ring-2 ring-offset-2 ring-slate-800"
+                                          )}>
+                                            {d.day}
+                                          </div>
+                                          <div className={cn("w-5 h-0.5 rounded-full", d.custody === "me" ? "bg-emerald-300" : "bg-transparent")} />
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
+                                  <button onClick={() => setWeekOffset(p => p + 1)} className="w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 transition-all"><ChevronRight className="w-4 h-4" /></button>
                                 </div>
+                                {weekOffset !== 0 && (
+                                  <button onClick={() => setWeekOffset(0)} className="mt-3 mx-auto block text-[11px] text-emerald-600 hover:text-emerald-700 transition-colors">Back to this week</button>
+                                )}
                               </motion.div>
                             ) : (
                               <motion.div key="month" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
