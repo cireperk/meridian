@@ -2129,18 +2129,12 @@ export default function App() {
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
               <div className="flex items-center gap-1">
-                <AnimatePresence>
-                  {activeTab === "talk" && (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
-                      {conversations.length > 0 && (
-                        <Button variant="ghost" size="sm" onClick={() => { setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
-                      )}
-                      {(hasConversation || showHistory) && (
-                        <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {conversations.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => { if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && activeTab === "talk" && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
+                )}
+                {(hasConversation || showHistory) && (
+                  <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
+                )}
               </div>
             </motion.header>
 
