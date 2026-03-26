@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -2919,6 +2919,23 @@ export default function App() {
                             </AnimatePresence>
                           </div>
                         ))}
+                        <div className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all">
+                          <button onClick={async () => {
+                            if (!session?.user?.email) return;
+                            try {
+                              const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+                                method: "POST",
+                                headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: session.user.email }),
+                              });
+                              if (res.ok) showToastMsg("Password reset email sent!");
+                              else showToastMsg("Failed to send reset email", true);
+                            } catch { showToastMsg("Something went wrong", true); }
+                          }} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
+                            <div className="flex items-center gap-3"><Lock className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">Reset Password</span></div>
+                            <span className="text-[11px] text-slate-400">Sends email</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
