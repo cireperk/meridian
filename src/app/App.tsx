@@ -1473,6 +1473,36 @@ export default function App() {
               </div>
             </div>
 
+            {/* ===== SECTION 4.6: From the Guides ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <div className="max-w-lg w-full">
+                <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">From the guides</motion.p>
+                <div className="space-y-3">
+                  {[
+                    { title: "How to Talk to Your Kids About Divorce — Age by Age", desc: "What to say (and not say) at every stage, from toddlers to teens.", tag: "Co-Parenting", href: "/guides/talking-to-kids-about-divorce.html" },
+                    { title: "Co-Parenting with a Narcissist: Scripts That Actually Work", desc: "Word-for-word responses that keep you in control and out of conflict.", tag: "High Conflict", href: "/guides/coparenting-with-a-narcissist.html" },
+                    { title: "How to Respond to a Hostile Co-Parent Text", desc: "De-escalation strategies that protect you and your kids.", tag: "Communication", href: "/guides/respond-to-difficult-coparent.html" },
+                  ].map((article, i) => (
+                    <motion.a key={i} href={article.href} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="block bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:border-emerald-200 hover:shadow-md transition-all group">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="inline-block text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mb-2">{article.tag}</span>
+                          <h3 className="text-sm font-medium text-slate-800 leading-snug mb-1">{article.title}</h3>
+                          <p className="text-xs text-slate-400 leading-relaxed">{article.desc}</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 transition-colors shrink-0 mt-1" />
+                      </div>
+                    </motion.a>
+                  ))}
+                </div>
+                <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.5 }} className="text-center mt-6">
+                  <a href="/guides/" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">View all guides &rarr;</a>
+                </motion.div>
+              </div>
+            </div>
+
             {/* ===== SECTION 4.75: FAQ ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <div className="max-w-lg w-full">
