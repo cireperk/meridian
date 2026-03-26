@@ -171,7 +171,7 @@ FORMATTING RULES:
 
 NAMES: If the user's documents contain real names (children, co-parent, etc.), use them in drafted messages instead of generic placeholders like "[child's name]" or "[co-parent's name]". The goal is a message they can copy and send as-is.`;
 
-type Tab = "chat" | "calendar" | "vault" | "coach" | "profile";
+type Tab = "talk" | "calendar" | "vault" | "profile";
 
 // ============================================================
 export default function App() {
@@ -221,6 +221,7 @@ export default function App() {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const TRIAL_DAYS = 3;
   const [trialBannerSeen, setTrialBannerSeen] = useState(() => localStorage.getItem("m_trial_banner_seen") === "1");
+  const [talkMode, setTalkMode] = useState<"chat" | "coach">("chat");
   const [coachMode, setCoachMode] = useState<"respond" | "draft">("respond");
   const [coachInput, setCoachInput] = useState("");
   const [coachMessages, setCoachMessages] = useState<Array<{ role: string; content: string }>>([]);
@@ -628,7 +629,7 @@ export default function App() {
   const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
 
   // --- App state ---
-  const [activeTab, setActiveTab] = useState<Tab>("chat");
+  const [activeTab, setActiveTab] = useState<Tab>("talk");
   const [conversations, setConversations] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); if (c?.length) return c; return []; } catch { return []; } });
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -904,7 +905,7 @@ export default function App() {
     } catch {} finally { setVaultLoading(false); }
   }, [session?.token, session?.user?.id]);
 
-  useEffect(() => { if (activeTab === "vault" || activeTab === "chat") loadVaultDocs(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "vault" || activeTab === "talk") loadVaultDocs(); }, [activeTab]);
   // Also load vault docs on session init so chat always has context
   useEffect(() => { if (session?.token) loadVaultDocs(); }, [session?.token]);
 
@@ -2086,7 +2087,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-1">
                 <AnimatePresence>
-                  {activeTab === "chat" && (
+                  {activeTab === "talk" && talkMode === "chat" && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-1">
                       {conversations.length > 0 && (
                         <Button variant="ghost" size="sm" onClick={() => { setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
@@ -2106,9 +2107,17 @@ export default function App() {
             {/* Content */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <AnimatePresence mode="wait">
-                {/* CHAT */}
-                {activeTab === "chat" && (
-                  <motion.div key="chat" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
+                {/* TALK (Chat + Coach) */}
+                {activeTab === "talk" && (
+                  <motion.div key="talk" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
+                    {/* Mode toggle */}
+                    <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
+                      <button onClick={() => { setTalkMode("chat"); setShowHistory(false); }} className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", talkMode === "chat" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600")}>Chat</button>
+                      <button onClick={() => setTalkMode("coach")} className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", talkMode === "coach" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600")}>Coach</button>
+                    </div>
+
+                  {talkMode === "chat" && (
+                  <div>
                     {/* Messages */}
                     <AnimatePresence mode="popLayout">
                       {showHistory ? (
@@ -2251,12 +2260,11 @@ export default function App() {
                         </div>
                       )}
                     </AnimatePresence>
-                  </motion.div>
-                )}
+                  </div>
+                  )}
 
-                {/* LEARN */}
-                {activeTab === "coach" && (
-                  <motion.div key="coach" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                  {talkMode === "coach" && (
+                  <div>
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-1">Communication Coach</h2>
                     <p className="text-sm text-slate-400 mb-6">Craft calm, child-focused messages</p>
 
@@ -2431,6 +2439,9 @@ export default function App() {
                         </div>
                       </motion.div>
                     )}
+                  </div>
+                  )}
+
                   </motion.div>
                 )}
 
@@ -2812,7 +2823,7 @@ export default function App() {
             </div>
 
             {/* Input - chat only, hidden when viewing history */}
-            {activeTab === "chat" && !showHistory && (
+            {activeTab === "talk" && talkMode === "chat" && !showHistory && (
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }} className="px-6 py-4 border-t border-slate-100/60 bg-white shrink-0">
                 <div className="flex items-end gap-3 bg-slate-50/60 rounded-2xl px-4 py-3 border border-slate-200/40 focus-within:border-emerald-400/60 focus-within:ring-4 focus-within:ring-emerald-500/8 transition-all duration-300">
                   <Textarea ref={textareaRef} className="flex-1 border-0 bg-transparent p-0 text-base text-slate-800 placeholder:text-slate-400 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[24px] max-h-[120px]" placeholder={hasConversation ? "How can we get better today?" : "How can we get better today?"} value={input} onChange={(e) => { setInput(e.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
@@ -2832,7 +2843,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
               <div className="flex items-center justify-around px-6 py-2.5">
-                {([{ id: "chat" as Tab, icon: MessageSquare, label: "Chat" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "coach" as Tab, icon: Users, label: "Coach" }]).map((tab) => (
+                {([{ id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
