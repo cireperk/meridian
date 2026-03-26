@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Home } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -95,7 +95,40 @@ const EVENT_TYPES = [
 ] as const;
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const CUSTODY_TEMPLATES: Record<string, { label: string; desc: string; pattern: number[] }> = {
+  "week-on-week-off": { label: "Week on / week off", desc: "Alternating full weeks", pattern: [7, 7] },
+  "2-2-3": { label: "2-2-3", desc: "2 days, 2 days, 3 days — alternating", pattern: [2, 2, 3] },
+  "2-2-5-5": { label: "2-2-5-5", desc: "2 days each, then 5 days alternating", pattern: [2, 2, 5, 5] },
+  "every-other-weekend": { label: "Every other weekend", desc: "Weekdays with one, weekends alternate", pattern: [5, 2] },
+};
+
+const getCustodyForDate = (dateStr: string, schedule: any): "me" | "coparent" | null => {
+  if (!schedule) return null;
+  const tmpl = CUSTODY_TEMPLATES[schedule.template];
+  const pattern = schedule.template === "custom" ? schedule.custom_pattern : tmpl?.pattern;
+  if (!pattern?.length) return null;
+  const start = new Date(schedule.start_date + "T00:00:00");
+  const target = new Date(dateStr + "T00:00:00");
+  const diffDays = Math.floor((target.getTime() - start.getTime()) / 86400000);
+  if (diffDays < 0) return null;
+  const halfCycle = pattern.reduce((a: number, b: number) => a + b, 0);
+  const fullCycle = halfCycle * 2;
+  const pos = ((diffDays % fullCycle) + fullCycle) % fullCycle;
+  let isFirstHalf = pos < halfCycle;
+  let posInHalf = isFirstHalf ? pos : pos - halfCycle;
+  let accumulated = 0;
+  for (let i = 0; i < pattern.length; i++) {
+    accumulated += pattern[i];
+    if (posInHalf < accumulated) {
+      const isStartParent = isFirstHalf ? (i % 2 === 0) : (i % 2 !== 0);
+      return isStartParent ? schedule.start_parent : (schedule.start_parent === "me" ? "coparent" : "me");
+    }
+  }
+  return null;
+};
 
 const formatTime12 = (t: string) => {
   if (!t) return "";
@@ -171,7 +204,7 @@ FORMATTING RULES:
 
 NAMES: If the user's documents contain real names (children, co-parent, etc.), use them in drafted messages instead of generic placeholders like "[child's name]" or "[co-parent's name]". The goal is a message they can copy and send as-is.`;
 
-type Tab = "talk" | "calendar" | "vault" | "profile";
+type Tab = "today" | "talk" | "calendar" | "vault" | "profile";
 
 // ============================================================
 export default function App() {
@@ -337,6 +370,10 @@ export default function App() {
             if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
             if (p?.[0]?.coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
             if (p?.[0]?.children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
+          }).catch(() => {});
+          // Load custody schedule
+          dbSelect("custody_schedules", `user_id=eq.${session.user.id}&order=created_at.desc&limit=1`, data.access_token).then((rows: any) => {
+            if (rows?.[0]) { setCustodySchedule(rows[0]); localStorage.setItem("m_custody_schedule", JSON.stringify(rows[0])); }
           }).catch(() => {});
         }
         // Load conversations + coach sessions from Supabase
@@ -629,7 +666,7 @@ export default function App() {
   const togglePlayPause = () => { const v = videoRef.current; if (!v || videoEnded) return; if (v.paused) { v.play().catch(() => {}); setVideoPaused(false); } else { v.pause(); setVideoPaused(true); } };
 
   // --- App state ---
-  const [activeTab, setActiveTab] = useState<Tab>("talk");
+  const [activeTab, setActiveTab] = useState<Tab>("today");
   const [conversations, setConversations] = useState<any[]>(() => { try { const c = JSON.parse(localStorage.getItem("m_conversations") || "null"); if (c?.length) return c; return []; } catch { return []; } });
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -661,6 +698,11 @@ export default function App() {
   const [calEditEvent, setCalEditEvent] = useState<any | null>(null);
   const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
   const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "" });
+  // Custody schedule state
+  const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
+  const [showCustodySetup, setShowCustodySetup] = useState(false);
+  const [custodyForm, setCustodyForm] = useState({ template: "week-on-week-off", start_date: "", start_parent: "me" as "me" | "coparent", handoff_time: "6:00 PM" });
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
 
@@ -1165,7 +1207,7 @@ export default function App() {
     setCalLoading(false);
   }, [session?.token, session?.user?.id, calMonth]);
 
-  useEffect(() => { if (activeTab === "calendar") loadCalEvents(); }, [activeTab, calMonth]);
+  useEffect(() => { if (activeTab === "calendar" || activeTab === "today") loadCalEvents(); }, [activeTab, calMonth]);
 
   const calDays = (() => {
     const first = new Date(calMonth.year, calMonth.month, 1);
@@ -2107,6 +2149,184 @@ export default function App() {
             {/* Content */}
             <div className="flex-1 min-h-0 overflow-y-auto">
               <AnimatePresence mode="wait">
+                {/* TODAY */}
+                {activeTab === "today" && !showFullCalendar && (
+                  <motion.div key="today" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                    {/* Greeting */}
+                    <h2 className="text-2xl font-light tracking-tight text-slate-700">
+                      Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}{firstName ? ", " : ""}<span className="text-emerald-600">{firstName}</span>{firstName ? "." : "."}
+                    </h2>
+                    <p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+
+                    {/* This Week's Schedule */}
+                    {custodySchedule ? (() => {
+                      const today = new Date();
+                      const dayOfWeek = today.getDay(); // 0=Sun
+                      const monday = new Date(today);
+                      monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+                      const weekDays = Array.from({ length: 7 }, (_, i) => {
+                        const d = new Date(monday);
+                        d.setDate(monday.getDate() + i);
+                        return { dateStr: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`, day: d.getDate(), label: WEEK_DAYS[i] };
+                      });
+                      const custodyDays = weekDays.map(d => ({ ...d, custody: getCustodyForDate(d.dateStr, custodySchedule) }));
+                      const myDays = custodyDays.filter(d => d.custody === "me").length;
+                      const nextHandoff = custodyDays.find((d, i) => i > 0 && d.custody !== custodyDays[i - 1].custody && new Date(d.dateStr + "T00:00:00") >= today);
+                      const childFirst = childrenNames?.split(",")[0]?.trim() || "";
+                      const cpName = coparentName || "co-parent";
+                      const todayCustody = getCustodyForDate(todayStr, custodySchedule);
+
+                      let summaryText = "";
+                      if (myDays >= 5) summaryText = `It's your week${childFirst ? ` with ${childFirst}` : ""}.`;
+                      else if (myDays <= 2) summaryText = `It's ${cpName}'s week${childFirst ? ` with ${childFirst}` : ""}.`;
+                      else summaryText = todayCustody === "me" ? `${childFirst || "Kids"} are with you today.` : `${childFirst || "Kids"} are with ${cpName} today.`;
+                      if (nextHandoff) {
+                        const handoffDate = new Date(nextHandoff.dateStr + "T00:00:00");
+                        const handoffDay = handoffDate.toLocaleDateString("en-US", { weekday: "long" });
+                        const handoffTo = nextHandoff.custody === "me" ? "you" : cpName;
+                        summaryText += ` Handoff to ${handoffTo} on ${handoffDay}${custodySchedule.handoff_time ? ` at ${custodySchedule.handoff_time}` : ""}.`;
+                      }
+
+                      return (
+                        <div className="mt-6 bg-white border border-slate-200/60 rounded-2xl p-5">
+                          <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider mb-3">This week's schedule</p>
+                          <p className="text-[15px] text-slate-700 leading-relaxed mb-5">{summaryText}</p>
+                          <div className="grid grid-cols-7 gap-1.5">
+                            {custodyDays.map(d => {
+                              const isToday = d.dateStr === todayStr;
+                              return (
+                                <div key={d.dateStr} className="flex flex-col items-center gap-1.5">
+                                  <span className="text-[10px] font-medium text-slate-400 uppercase">{d.label}</span>
+                                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                    d.custody === "me" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500",
+                                    isToday && "ring-2 ring-offset-2 ring-slate-800"
+                                  )}>
+                                    {d.day}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex items-center justify-center gap-5 mt-4">
+                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-xs text-slate-500">Your days</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-slate-200" /><span className="text-xs text-slate-500">{cpName}'s days</span></div>
+                          </div>
+                        </div>
+                      );
+                    })() : (
+                      <button onClick={() => setShowCustodySetup(true)} className="mt-6 w-full bg-white border border-dashed border-slate-300 rounded-2xl p-6 flex flex-col items-center gap-2 hover:border-emerald-400 hover:bg-emerald-50/30 transition-all">
+                        <CalendarDays className="w-6 h-6 text-emerald-500" />
+                        <span className="text-sm font-medium text-slate-700">Set up your custody schedule</span>
+                        <span className="text-xs text-slate-400">See your week at a glance</span>
+                      </button>
+                    )}
+
+                    {/* Coming Up */}
+                    {(() => {
+                      const upcoming = calEvents
+                        .filter(e => e.date >= todayStr)
+                        .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))
+                        .slice(0, 3);
+                      if (upcoming.length === 0) return null;
+                      return (
+                        <div className="mt-8">
+                          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">Coming up</p>
+                          <div className="space-y-2">
+                            {upcoming.map((evt: any) => {
+                              const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
+                              const evtDate = new Date(evt.date + "T12:00:00");
+                              return (
+                                <div key={evt.id} className="bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-4">
+                                  <div className="flex flex-col items-center shrink-0 w-10">
+                                    <span className="text-[10px] font-medium text-emerald-600 uppercase">{evtDate.toLocaleDateString("en-US", { month: "short" })}</span>
+                                    <span className="text-xl font-light text-slate-800">{evtDate.getDate()}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700 truncate">{evt.title}</p>
+                                    <p className="text-xs text-slate-400">{evtDate.toLocaleDateString("en-US", { weekday: "long" })}{evt.time ? ` at ${evt.time}` : ""}{evt.notes ? ` · ${evt.notes}` : ""}</p>
+                                  </div>
+                                  {typeInfo && <span className={cn("text-[10px] font-medium px-2 py-1 rounded-full text-white shrink-0", typeInfo.color)}>{typeInfo.label}</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* View full month */}
+                    <button onClick={() => setShowFullCalendar(true)} className="mt-6 w-full flex items-center justify-center gap-2 py-3 text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all">
+                      View full month <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* FULL CALENDAR (sub-view of Today) */}
+                {activeTab === "today" && showFullCalendar && (
+                  <motion.div key="today-calendar" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
+                    <button onClick={() => setShowFullCalendar(false)} className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4">
+                      <ArrowLeft className="w-4 h-4" /> Back to today
+                    </button>
+                    {/* Reuse calendar grid inline */}
+                    <div className="flex items-center justify-between mb-6">
+                      <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-5 h-5" /></button>
+                      <h2 className="text-lg font-light tracking-tight text-slate-700">{MONTHS[calMonth.month]} {calMonth.year}</h2>
+                      <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronRight className="w-5 h-5" /></button>
+                    </div>
+                    <div className="grid grid-cols-7 mb-2">{DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}</div>
+                    <div className="grid grid-cols-7 gap-y-1">
+                      {calDays.map((cell: any, i: number) => {
+                        const isToday = cell.dateStr === todayStr;
+                        const isSelected = cell.dateStr === calSelectedDate;
+                        const dayEvents = calEvents.filter((e: any) => e.date === cell.dateStr);
+                        const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
+                        const custody = getCustodyForDate(cell.dateStr, custodySchedule);
+                        return (
+                          <button key={i} onClick={() => setCalSelectedDate(cell.dateStr)}
+                            className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isToday && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
+                            <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isToday ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
+                            <div className="flex gap-0.5 mt-0.5">
+                              {custody && <div className={cn("w-1.5 h-1.5 rounded-full", custody === "me" ? "bg-emerald-400" : "bg-slate-300")} />}
+                              {eventTypes.map((t: any) => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {calSelectedDate && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-medium text-slate-700">{new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h3>
+                          <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"><Plus className="w-4 h-4" /></button>
+                        </div>
+                        {selectedDateEvents.length === 0 ? (
+                          <div className="text-center py-8">
+                            <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
+                            <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {selectedDateEvents.map((evt: any) => {
+                              const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
+                              return (
+                                <button key={evt.id} onClick={() => openEditEvent(evt)} className="w-full text-left p-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-slate-300 transition-all">
+                                  <div className="flex items-start gap-3">
+                                    <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-slate-700">{evt.title}</div>
+                                      <div className="text-xs text-slate-400 mt-0.5">{evt.time && <span>{evt.time}</span>}{evt.notes && <span> · {evt.notes}</span>}</div>
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* TALK (Chat + Coach) */}
                 {activeTab === "talk" && (
                   <motion.div key="talk" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-4 pb-4">
@@ -2843,7 +3063,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
               <div className="flex items-center justify-around px-6 py-2.5">
-                {([{ id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "calendar" as Tab, icon: CalendarDays, label: "Calendar" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }]).map((tab) => (
+                {([{ id: "today" as Tab, icon: Home, label: "Today" }, { id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
@@ -2906,6 +3126,86 @@ export default function App() {
                       )
                     )}
                   </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Custody Schedule Setup Modal */}
+          <AnimatePresence>
+            {showCustodySetup && (
+              <motion.div className="fixed inset-0 z-[250] bg-black/30 flex items-end justify-center" onClick={() => setShowCustodySetup(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-lg font-light text-slate-700">Custody schedule</h3>
+                    <button onClick={() => setShowCustodySetup(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50"><X size={14} /></button>
+                  </div>
+
+                  {/* Co-parent & children names if missing */}
+                  {!coparentName && (
+                    <div className="mb-4">
+                      <label className="text-[11px] text-slate-400 mb-1 block">Co-parent's first name</label>
+                      <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)} />
+                    </div>
+                  )}
+                  {!childrenNames && (
+                    <div className="mb-4">
+                      <label className="text-[11px] text-slate-400 mb-1 block">Children's names</label>
+                      <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} />
+                    </div>
+                  )}
+
+                  {/* Template picker */}
+                  <label className="text-[11px] text-slate-400 mb-2 block">Schedule template</label>
+                  <div className="space-y-2 mb-5">
+                    {Object.entries(CUSTODY_TEMPLATES).map(([key, tmpl]) => (
+                      <button key={key} onClick={() => setCustodyForm(f => ({ ...f, template: key }))} className={cn("w-full text-left p-3.5 rounded-xl border transition-all", custodyForm.template === key ? "border-emerald-500 bg-emerald-50/50" : "border-slate-200/60 bg-white hover:border-slate-300")}>
+                        <p className="text-sm font-medium text-slate-700">{tmpl.label}</p>
+                        <p className="text-xs text-slate-400">{tmpl.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Start date */}
+                  <div className="mb-4">
+                    <label className="text-[11px] text-slate-400 mb-1 block">When does your current rotation start?</label>
+                    <input type="date" className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" value={custodyForm.start_date} onChange={(e) => setCustodyForm(f => ({ ...f, start_date: e.target.value }))} />
+                  </div>
+
+                  {/* Who starts */}
+                  <div className="mb-4">
+                    <label className="text-[11px] text-slate-400 mb-2 block">Who has the kids first in this rotation?</label>
+                    <div className="flex gap-2">
+                      <button onClick={() => setCustodyForm(f => ({ ...f, start_parent: "me" }))} className={cn("flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all", custodyForm.start_parent === "me" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-slate-300")}>Me</button>
+                      <button onClick={() => setCustodyForm(f => ({ ...f, start_parent: "coparent" }))} className={cn("flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all", custodyForm.start_parent === "coparent" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-slate-300")}>{coparentName || "Co-parent"}</button>
+                    </div>
+                  </div>
+
+                  {/* Handoff time */}
+                  <div className="mb-6">
+                    <label className="text-[11px] text-slate-400 mb-1 block">Usual handoff time</label>
+                    <input className="w-full px-3 py-2.5 bg-slate-50/80 border border-slate-200/60 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="6:00 PM" value={custodyForm.handoff_time} onChange={(e) => setCustodyForm(f => ({ ...f, handoff_time: e.target.value }))} />
+                  </div>
+
+                  {/* Save */}
+                  <Button onClick={async () => {
+                    if (!custodyForm.start_date) return;
+                    try {
+                      // Save coparent/children names if newly entered
+                      if (coparentName && session?.token) { localStorage.setItem("m_coparent_name", coparentName); dbUpdate("profiles", `id=eq.${session.user.id}`, { coparent_name: coparentName }, session.token).catch(() => {}); }
+                      if (childrenNames && session?.token) { localStorage.setItem("m_children_names", childrenNames); dbUpdate("profiles", `id=eq.${session.user.id}`, { children_names: childrenNames }, session.token).catch(() => {}); }
+                      // Save custody schedule
+                      const body = { user_id: session!.user.id, template: custodyForm.template, start_date: custodyForm.start_date, start_parent: custodyForm.start_parent, handoff_time: custodyForm.handoff_time || "6:00 PM" };
+                      const res = await dbUpsert("custody_schedules", body, session!.token);
+                      const saved = Array.isArray(res) ? res[0] : res;
+                      setCustodySchedule(saved);
+                      localStorage.setItem("m_custody_schedule", JSON.stringify(saved));
+                      setShowCustodySetup(false);
+                    } catch (err) { console.error("Failed to save custody schedule", err); }
+                  }} disabled={!custodyForm.start_date} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">
+                    Save schedule
+                  </Button>
                 </motion.div>
               </motion.div>
             )}
