@@ -936,7 +936,8 @@ export default function App() {
     catch { alert("Failed to send feedback. Please try again."); } finally { setFeedbackSending(false); }
   };
 
-  const firstName = session?.user?.name?.split(" ")[0] || "";
+  const toName = (s: string) => s.replace(/\S+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+  const firstName = toName(session?.user?.name?.split(" ")[0] || "");
   const hasConversation = messages.length > 0;
 
   // --- Vault ---
@@ -2194,7 +2195,7 @@ export default function App() {
                       const hasChat = conversations.length > 0;
                       const steps = [
                         { id: "decree", done: hasDecree, label: "Upload your decree", desc: hasDecree ? (decreeExtraction ? "Analyzed and ready" : "Uploaded") : "Unlocks personalized answers and legal context", action: () => { if (!hasDecree) fileRef.current?.click(); else { setActiveTab("vault" as any); } } },
-                        { id: "details", done: hasDetails, label: "Confirm your details", desc: hasDetails ? `${coparentName} · ${childrenNames}` : (hasDecree && decreeExtraction ? "We found some details — tap to confirm" : "Co-parent and children's names"), action: () => setActiveTab("profile" as any) },
+                        { id: "details", done: hasDetails, label: "Confirm your details", desc: hasDetails ? `${toName(coparentName)} · ${toName(childrenNames)}` : (hasDecree && decreeExtraction ? "We found some details — tap to confirm" : "Co-parent and children's names"), action: () => setActiveTab("profile" as any) },
                         { id: "schedule", done: hasSchedule, label: "Set your custody schedule", desc: hasSchedule ? "Schedule active" : "Unlocks the weekly view and handoff tracking", action: () => { if (!hasSchedule) setShowCustodySetup(true); } },
                         { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
                       ];
@@ -2255,8 +2256,8 @@ export default function App() {
                       const custodyDays = weekDays.map(d => ({ ...d, custody: getCustodyForDate(d.dateStr, custodySchedule) }));
                       const myDays = custodyDays.filter(d => d.custody === "me").length;
                       const nextHandoff = custodyDays.find((d, i) => i > 0 && d.custody !== custodyDays[i - 1].custody && new Date(d.dateStr + "T00:00:00") >= today);
-                      const childFirst = childrenNames?.split(",")[0]?.trim() || "";
-                      const cpName = coparentName || "co-parent";
+                      const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
+                      const cpName = toName(coparentName || "co-parent");
                       const todayCustody = getCustodyForDate(todayStr, custodySchedule);
                       const isCurrentWeek = weekOffset === 0;
                       const weekLabel = isCurrentWeek ? "This week's schedule" : (() => {
@@ -3206,7 +3207,7 @@ export default function App() {
                     <label className="text-[11px] text-slate-400 mb-2 block">Who has the kids first in this rotation?</label>
                     <div className="flex gap-2">
                       <button onClick={() => setCustodyForm(f => ({ ...f, start_parent: "me" }))} className={cn("flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all", custodyForm.start_parent === "me" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-slate-300")}>Me</button>
-                      <button onClick={() => setCustodyForm(f => ({ ...f, start_parent: "coparent" }))} className={cn("flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all", custodyForm.start_parent === "coparent" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-slate-300")}>{coparentName || "Co-parent"}</button>
+                      <button onClick={() => setCustodyForm(f => ({ ...f, start_parent: "coparent" }))} className={cn("flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all", custodyForm.start_parent === "coparent" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-slate-300")}>{toName(coparentName || "Co-parent")}</button>
                     </div>
                   </div>
 
