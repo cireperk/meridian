@@ -1342,6 +1342,34 @@ export default function App() {
               </motion.div>
             </div>
 
+            {/* ===== SECTION: Privacy Promise ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider mb-3 text-center">Your privacy is the product</p>
+                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-4 text-center leading-snug">A safe space. Not a legal record.</h2>
+                <p className="text-sm text-slate-500 text-center mb-10 max-w-sm mx-auto leading-relaxed">Other co-parenting apps build for court admissibility. Everything you write becomes a permanent record. Meridian is different.</p>
+
+                <div className="space-y-4">
+                  {[
+                    { icon: Shield, title: "Private by default", desc: "Your conversations stay between you and Meridian. Not your co-parent. Not a courtroom. Not advertisers." },
+                    { icon: EyeOff, title: "Nothing is shared", desc: "We don't sell data, we don't build ad profiles, and we never will." },
+                    { icon: Trash2, title: "You're in control", desc: "Delete your data anytime. No questions, no hoops." },
+                  ].map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center shrink-0">
+                        <item.icon className="w-5 h-5 text-emerald-600" strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
+                        <p className="text-[13px] text-slate-500 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+
             {/* ===== SECTION 2: The Mirror ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <motion.div className="max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
@@ -1377,24 +1405,6 @@ export default function App() {
                       <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
                       <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
                     </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* ===== SECTION 4: The Anti-Competitor ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <div className="space-y-6 text-center">
-                  {[
-                    "Your conversations never end up in court.",
-                    "No one sees your data. Not even us.",
-                    "Try free for 3 days. No credit card required.",
-                  ].map((line, i) => (
-                    <motion.p key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                      className="text-lg sm:text-xl font-light text-slate-800">
-                      {line}
-                    </motion.p>
                   ))}
                 </div>
               </motion.div>
