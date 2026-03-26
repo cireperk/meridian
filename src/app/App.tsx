@@ -366,10 +366,11 @@ export default function App() {
         }
         // Load decree from DB if not in localStorage
         if (!localStorage.getItem("m_decree_text") && session.user?.id) {
-          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages,coparent_name,children_names`, data.access_token).then((p: any) => {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages,coparent_name,children_names,setup_complete`, data.access_token).then((p: any) => {
             if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
             if (p?.[0]?.coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
             if (p?.[0]?.children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
+            if (p?.[0]?.setup_complete) setSetupComplete(true);
           }).catch(() => {});
           // Load custody schedule
           dbSelect("custody_schedules", `user_id=eq.${session.user.id}&order=created_at.desc&limit=1`, data.access_token).then((rows: any) => {
@@ -426,12 +427,13 @@ export default function App() {
       else {
         let name = "";
         try {
-          const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name,decree_text,decree_name,decree_pages,coparent_name,children_names`, data.access_token);
+          const p = await dbSelect("profiles", `id=eq.${data.user.id}&select=name,decree_text,decree_name,decree_pages,coparent_name,children_names,setup_complete`, data.access_token);
           if (p?.length) {
             name = p[0].name;
             if (p[0].decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
             if (p[0].coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
             if (p[0].children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
+            if (p[0].setup_complete) setSetupComplete(true);
           }
         } catch {}
         const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); setAuthView("main");
@@ -674,6 +676,7 @@ export default function App() {
   const [vaultDocs, setVaultDocs] = useState<any[]>([]);
   const [vaultLoading, setVaultLoading] = useState(false);
   const [vaultLoaded, setVaultLoaded] = useState(false);
+  const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
   const [vaultCategory, setVaultCategory] = useState("all");
   const [vaultUploading, setVaultUploading] = useState(false);
   const [vaultUploadProgress, setVaultUploadProgress] = useState<"uploading" | "processing" | "done" | null>(null);
@@ -2187,8 +2190,10 @@ export default function App() {
 
                     {/* Getting Started — shows when not everything is set up */}
                     {(() => {
-                      // Wait until vault docs have loaded to avoid flash
-                      if (!vaultLoaded) return null;
+                      // Skip checklist entirely if setup already completed (from profile, loads at auth time)
+                      if (setupComplete) return null;
+                      // For users still setting up, wait for vault to load before computing steps
+                      if (setupComplete === null && !vaultLoaded) return null;
                       const hasDecree = !!decreeText || vaultDocs.some((d: any) => d.category === "decree");
                       const hasDetails = !!(coparentName && childrenNames);
                       const hasSchedule = !!custodySchedule;
@@ -2200,7 +2205,14 @@ export default function App() {
                         { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
                       ];
                       const completed = steps.filter(s => s.done).length;
-                      if (completed >= 4) return null;
+                      if (completed >= 4) {
+                        // All done — persist so checklist never shows again
+                        if (!setupComplete && session?.token) {
+                          setSetupComplete(true);
+                          dbUpdate("profiles", `id=eq.${session.user.id}`, { setup_complete: true }, session.token).catch(() => {});
+                        }
+                        return null;
+                      }
                       return (
                         <div className="mt-6 mb-2">
                           <p className="text-sm text-slate-500 mb-5">Let's set things up so we can show up for you.</p>
