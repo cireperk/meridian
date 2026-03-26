@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, Mail } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -384,7 +384,6 @@ export default function App() {
     setAuthError(""); setAuthLoading(true);
     try {
       const data = await authSubmit(authEmail, authPassword, authView);
-      if (data.needsConfirmation) { setAuthView("confirm-email"); setAuthLoading(false); return; }
       if (data.isNew) { setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
       else {
         let name = "";
@@ -1706,7 +1705,7 @@ export default function App() {
       )}
 
       {/* ==================== AUTH ==================== */}
-      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "confirm-email" || authView.startsWith("onboard-")) && !showSplash ? (
+      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView.startsWith("onboard-")) && !showSplash ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden z-40">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
@@ -1850,26 +1849,6 @@ export default function App() {
                   <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Meridian is not a lawyer or legal advisor. It's a grounding tool — built to help you stay clear, calm, and centered through divorce and co-parenting.</p>
                   <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're right here with you.</p>
                   <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Let's go{firstName ? `, ${firstName}` : ""}</Button>
-                </motion.div>
-              ) : authView === "confirm-email" ? (
-                <motion.div key="confirm-email" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-5">
-                    <Mail className="w-6 h-6 text-emerald-500" />
-                  </motion.div>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Check your email</h2>
-                  <p className="text-sm text-slate-400 mb-2 text-center leading-relaxed max-w-[300px]">We sent a confirmation link to</p>
-                  <p className="text-sm text-slate-700 font-medium mb-6 text-center">{authEmail}</p>
-                  <p className="text-[13px] text-slate-400 text-center leading-relaxed max-w-[300px] mb-8">Tap the link in your email to activate your account. It may take a minute to arrive — check your spam folder if you don't see it.</p>
-                  <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">I've confirmed — Sign In</Button>
-                  <button onClick={async () => {
-                    try {
-                      await sbFetch("/auth/v1/resend", { method: "POST", body: { type: "signup", email: authEmail } });
-                      setAuthError("Confirmation email resent!");
-                      setTimeout(() => setAuthError(""), 3000);
-                    } catch { setAuthError("Could not resend. Please try again."); setTimeout(() => setAuthError(""), 3000); }
-                  }} className="mt-4 text-xs text-slate-400 hover:text-emerald-600 transition-colors">Didn't get the email? Resend</button>
-                  {authError && <p className={`mt-3 text-xs text-center ${authError.includes("resent") ? "text-emerald-600" : "text-red-500"}`}>{authError}</p>}
-                  <button onClick={() => { setAuthView("signup"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
                 </motion.div>
               ) : authView === "forgot" ? (
                 <motion.div key="forgot" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>

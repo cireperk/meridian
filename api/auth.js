@@ -44,12 +44,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ...tokenData, isNew: false });
   }
 
-  // Sign-in failed — check if it's an unconfirmed user
-  const tokenErr = await tokenRes.json().catch(() => ({}));
-  if (tokenErr.error === "invalid_grant" && tokenErr.error_description?.includes("Email not confirmed")) {
-    return res.status(200).json({ needsConfirmation: true, email });
-  }
-
   // Sign-in failed — if user intended to sign in, don't silently create an account
   if (intent === "signin") {
     return res.status(401).json({ error: "Invalid email or password" });
@@ -81,11 +75,9 @@ export default async function handler(req, res) {
     return res.status(signupRes.status).json({ error: signupData.msg || signupData.message || "Signup failed" });
   }
 
-  // If Supabase returns a session, email confirmation is disabled — sign them in
-  if (signupData.access_token) {
-    return res.status(200).json({ ...signupData, isNew: true });
+  if (!signupData.access_token) {
+    return res.status(500).json({ error: "Signup succeeded but no session returned" });
   }
 
-  // Email confirmation is enabled — user needs to confirm
-  return res.status(200).json({ needsConfirmation: true, email, isNew: true });
+  return res.status(200).json({ ...signupData, isNew: true });
 }
