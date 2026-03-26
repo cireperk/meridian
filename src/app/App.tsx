@@ -2925,15 +2925,14 @@ export default function App() {
                             try {
                               const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
                                 method: "POST",
-                                headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-                                body: JSON.stringify({ email: session.user.email }),
+                                headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: session.user.email, redirect_to: window.location.origin }),
                               });
-                              if (res.ok) showToastMsg("Password reset email sent!");
-                              else showToastMsg("Failed to send reset email", true);
+                              if (res.ok) showToastMsg("Check your email for a reset link");
+                              else { const d = await res.json().catch(() => null); showToastMsg(d?.msg || d?.error_description || "Failed to send reset email", true); }
                             } catch { showToastMsg("Something went wrong", true); }
-                          }} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
-                            <div className="flex items-center gap-3"><Lock className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">Reset Password</span></div>
-                            <span className="text-[11px] text-slate-400">Sends email</span>
+                          }} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center gap-3">
+                            <Lock className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">Reset Password</span>
                           </button>
                         </div>
                       </div>
