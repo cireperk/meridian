@@ -14,7 +14,6 @@
     "@capacitor/app": "^8.0.1",
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
-    "@capacitor/haptics": "^8.0.1",
     "@capacitor/ios": "^8.2.0",
     "@capacitor/preferences": "^8.0.1",
     "@radix-ui/react-slot": "^1.2.4",
