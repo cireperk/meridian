@@ -1315,7 +1315,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-5">
                 <a href="/guides/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Guides</a>
-                <a href="/professionals/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Professionals</a>
+                <a href="/professionals/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">For Professionals</a>
                 <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
                   className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
                   Sign In
