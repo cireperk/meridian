@@ -1707,11 +1707,9 @@ export default function App() {
 
       {/* ==================== AUTH ==================== */}
       {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "confirm-email" || authView.startsWith("onboard-")) && !showSplash ? (
-        <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-sky-50/40 via-white to-emerald-50/30 overflow-hidden z-40">
-          <div className="ocean-orb-1 absolute top-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-teal-200/40 to-cyan-100/30 blur-3xl pointer-events-none" />
-          <div className="ocean-orb-2 absolute bottom-[-10%] left-[-15%] w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-emerald-100/35 to-teal-200/25 blur-3xl pointer-events-none" />
-          <div className="ocean-orb-3 absolute top-[30%] left-[20%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-sky-100/30 to-emerald-100/20 blur-3xl pointer-events-none" />
-          <div className="ocean-shimmer absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-cyan-50/10 pointer-events-none" />
+        <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden z-40">
+          <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
           <motion.div className="max-w-[380px] w-full flex flex-col items-center relative z-10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
             <div className="flex items-center gap-3 mb-12">
               <Logo size="md" />
