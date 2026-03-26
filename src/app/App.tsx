@@ -204,7 +204,7 @@ FORMATTING RULES:
 
 NAMES: If the user's documents contain real names (children, co-parent, etc.), use them in drafted messages instead of generic placeholders like "[child's name]" or "[co-parent's name]". The goal is a message they can copy and send as-is.`;
 
-type Tab = "today" | "talk" | "calendar" | "vault" | "profile";
+type Tab = "today" | "talk" | "vault" | "profile";
 
 // ============================================================
 export default function App() {
@@ -1207,7 +1207,7 @@ export default function App() {
     setCalLoading(false);
   }, [session?.token, session?.user?.id, calMonth]);
 
-  useEffect(() => { if (activeTab === "calendar" || activeTab === "today") loadCalEvents(); }, [activeTab, calMonth]);
+  useEffect(() => { if (activeTab === "today") loadCalEvents(); }, [activeTab, calMonth]);
 
   const calDays = (() => {
     const first = new Date(calMonth.year, calMonth.month, 1);
@@ -2140,9 +2140,6 @@ export default function App() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <button onClick={() => setActiveTab("profile")} className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200", activeTab === "profile" ? "bg-emerald-100 text-emerald-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}>
-                  <User className="w-4 h-4" strokeWidth={activeTab === "profile" ? 2.5 : 2} />
-                </button>
               </div>
             </motion.header>
 
@@ -2665,110 +2662,6 @@ export default function App() {
                   </motion.div>
                 )}
 
-                {/* CALENDAR */}
-                {activeTab === "calendar" && (
-                  <motion.div key="calendar" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    {/* Month header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <h2 className="text-lg font-light tracking-tight text-slate-700">{MONTHS[calMonth.month]} {calMonth.year}</h2>
-                      <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 mb-2">
-                      {DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}
-                    </div>
-
-                    {/* Calendar grid */}
-                    <div className="grid grid-cols-7 gap-y-1">
-                      {calDays.map((cell, i) => {
-                        const isToday = cell.dateStr === todayStr;
-                        const isSelected = cell.dateStr === calSelectedDate;
-                        const dayEvents = calEvents.filter(e => e.date === cell.dateStr);
-                        const eventTypes = [...new Set(dayEvents.map(e => e.type))].slice(0, 3);
-                        return (
-                          <button key={i} onClick={() => setCalSelectedDate(cell.dateStr)}
-                            className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isToday && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
-                            <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isToday ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
-                            {eventTypes.length > 0 && (
-                              <div className="flex gap-0.5 mt-0.5">
-                                {eventTypes.map(t => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Hint when no date selected */}
-                    {!calSelectedDate && calEvents.length === 0 && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-col items-center text-center py-6">
-                        <p className="text-sm text-slate-400 mb-1">Tap a date to get started</p>
-                        <p className="text-xs text-slate-300">Track handoffs, appointments, deadlines, and more</p>
-                      </motion.div>
-                    )}
-                    {!calSelectedDate && calEvents.length > 0 && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-6 flex flex-col items-center text-center py-4">
-                        <p className="text-xs text-slate-300">Tap a date to view or add events</p>
-                      </motion.div>
-                    )}
-
-                    {/* Selected date events */}
-                    {calSelectedDate && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-medium text-slate-700">
-                            {new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                          </h3>
-                          <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all">
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                        {selectedDateEvents.length === 0 ? (
-                          <div className="text-center py-8">
-                            <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
-                            <p className="text-xs text-slate-300 mb-4">Track a handoff, appointment, or deadline</p>
-                            <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {selectedDateEvents.map((evt: any) => {
-                              const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
-                              return (
-                                <button key={evt.id} onClick={() => openEditEvent(evt)} className="w-full text-left p-3.5 bg-white border border-slate-200/60 rounded-xl hover:border-slate-300 transition-all">
-                                  <div className="flex items-start gap-3">
-                                    <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium text-slate-700">{evt.title}</div>
-                                      <div className="flex items-center gap-2 mt-0.5">
-                                        {evt.time && <span className="text-[12px] text-slate-400">{evt.time}</span>}
-                                        <span className="text-[11px] text-slate-300 px-1.5 py-0.5 bg-slate-50 rounded">{typeInfo?.label}</span>
-                                      </div>
-                                      {evt.notes && <p className="text-[12px] text-slate-400 mt-1 truncate">{evt.notes}</p>}
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-
-                    {/* FAB */}
-                    {!calSelectedDate && (
-                      <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
-                        onClick={() => openAddEvent(todayStr)} className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25 flex items-center justify-center text-white z-30 hover:shadow-xl transition-shadow">
-                        <Plus className="w-6 h-6" />
-                      </motion.button>
-                    )}
-                  </motion.div>
-                )}
 
                 {/* VAULT */}
                 {activeTab === "vault" && (
@@ -3063,7 +2956,7 @@ export default function App() {
             {/* Bottom Nav */}
             <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
               <div className="flex items-center justify-around px-6 py-2.5">
-                {([{ id: "today" as Tab, icon: Home, label: "Today" }, { id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }]).map((tab) => (
+                {([{ id: "today" as Tab, icon: Home, label: "Today" }, { id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "profile" as Tab, icon: User, label: "Profile" }]).map((tab) => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
                     <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                     {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
