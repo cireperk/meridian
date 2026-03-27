@@ -1338,16 +1338,6 @@ export default function App() {
                         <stop offset="100%" stopColor="#0d9488" />
                       </linearGradient>
                     </defs>
-                    {/* Faint globe circle */}
-                    <motion.circle
-                      cx="32" cy="32" r="28"
-                      stroke="#10b981"
-                      strokeWidth="0.75"
-                      fill="none"
-                      initial={{ opacity: 0, pathLength: 0 }}
-                      animate={{ opacity: 0.15, pathLength: 1 }}
-                      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-                    />
                     {/* Left meridian line — draws in */}
                     <motion.path
                       d="M22 4 Q28 32, 22 60"
@@ -1369,16 +1359,6 @@ export default function App() {
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: 1, opacity: 1 }}
                       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-                    />
-                    {/* Horizontal equator — draws across */}
-                    <motion.ellipse
-                      cx="32" cy="32" rx="26" ry="8"
-                      stroke="#10b981"
-                      strokeWidth="0.75"
-                      fill="none"
-                      initial={{ pathLength: 0, opacity: 0 }}
-                      animate={{ pathLength: 1, opacity: 0.2 }}
-                      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
                     />
                   </svg>
                   {/* Soft glow behind the logo */}
