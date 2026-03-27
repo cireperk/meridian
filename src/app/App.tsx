@@ -1307,21 +1307,9 @@ export default function App() {
               initial={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="fixed inset-0 flex flex-col items-center justify-center bg-white z-[60]"
+              className="fixed inset-0 flex flex-col items-center justify-center z-[60]"
+              style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.08) 0%, rgba(255,255,255,1) 70%)" }}
             >
-              {/* Ambient glow */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <motion.div
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute top-[-30%] right-[-20%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 blur-3xl"
-                />
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="absolute bottom-[-20%] left-[-15%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100 to-cyan-50 blur-3xl"
-                />
-              </div>
               {/* Content */}
               <div className="relative z-10 flex flex-col items-center px-8">
                 <motion.div
