@@ -1953,20 +1953,20 @@ export default function App() {
               )}
               {/* Step 1: Name */}
               {authView === "onboarding" ? (
-                <motion.div key="name" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">What's your name?</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">We'll set things up for you — takes about a minute.</p>
-                  <div className="w-full flex flex-col gap-3">
-                    <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-center" placeholder="Your first name" value={authName} onChange={(e) => setAuthName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleOnboarding()} autoFocus />
+                <motion.div key="name" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">What's your name?</h2>
+                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">Just your first name — so we know<br/>who we're walking with.</p>
+                  <div className="w-full flex flex-col gap-4">
+                    <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-center" placeholder="Your first name" value={authName} onChange={(e) => setAuthName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleOnboarding()} autoFocus />
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">{authLoading ? "Saving..." : "Continue"}</Button>
+                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">{authLoading ? "Saving..." : "Continue"}</Button>
                   </div>
                 </motion.div>
               ) : authView === "onboard-situation" ? (
                 /* Step 2: Situation — tap to advance */
-                <motion.div key="situation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Where are you right now?</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">This helps us personalize your experience.</p>
+                <motion.div key="situation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Where are you<br/>right now?</h2>
+                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">There's no wrong answer.</p>
                   <div className="w-full flex flex-col gap-3 mb-8">
                     {[
                       { id: "during", label: "Going through it now", desc: "Separation or divorce in progress" },
@@ -1979,31 +1979,31 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                  <button onClick={() => setAuthView("onboard-people")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Skip</button>
+                  <button onClick={() => setAuthView("onboard-people")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">I'd rather not say</button>
                 </motion.div>
               ) : authView === "onboard-people" ? (
                 /* Step 3: People */
-                <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Who's in the picture?</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center">This helps us personalize everything for you.</p>
-                  <div className="w-full flex flex-col gap-4 mb-6">
+                <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Tell us about<br/>your family.</h2>
+                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">Just first names — so things feel personal,<br/>not clinical.</p>
+                  <div className="w-full flex flex-col gap-5 mb-8">
                     <div>
-                      <label className="text-xs font-medium text-slate-500 mb-1.5 block">Co-parent's first name</label>
-                      <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)} />
+                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Your co-parent</label>
+                      <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-slate-500 mb-1.5 block">Children's names</label>
-                      <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthView("onboard-decree")} />
+                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Your children</label>
+                      <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="First names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthView("onboard-decree")} />
                     </div>
                   </div>
-                  <Button onClick={() => setAuthView("onboard-decree")} disabled={false} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Continue</Button>
-                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-4">Skip</button>
+                  <Button onClick={() => setAuthView("onboard-decree")} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">Continue</Button>
+                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-5">I'll do this later</button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
                 /* Step 4: Decree — simplified */
-                <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Do you have your custody decree?</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[300px]">Uploading it lets Meridian answer questions using your actual terms — custody, support, obligations.</p>
+                <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Do you have your<br/>custody decree?</h2>
+                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed max-w-[300px]">This is the most powerful thing you can do. It lets us answer questions using your actual terms.</p>
                   <AnimatePresence mode="wait">
                     {uploading ? (
                       <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border border-emerald-200 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-6">
@@ -2054,12 +2054,12 @@ export default function App() {
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 /* Step 5: You're all set */
-                <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
-                    <Check size={28} className="text-emerald-500" />
+                <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.15 }} className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
+                    <Check size={30} className="text-emerald-500" />
                   </motion.div>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">You're all set{firstName ? `, ${firstName}` : ""}.</h2>
-                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Meridian is ready to walk with you. Here's what we know so far:</p>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">We're ready{firstName ? `,\n${firstName}` : ""}.</h2>
+                  <p className="text-[15px] text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Here's what we know so far.</p>
                   <div className="w-full bg-slate-50/80 rounded-2xl p-5 mb-8 space-y-3">
                     {localStorage.getItem("m_phase") && (
                       <div className="flex items-center gap-3">
@@ -2085,8 +2085,8 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  <Button onClick={finishOnboarding} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Let's go{firstName ? `, ${firstName}` : ""}</Button>
-                  <p className="text-[11px] text-slate-400 text-center mt-6 leading-relaxed max-w-[260px]">Meridian is not a lawyer. For legal decisions, always consult your attorney.</p>
+                  <Button onClick={finishOnboarding} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">Let's go</Button>
+                  <p className="text-[11px] text-slate-400 text-center mt-8 leading-relaxed max-w-[260px]">Meridian is not a lawyer. For legal decisions, always consult your attorney.</p>
                 </motion.div>
               ) : authView === "forgot" ? (
                 <motion.div key="forgot" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
