@@ -662,6 +662,15 @@ export default function App() {
     return () => clearTimeout(t);
   }, [showLaunchSplash]);
 
+  // Hide Smart App Banner during auth/onboarding flows
+  useEffect(() => {
+    const tag = document.querySelector('meta[name="apple-itunes-app"]');
+    if (!tag) return;
+    const isAuthFlow = !session?.user?.name || ["signin","signup","forgot","onboarding"].includes(authView) || authView.startsWith("onboard-");
+    if (isAuthFlow) { tag.setAttribute("content", ""); tag.removeAttribute("name"); (tag as any).__hidden = true; }
+    else if ((tag as any).__hidden) { tag.setAttribute("name", "apple-itunes-app"); tag.setAttribute("content", "app-id=6760792373"); (tag as any).__hidden = false; }
+  }, [authView, session?.user?.name]);
+
   // Pull-to-refresh for splash landing page
   const splashRef = useRef<HTMLDivElement>(null);
   const [pullY, setPullY] = useState(0);
