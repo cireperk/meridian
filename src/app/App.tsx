@@ -1965,6 +1965,7 @@ export default function App() {
               ) : authView === "onboard-situation" ? (
                 /* Step 2: Situation — tap to advance */
                 <motion.div key="situation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <button onClick={() => setAuthView("onboarding")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
                   <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Where are you<br/>right now?</h2>
                   <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">There's no wrong answer.</p>
                   <div className="w-full flex flex-col gap-3 mb-8">
@@ -1984,6 +1985,7 @@ export default function App() {
               ) : authView === "onboard-people" ? (
                 /* Step 3: People */
                 <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <button onClick={() => setAuthView("onboard-situation")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
                   <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Tell us about<br/>your family.</h2>
                   <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">Just first names — so things feel personal,<br/>not clinical.</p>
                   <div className="w-full flex flex-col gap-5 mb-8">
@@ -2002,6 +2004,7 @@ export default function App() {
               ) : authView === "onboard-decree" ? (
                 /* Step 4: Decree upload */
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <button onClick={() => setAuthView("onboard-people")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
                   <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Upload your decree</h2>
                   <p className="text-[15px] text-slate-400 mb-2 text-center leading-relaxed max-w-[300px]">This is the most powerful thing you can do. It lets us answer questions using your actual terms — custody, support, obligations.</p>
                   <div className="mb-6" />
@@ -2091,6 +2094,7 @@ export default function App() {
               ) : authView === "onboard-ready" ? (
                 /* Step 5: You're all set */
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+                  <button onClick={() => setAuthView("onboard-decree")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.15 }} className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
                     <Check size={30} className="text-emerald-500" />
                   </motion.div>
