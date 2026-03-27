@@ -2000,57 +2000,93 @@ export default function App() {
                   <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-5">I'll do this later</button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
-                /* Step 4: Decree — simplified */
+                /* Step 4: Decree upload */
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
-                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Do you have your<br/>custody decree?</h2>
-                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed max-w-[300px]">This is the most powerful thing you can do. It lets us answer questions using your actual terms.</p>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Upload your decree</h2>
+                  <p className="text-[15px] text-slate-400 mb-2 text-center leading-relaxed max-w-[300px]">This is the most powerful thing you can do. It lets us answer questions using your actual terms — custody, support, obligations.</p>
+                  <div className="mb-6" />
                   <AnimatePresence mode="wait">
                     {uploading ? (
-                      <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border border-emerald-200 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-6">
+                      <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-8 h-8 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
                         <span className="text-sm font-medium text-emerald-700">Uploading your document...</span>
+                        <span className="text-xs text-emerald-500/70">This only takes a moment</span>
                       </motion.div>
                     ) : decreeFileName && decreeText ? (
-                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full border border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-6 text-emerald-700 overflow-hidden">
+                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700 overflow-hidden">
                         <div className="py-6 px-6 flex flex-col items-center gap-2">
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}><Check size={28} className="text-emerald-500" /></motion.div>
                           <span className="text-sm font-medium">{decreeFileName}</span>
-                          {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages</span>}
+                          {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
                         </div>
                         {FEATURE_DECREE_INTELLIGENCE && extractionLoading && !decreeExtraction && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-3 flex items-center justify-center gap-2">
-                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full" />
-                            <span className="text-xs text-emerald-600">Reading your decree...</span>
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-4 flex flex-col items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                              <span className="text-xs font-medium text-emerald-600">Summarizing key details...</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 text-center leading-relaxed">Feel free to continue — your summary will be ready when you get in.</span>
+                          </motion.div>
+                        )}
+                        {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.4 }} className="w-full border-t border-emerald-200 bg-white/60 px-5 py-4">
+                            <p className="text-xs font-medium text-emerald-700 mb-3 text-center">Here's what we found</p>
+                            <div className="space-y-2">
+                              {decreeExtraction.custody_type && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Custody</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.child_support?.amount && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Support</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">${decreeExtraction.child_support.amount}/mo{decreeExtraction.child_support.payer ? ` from ${decreeExtraction.child_support.payer}` : ""}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.geographic_restriction?.restricted && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Geo</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.geographic_restriction.area || "Restricted"}</span>
+                                </div>
+                              )}
+                              {decreeExtraction.children?.length > 0 && (
+                                <div className="flex items-start gap-2 text-left">
+                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Children</span>
+                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.children.map((c: any) => c.name).filter(Boolean).join(", ") || `${decreeExtraction.children.length} listed`}</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-3 text-center">You can view and edit the full summary anytime</p>
                           </motion.div>
                         )}
                       </motion.div>
                     ) : (
-                      <motion.div key="choice" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex flex-col gap-3 mb-6">
-                        <button onClick={() => fileRef.current?.click()} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/8 transition-all text-left group">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors"><Upload size={18} className="text-emerald-500" /></div>
-                            <div>
-                              <div className="text-[15px] font-medium text-slate-800 group-hover:text-emerald-700 transition-colors">Yes, upload it now</div>
-                              <div className="text-[12px] text-slate-400">.pdf, .docx, .txt, or .md</div>
-                            </div>
+                      <motion.div key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full mb-4">
+                        <button onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-slate-400 mb-3">
+                          <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
+                        </button>
+                        <div className="flex flex-col items-center gap-2 mt-1">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-center gap-1"><FolderLock size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Encrypted<br/>storage</span></div>
+                            <div className="w-px h-8 bg-slate-200" />
+                            <div className="flex flex-col items-center gap-1"><Eye size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never read<br/>by humans</span></div>
+                            <div className="w-px h-8 bg-slate-200" />
+                            <div className="flex flex-col items-center gap-1"><Shield size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never shared<br/>or sold</span></div>
                           </div>
-                        </button>
-                        <button onClick={() => setAuthView("onboard-ready")} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-slate-300 transition-all text-left">
-                          <div className="text-[15px] font-medium text-slate-600">Not yet</div>
-                          <div className="text-[12px] text-slate-400">No problem — you can add it anytime</div>
-                        </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mb-3 w-full">{uploadError}</div>}
-                  {decreeFileName && decreeText && (
-                    <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Continue</Button>
+                  {decreeFileName && decreeText ? (
+                    <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">Continue</Button>
+                  ) : (
+                    <>
+                      <p className="text-xs text-slate-400 text-center mb-3 mt-2">Don't have it yet? That's completely okay — you can add it anytime from your vault.</p>
+                      <button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="text-sm text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">{uploading ? "Processing..." : "I'll do this later"}</button>
+                    </>
                   )}
-                  <div className="flex items-center gap-4 mt-6">
-                    <div className="flex flex-col items-center gap-1"><FolderLock size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Encrypted</span></div>
-                    <div className="flex flex-col items-center gap-1"><Eye size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Private</span></div>
-                    <div className="flex flex-col items-center gap-1"><Shield size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Never shared</span></div>
-                  </div>
                 </motion.div>
               ) : authView === "onboard-ready" ? (
                 /* Step 5: You're all set */
