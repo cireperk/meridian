@@ -620,6 +620,7 @@ export default function App() {
   const [appReady, setAppReady] = useState(() => window.location.hash.includes("access_token=") ? false : (!!localStorage.getItem("m_session") || isNative));
   const [oauthProcessing, setOauthProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [showLaunchSplash, setShowLaunchSplash] = useState(true);
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
@@ -637,6 +638,13 @@ export default function App() {
       setWaitlistStatus("sent");
     } catch { setWaitlistStatus("sent"); /* don't reveal failures */ }
   };
+
+  // Auto-dismiss launch splash after animations complete
+  useEffect(() => {
+    if (!showLaunchSplash) return;
+    const t = setTimeout(() => setShowLaunchSplash(false), 2200);
+    return () => clearTimeout(t);
+  }, [showLaunchSplash]);
 
   // Pull-to-refresh for splash landing page
   const splashRef = useRef<HTMLDivElement>(null);
@@ -1291,11 +1299,59 @@ export default function App() {
       <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
 
       {/* ==================== LOADING / SPLASH ==================== */}
-        {!appReady && (
-          <div className="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
-            <Logo size="md" className="mb-4 animate-pulse" />
-          </div>
-        )}
+        {/* Branded launch splash — shows on every cold start */}
+        <AnimatePresence>
+          {(showLaunchSplash || !appReady) && (
+            <motion.div
+              key="launch-splash"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-0 flex flex-col items-center justify-center bg-white z-[60]"
+            >
+              {/* Ambient glow */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute top-[-30%] right-[-20%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 blur-3xl"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute bottom-[-20%] left-[-15%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100 to-cyan-50 blur-3xl"
+                />
+              </div>
+              {/* Content */}
+              <div className="relative z-10 flex flex-col items-center px-8">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  className="mb-8"
+                >
+                  <Logo size="lg" />
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-2xl font-light tracking-tight text-slate-700 text-center mb-2 leading-snug"
+                >
+                  Hard chapter.
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-2xl font-light tracking-tight text-center leading-snug bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent"
+                >
+                  Not the last one.
+                </motion.p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {showSplash && (
           <div ref={splashRef} onTouchStart={onPullTouchStart} onTouchMove={onPullTouchMove} onTouchEnd={onPullTouchEnd}
             className="fixed inset-0 z-50 bg-white overflow-y-auto overflow-x-hidden scroll-smooth [-webkit-overflow-scrolling:touch]">
