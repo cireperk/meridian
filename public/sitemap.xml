@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.mymeridianapp.com/</loc>
+    <loc>https://mymeridianapp.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/guides/</loc>
+    <loc>https://mymeridianapp.com/guides/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 <url>
-    <loc>https://www.mymeridianapp.com/guides/coparenting-with-a-narcissist.html</loc>
+    <loc>https://mymeridianapp.com/guides/coparenting-with-a-narcissist.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/guides/respond-to-difficult-coparent.html</loc>
+    <loc>https://mymeridianapp.com/guides/respond-to-difficult-coparent.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/guides/coparent-wont-follow-agreement.html</loc>
+    <loc>https://mymeridianapp.com/guides/coparent-wont-follow-agreement.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/guides/talking-to-kids-about-divorce.html</loc>
+    <loc>https://mymeridianapp.com/guides/talking-to-kids-about-divorce.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/guides/understanding-custody-decree.html</loc>
+    <loc>https://mymeridianapp.com/guides/understanding-custody-decree.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/privacy.html</loc>
+    <loc>https://mymeridianapp.com/privacy.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/terms.html</loc>
+    <loc>https://mymeridianapp.com/terms.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/support.html</loc>
+    <loc>https://mymeridianapp.com/support.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
