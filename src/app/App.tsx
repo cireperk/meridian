@@ -1308,7 +1308,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="fixed inset-0 flex flex-col items-center justify-center z-[60]"
-              style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.08) 0%, rgba(255,255,255,1) 70%)" }}
+              style={{ background: "white", backgroundImage: "radial-gradient(ellipse at 50% 40%, rgba(16,185,129,0.08) 0%, transparent 70%)" }}
             >
               {/* Content */}
               <div className="relative z-10 flex flex-col items-center px-8">
