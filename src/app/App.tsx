@@ -476,11 +476,21 @@ export default function App() {
     try {
       await sbFetch("/rest/v1/profiles", { method: "POST", body: { id: session.user.id, name: authName.trim(), email: session.user.email }, token: session.token, headers: { Prefer: "resolution=merge-duplicates" } });
       const s = { ...session, user: { ...session.user, name: authName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
-      setAuthView("onboard-modes");
+      setAuthView("onboard-situation");
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
   };
 
-  const finishOnboarding = () => { setAuthView("main"); if (session?.token && session?.user?.id) dbUpdate("profiles", `id=eq.${session.user.id}`, { onboarded: true }, session.token).catch(() => {}); };
+  const finishOnboarding = () => {
+    setAuthView("main");
+    if (session?.token && session?.user?.id) {
+      const updates: any = { onboarded: true };
+      if (coparentName) updates.coparent_name = coparentName;
+      if (childrenNames) updates.children_names = childrenNames;
+      dbUpdate("profiles", `id=eq.${session.user.id}`, updates, session.token).catch(() => {});
+      if (coparentName) localStorage.setItem("m_coparent_name", coparentName);
+      if (childrenNames) localStorage.setItem("m_children_names", childrenNames);
+    }
+  };
 
   const handleUpdateName = async (newName: string) => {
     if (!newName.trim() || !session?.token) return;
@@ -1929,138 +1939,148 @@ export default function App() {
 
             <AnimatePresence mode="wait">
               {(authView === "onboarding" || authView.startsWith("onboard-")) && (
-                <div className="w-full mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] text-slate-400 font-medium">Step {authView === "onboarding" ? 1 : authView === "onboard-modes" ? 2 : authView === "onboard-decree" ? 3 : 4} of 4</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" initial={{ width: "0%" }} animate={{ width: authView === "onboarding" ? "25%" : authView === "onboard-modes" ? "50%" : authView === "onboard-decree" ? "75%" : "100%" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
+                <div className="w-full mb-8">
+                  <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" initial={{ width: "0%" }} animate={{ width: authView === "onboarding" ? "20%" : authView === "onboard-situation" ? "40%" : authView === "onboard-people" ? "60%" : authView === "onboard-decree" ? "80%" : "100%" }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
                   </div>
                 </div>
               )}
+              {/* Step 1: Name */}
               {authView === "onboarding" ? (
                 <motion.div key="name" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-8 text-center">What's your first name?</h2>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">What's your name?</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">We'll set things up for you — takes about a minute.</p>
                   <div className="w-full flex flex-col gap-3">
-                    <input className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Your first name" value={authName} onChange={(e) => setAuthName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleOnboarding()} />
+                    <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-center" placeholder="Your first name" value={authName} onChange={(e) => setAuthName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleOnboarding()} autoFocus />
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">{authLoading ? "Saving..." : "Continue"}</Button>
+                    <Button onClick={handleOnboarding} disabled={!authName.trim() || authLoading} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">{authLoading ? "Saving..." : "Continue"}</Button>
                   </div>
                 </motion.div>
-              ) : authView === "onboard-modes" ? (
-                <motion.div key="modes" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Where are you in your journey?</h2>
-                  <p className="text-sm text-slate-400 mb-6 text-center">This helps us show you the most relevant resources.</p>
-                  <div className="w-full flex flex-col gap-2.5 mb-6">
+              ) : authView === "onboard-situation" ? (
+                /* Step 2: Situation — tap to advance */
+                <motion.div key="situation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Where are you right now?</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">This helps us personalize your experience.</p>
+                  <div className="w-full flex flex-col gap-3 mb-8">
                     {[
-                      { id: "during", label: "Going through it now", desc: "Actively navigating the divorce process" },
-                      { id: "after", label: "Recently divorced", desc: "Adjusting to life after separation" },
-                      { id: "coparenting", label: "Focused on co-parenting", desc: "Building a healthy co-parenting relationship" },
+                      { id: "during", label: "Going through it now", desc: "Separation or divorce in progress" },
+                      { id: "after", label: "Recently finalized", desc: "Adjusting to life after divorce" },
+                      { id: "coparenting", label: "Focused on co-parenting", desc: "Making it work for the kids" },
                     ].map((option) => (
-                      <button key={option.id} onClick={() => { localStorage.setItem("m_phase", option.id); setAuthView("onboard-decree"); }} className="w-full flex items-start gap-3.5 p-4 rounded-xl bg-white border border-slate-200/60 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all text-left group">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 mt-1.5 shrink-0 group-hover:scale-125 transition-transform" />
-                        <div><div className="text-sm font-medium text-slate-800 mb-0.5">{option.label}</div><div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div></div>
+                      <button key={option.id} onClick={() => { localStorage.setItem("m_phase", option.id); setAuthView("onboard-people"); }} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/8 transition-all text-left group">
+                        <div className="text-[15px] font-medium text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">{option.label}</div>
+                        <div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div>
                       </button>
                     ))}
                   </div>
-                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-1">Skip for now</button>
+                  <button onClick={() => setAuthView("onboard-people")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">Skip</button>
+                </motion.div>
+              ) : authView === "onboard-people" ? (
+                /* Step 3: People */
+                <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Who's in the picture?</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center">This helps us personalize everything for you.</p>
+                  <div className="w-full flex flex-col gap-4 mb-6">
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1.5 block">Co-parent's first name</label>
+                      <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1.5 block">Children's names</label>
+                      <input className="w-full pl-4 pr-4 py-3.5 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthView("onboard-decree")} />
+                    </div>
+                  </div>
+                  <Button onClick={() => setAuthView("onboard-decree")} disabled={false} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Continue</Button>
+                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-4">Skip</button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
+                /* Step 4: Decree — simplified */
                 <motion.div key="decree" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <button onClick={() => setAuthView("onboard-modes")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Upload your decree</h2>
-                  <p className="text-sm text-slate-500 mb-2 text-center leading-relaxed max-w-[300px]">When Meridian has your decree, it can answer questions using your actual terms — custody schedules, financial obligations, and more.</p>
-                  <div className="mb-6" />
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Do you have your custody decree?</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[300px]">Uploading it lets Meridian answer questions using your actual terms — custody, support, obligations.</p>
                   <AnimatePresence mode="wait">
                     {uploading ? (
-                      <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border-2 border-emerald-300 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-4">
+                      <motion.div key="uploading" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full py-8 px-6 border border-emerald-200 bg-emerald-50/50 rounded-2xl flex flex-col items-center gap-3 mb-6">
                         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-8 h-8 border-[2.5px] border-emerald-500 border-t-transparent rounded-full" />
                         <span className="text-sm font-medium text-emerald-700">Uploading your document...</span>
-                        <span className="text-xs text-emerald-500/70">This only takes a moment</span>
                       </motion.div>
                     ) : decreeFileName && decreeText ? (
-                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-4 text-emerald-700 overflow-hidden">
+                      <motion.div key="uploaded" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full border border-emerald-200 bg-emerald-50 rounded-2xl flex flex-col items-center gap-2 mb-6 text-emerald-700 overflow-hidden">
                         <div className="py-6 px-6 flex flex-col items-center gap-2">
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}><Check size={28} className="text-emerald-500" /></motion.div>
                           <span className="text-sm font-medium">{decreeFileName}</span>
-                          {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages ready</span>}
+                          {decreePages > 0 && <span className="text-xs text-emerald-500/70">{decreePages} pages</span>}
                         </div>
                         {FEATURE_DECREE_INTELLIGENCE && extractionLoading && !decreeExtraction && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-4 flex flex-col items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full" />
-                              <span className="text-xs font-medium text-emerald-600">Summarizing key details...</span>
-                            </div>
-                            <span className="text-[11px] text-slate-400 text-center leading-relaxed">Feel free to continue — your summary will be ready when you get in.</span>
-                          </motion.div>
-                        )}
-                        {FEATURE_DECREE_INTELLIGENCE && decreeExtraction?.status === "complete" && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.4 }} className="w-full border-t border-emerald-200 bg-white/60 px-5 py-4">
-                            <p className="text-xs font-medium text-emerald-700 mb-3 text-center">Here's what we found</p>
-                            <div className="space-y-2">
-                              {decreeExtraction.custody_type && (
-                                <div className="flex items-start gap-2 text-left">
-                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Custody</span>
-                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.custody_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
-                                </div>
-                              )}
-                              {decreeExtraction.child_support?.amount && (
-                                <div className="flex items-start gap-2 text-left">
-                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Support</span>
-                                  <span className="text-[12px] text-slate-600 leading-snug">${decreeExtraction.child_support.amount}/mo{decreeExtraction.child_support.payer ? ` from ${decreeExtraction.child_support.payer}` : ""}</span>
-                                </div>
-                              )}
-                              {decreeExtraction.geographic_restriction?.restricted && (
-                                <div className="flex items-start gap-2 text-left">
-                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Geo</span>
-                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.geographic_restriction.area || "Restricted"}</span>
-                                </div>
-                              )}
-                              {decreeExtraction.children?.length > 0 && (
-                                <div className="flex items-start gap-2 text-left">
-                                  <span className="text-[11px] text-emerald-500 mt-px shrink-0">Children</span>
-                                  <span className="text-[12px] text-slate-600 leading-snug">{decreeExtraction.children.map((c: any) => c.name).filter(Boolean).join(", ") || `${decreeExtraction.children.length} listed`}</span>
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-3 text-center">You can view and edit the full summary anytime</p>
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="w-full border-t border-emerald-200 bg-emerald-50/80 px-6 py-3 flex items-center justify-center gap-2">
+                            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }} className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                            <span className="text-xs text-emerald-600">Reading your decree...</span>
                           </motion.div>
                         )}
                       </motion.div>
                     ) : (
-                      <motion.div key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full mb-4">
-                        <button onClick={() => fileRef.current?.click()} className="w-full py-8 px-6 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center gap-2 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/30 transition-all text-slate-400 mb-3">
-                          <Upload size={24} /><span className="text-sm font-medium text-slate-600">Tap to upload your decree</span><span className="text-xs text-slate-400">.pdf, .docx, .txt, or .md</span>
-                        </button>
-                        <div className="flex flex-col items-center gap-2 mt-1">
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col items-center gap-1"><FolderLock size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Encrypted<br/>storage</span></div>
-                            <div className="w-px h-8 bg-slate-200" />
-                            <div className="flex flex-col items-center gap-1"><Eye size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never read<br/>by humans</span></div>
-                            <div className="w-px h-8 bg-slate-200" />
-                            <div className="flex flex-col items-center gap-1"><Shield size={14} className="text-emerald-400" /><span className="text-[10px] text-slate-400 leading-tight text-center">Never shared<br/>or sold</span></div>
+                      <motion.div key="choice" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full flex flex-col gap-3 mb-6">
+                        <button onClick={() => fileRef.current?.click()} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/8 transition-all text-left group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors"><Upload size={18} className="text-emerald-500" /></div>
+                            <div>
+                              <div className="text-[15px] font-medium text-slate-800 group-hover:text-emerald-700 transition-colors">Yes, upload it now</div>
+                              <div className="text-[12px] text-slate-400">.pdf, .docx, .txt, or .md</div>
+                            </div>
                           </div>
-                        </div>
+                        </button>
+                        <button onClick={() => setAuthView("onboard-ready")} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-slate-300 transition-all text-left">
+                          <div className="text-[15px] font-medium text-slate-600">Not yet</div>
+                          <div className="text-[12px] text-slate-400">No problem — you can add it anytime</div>
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   {uploadError && <div className="text-red-600 text-[13px] text-center py-2 px-3 bg-red-50 rounded-lg mb-3 w-full">{uploadError}</div>}
-                  {decreeFileName && decreeText ? (
-                    <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Continue</Button>
-                  ) : (
-                    <>
-                      <p className="text-xs text-slate-400 text-center mb-3">Don't have it yet? That's completely okay — you can add it anytime from your vault.</p>
-                      <button onClick={() => setAuthView("onboard-ready")} disabled={uploading} className="text-sm text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-40">{uploading ? "Processing..." : "Skip for now"}</button>
-                    </>
+                  {decreeFileName && decreeText && (
+                    <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Continue</Button>
                   )}
+                  <div className="flex items-center gap-4 mt-6">
+                    <div className="flex flex-col items-center gap-1"><FolderLock size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Encrypted</span></div>
+                    <div className="flex flex-col items-center gap-1"><Eye size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Private</span></div>
+                    <div className="flex flex-col items-center gap-1"><Shield size={13} className="text-slate-300" /><span className="text-[10px] text-slate-400">Never shared</span></div>
+                  </div>
                 </motion.div>
               ) : authView === "onboard-ready" ? (
+                /* Step 5: You're all set */
                 <motion.div key="ready" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                  <button onClick={() => setAuthView("onboard-decree")} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mb-6 flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back</button>
-                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-4 text-center">Just so you know</h2>
-                  <p className="text-sm text-slate-400 mb-3 text-center leading-relaxed max-w-[280px]">Meridian is not a lawyer or legal advisor. It's a grounding tool — built to help you stay clear, calm, and centered through divorce and co-parenting.</p>
-                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">For legal decisions, always loop in your attorney. For everything else, we're right here with you.</p>
-                  <Button onClick={finishOnboarding} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Let's go{firstName ? `, ${firstName}` : ""}</Button>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
+                    <Check size={28} className="text-emerald-500" />
+                  </motion.div>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">You're all set{firstName ? `, ${firstName}` : ""}.</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Meridian is ready to walk with you. Here's what we know so far:</p>
+                  <div className="w-full bg-slate-50/80 rounded-2xl p-5 mb-8 space-y-3">
+                    {localStorage.getItem("m_phase") && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><Check size={12} className="text-emerald-600" /></div>
+                        <span className="text-sm text-slate-600">{{ during: "Going through it now", after: "Recently finalized", coparenting: "Focused on co-parenting" }[localStorage.getItem("m_phase") as string] || "Your situation"}</span>
+                      </div>
+                    )}
+                    {(coparentName || childrenNames) && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><Check size={12} className="text-emerald-600" /></div>
+                        <span className="text-sm text-slate-600">{[coparentName && toName(coparentName), childrenNames && toName(childrenNames)].filter(Boolean).join(" · ")}</span>
+                      </div>
+                    )}
+                    {decreeFileName ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><Check size={12} className="text-emerald-600" /></div>
+                        <span className="text-sm text-slate-600">Decree uploaded</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><span className="text-[10px] text-slate-400">—</span></div>
+                        <span className="text-sm text-slate-400">Decree — you can add this anytime</span>
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={finishOnboarding} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Take me in</Button>
+                  <p className="text-[11px] text-slate-400 text-center mt-6 leading-relaxed max-w-[260px]">Meridian is not a lawyer. For legal decisions, always consult your attorney.</p>
                 </motion.div>
               ) : authView === "forgot" ? (
                 <motion.div key="forgot" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
