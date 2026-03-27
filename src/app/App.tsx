@@ -642,7 +642,7 @@ export default function App() {
   // Auto-dismiss launch splash after animations complete
   useEffect(() => {
     if (!showLaunchSplash) return;
-    const t = setTimeout(() => setShowLaunchSplash(false), 2200);
+    const t = setTimeout(() => setShowLaunchSplash(false), 2600);
     return () => clearTimeout(t);
   }, [showLaunchSplash]);
 
@@ -1325,12 +1325,69 @@ export default function App() {
               {/* Content */}
               <div className="relative z-10 flex flex-col items-center px-8">
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                  className="mb-8"
+                  transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                  className="mb-8 relative"
                 >
-                  <Logo size="lg" />
+                  {/* Animated meridian lines */}
+                  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
+                    <defs>
+                      <linearGradient id="splash-grad" x1="32" y1="0" x2="32" y2="64" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#0d9488" />
+                      </linearGradient>
+                    </defs>
+                    {/* Faint globe circle */}
+                    <motion.circle
+                      cx="32" cy="32" r="28"
+                      stroke="#10b981"
+                      strokeWidth="0.75"
+                      fill="none"
+                      initial={{ opacity: 0, pathLength: 0 }}
+                      animate={{ opacity: 0.15, pathLength: 1 }}
+                      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                    />
+                    {/* Left meridian line — draws in */}
+                    <motion.path
+                      d="M22 4 Q28 32, 22 60"
+                      stroke="url(#splash-grad)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+                    />
+                    {/* Right meridian line — draws in slightly staggered */}
+                    <motion.path
+                      d="M42 4 Q48 32, 42 60"
+                      stroke="url(#splash-grad)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+                    />
+                    {/* Horizontal equator — draws across */}
+                    <motion.ellipse
+                      cx="32" cy="32" rx="26" ry="8"
+                      stroke="#10b981"
+                      strokeWidth="0.75"
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.2 }}
+                      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
+                    />
+                  </svg>
+                  {/* Soft glow behind the logo */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 0.3, scale: 1 }}
+                    transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                    className="absolute inset-0 -m-4 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none"
+                  />
                 </motion.div>
                 <motion.h1
                   initial={{ opacity: 0, y: 12 }}
