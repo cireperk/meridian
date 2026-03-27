@@ -636,7 +636,7 @@ export default function App() {
   const [appReady, setAppReady] = useState(() => window.location.hash.includes("access_token=") ? false : (!!localStorage.getItem("m_session") || isNative));
   const [oauthProcessing, setOauthProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
-  const [showLaunchSplash, setShowLaunchSplash] = useState(true);
+  const [showLaunchSplash, setShowLaunchSplash] = useState(isNative);
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
