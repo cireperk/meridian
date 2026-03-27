@@ -662,15 +662,6 @@ export default function App() {
     return () => clearTimeout(t);
   }, [showLaunchSplash]);
 
-  // Hide Smart App Banner during auth/onboarding flows — must remove tag from DOM entirely
-  useEffect(() => {
-    const isAuthFlow = !session?.user?.name || ["signin","signup","forgot","onboarding","main"].includes(authView) || authView.startsWith("onboard-");
-    const existing = document.querySelector('meta[name="apple-itunes-app"]');
-    if (isAuthFlow && existing) { existing.remove(); }
-    if (!isAuthFlow && !document.querySelector('meta[name="apple-itunes-app"]')) {
-      const meta = document.createElement("meta"); meta.name = "apple-itunes-app"; meta.content = "app-id=6760792373"; document.head.appendChild(meta);
-    }
-  }, [authView, session?.user?.name]);
 
   // Pull-to-refresh for splash landing page
   const splashRef = useRef<HTMLDivElement>(null);
