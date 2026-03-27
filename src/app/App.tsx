@@ -662,13 +662,14 @@ export default function App() {
     return () => clearTimeout(t);
   }, [showLaunchSplash]);
 
-  // Hide Smart App Banner during auth/onboarding flows
+  // Hide Smart App Banner during auth/onboarding flows — must remove tag from DOM entirely
   useEffect(() => {
-    const tag = document.querySelector('meta[name="apple-itunes-app"]');
-    if (!tag) return;
-    const isAuthFlow = !session?.user?.name || ["signin","signup","forgot","onboarding"].includes(authView) || authView.startsWith("onboard-");
-    if (isAuthFlow) { tag.setAttribute("content", ""); tag.removeAttribute("name"); (tag as any).__hidden = true; }
-    else if ((tag as any).__hidden) { tag.setAttribute("name", "apple-itunes-app"); tag.setAttribute("content", "app-id=6760792373"); (tag as any).__hidden = false; }
+    const isAuthFlow = !session?.user?.name || ["signin","signup","forgot","onboarding","main"].includes(authView) || authView.startsWith("onboard-");
+    const existing = document.querySelector('meta[name="apple-itunes-app"]');
+    if (isAuthFlow && existing) { existing.remove(); }
+    if (!isAuthFlow && !document.querySelector('meta[name="apple-itunes-app"]')) {
+      const meta = document.createElement("meta"); meta.name = "apple-itunes-app"; meta.content = "app-id=6760792373"; document.head.appendChild(meta);
+    }
   }, [authView, session?.user?.name]);
 
   // Pull-to-refresh for splash landing page
@@ -1995,7 +1996,7 @@ export default function App() {
                 /* Step 3: People */
                 <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
                   <button onClick={() => setAuthView("onboard-situation")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
-                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Tell us about<br/>your family.</h2>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Who's involved?</h2>
                   <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">Just first names — so things feel personal,<br/>not clinical.</p>
                   <div className="w-full flex flex-col gap-5 mb-8">
                     <div>
