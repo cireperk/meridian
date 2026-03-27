@@ -1306,10 +1306,18 @@ export default function App() {
             {/* Content wrapper — slides down with pull */}
             <div className="relative min-h-full bg-gradient-to-b from-white via-emerald-50/20 to-white transition-transform duration-200 ease-out"
               style={{ transform: pullY > 0 || pullRefreshing ? `translateY(${pullRefreshing ? 48 : pullY}px)` : undefined }}>
-            {/* Soft ambient background */}
+            {/* Soft ambient background — slow breathing animation */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ height: "100dvh", position: "fixed" }}>
-              <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl" />
-              <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl" />
+              <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.6, 0.4] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 blur-3xl"
+              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100 to-cyan-50 blur-3xl"
+              />
             </div>
 
             {/* Sticky top nav */}
@@ -1330,23 +1338,23 @@ export default function App() {
 
             {/* ===== SECTION 1: Hero ===== */}
             <div className="min-h-[calc(100dvh-60px)] flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
                 <div className="flex items-center gap-4">
                   <Logo size="lg" />
                   <span className="font-sans font-medium text-2xl tracking-normal text-slate-800">Meridian</span>
                 </div>
               </motion.div>
 
-              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
+              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
                 Hard chapter.<br />
                 <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">Not the last one.</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
+              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
                 Meridian walks with you through divorce, co-parenting, and everything you're rebuilding.
               </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
                 {/* Mobile: iOS → app download primary; non-iOS → web primary */}
                 <div className="flex flex-col items-center gap-3 sm:hidden w-full">
                   {isIOS ? (
