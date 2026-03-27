@@ -311,7 +311,8 @@ export default function App() {
             }
           }).catch(() => {});
         } else {
-          // New user — go to onboarding
+          // New user — clear stale data and go to onboarding
+          clearUserData();
           setSession({ token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: oauthName } });
           setAuthView("onboarding"); setShowSplash(false); setOauthProcessing(false); setAppReady(true);
           if (oauthName) setEditName(oauthName);
@@ -423,7 +424,7 @@ export default function App() {
     setAuthError(""); setAuthLoading(true);
     try {
       const data = await authSubmit(authEmail, authPassword, authView);
-      if (data.isNew) { setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
+      if (data.isNew) { clearUserData(); setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
       else {
         let name = "";
         try {
@@ -497,7 +498,12 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); localStorage.removeItem("m_coparent_name"); localStorage.removeItem("m_children_names"); localStorage.removeItem("m_vault_docs"); localStorage.removeItem("m_cal_events"); setCoparentName(""); setChildrenNames(""); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setCalEvents([]); setSetupComplete(null); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const clearUserData = () => {
+    ["m_conversations","m_coach_sessions","m_sub_status","m_trial_banner_seen","m_decree_text","m_decree_name","m_decree_pages","m_coparent_name","m_children_names","m_vault_docs","m_cal_events","m_custody_schedule","m_phase"].forEach(k => localStorage.removeItem(k));
+    setCoparentName(""); setChildrenNames(""); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setCalEvents([]); setSetupComplete(null); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setCustodySchedule(null); setDecreeExtraction(null);
+  };
+
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); clearUserData(); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -2079,7 +2085,7 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                  <Button onClick={finishOnboarding} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Take me in</Button>
+                  <Button onClick={finishOnboarding} className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-xl text-base">Let's go{firstName ? `, ${firstName}` : ""}</Button>
                   <p className="text-[11px] text-slate-400 text-center mt-6 leading-relaxed max-w-[260px]">Meridian is not a lawyer. For legal decisions, always consult your attorney.</p>
                 </motion.div>
               ) : authView === "forgot" ? (
