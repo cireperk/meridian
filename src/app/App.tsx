@@ -487,7 +487,7 @@ export default function App() {
     try { await dbUpdate("profiles", `id=eq.${session.user.id}`, { name: newName.trim() }, session.token); const s = { ...session, user: { ...session.user, name: newName.trim() } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); } catch {}
   };
 
-  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); localStorage.removeItem("m_coparent_name"); localStorage.removeItem("m_children_names"); setCoparentName(""); setChildrenNames(""); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
+  const handleSignOut = () => { setSession(null); localStorage.removeItem("m_session"); Preferences.remove({ key: "m_session" }).catch(() => {}); localStorage.removeItem("m_conversations"); localStorage.removeItem("m_coach_sessions"); localStorage.removeItem("m_sub_status"); localStorage.removeItem("m_trial_banner_seen"); localStorage.removeItem("m_decree_text"); localStorage.removeItem("m_decree_name"); localStorage.removeItem("m_decree_pages"); localStorage.removeItem("m_coparent_name"); localStorage.removeItem("m_children_names"); localStorage.removeItem("m_vault_docs"); localStorage.removeItem("m_cal_events"); setCoparentName(""); setChildrenNames(""); setDecreeText(""); setDecreeFileName(""); setDecreePages(0); setVaultDocs([]); setCalEvents([]); setSetupComplete(null); setConversations([]); setActiveConvId(null); setCoachSessions([]); setActiveCoachSessionId(null); setCoachMessages([]); setCoachStreaming(""); setCoachInput(""); setTrialBannerSeen(false); setAuthEmail(""); setAuthPassword(""); setAuthError(""); if (Capacitor.isNativePlatform()) { setAuthView("signin"); setShowSplash(false); } else { setAuthView("main"); setShowSplash(true); } setSubscription({ status: null, trialEnd: null, loading: true }); };
 
   // --- Subscription ---
   const [showSubscribeSuccess, setShowSubscribeSuccess] = useState(false);
@@ -673,7 +673,7 @@ export default function App() {
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [vaultDocs, setVaultDocs] = useState<any[]>([]);
+  const [vaultDocs, setVaultDocs] = useState<any[]>(() => { try { return JSON.parse(localStorage.getItem("m_vault_docs") || "[]"); } catch { return []; } });
   const [vaultLoading, setVaultLoading] = useState(false);
   const [vaultLoaded, setVaultLoaded] = useState(false);
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
@@ -695,7 +695,7 @@ export default function App() {
   const [editingValue, setEditingValue] = useState("");
   // Calendar state
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
-  const [calEvents, setCalEvents] = useState<any[]>([]);
+  const [calEvents, setCalEvents] = useState<any[]>(() => { try { return JSON.parse(localStorage.getItem("m_cal_events") || "[]"); } catch { return []; } });
   const [calSelectedDate, setCalSelectedDate] = useState<string | null>(null);
   const [calLoading, setCalLoading] = useState(false);
   const [calShowAdd, setCalShowAdd] = useState(false);
@@ -950,6 +950,7 @@ export default function App() {
     try {
       const docs = await dbSelect("documents", `user_id=eq.${session.user.id}&order=created_at.desc`, session.token);
       setVaultDocs(docs || []);
+      try { localStorage.setItem("m_vault_docs", JSON.stringify(docs || [])); } catch {}
     } catch {} finally { setVaultLoading(false); setVaultLoaded(true); }
   }, [session?.token, session?.user?.id]);
 
@@ -1209,11 +1210,13 @@ export default function App() {
       const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
       const events = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${start}&date=lte.${endStr}&order=date,time`, session.token);
       setCalEvents(events || []);
+      try { localStorage.setItem("m_cal_events", JSON.stringify(events || [])); } catch {}
     } catch { setCalEvents([]); }
     setCalLoading(false);
   }, [session?.token, session?.user?.id, calMonth]);
 
   useEffect(() => { if (activeTab === "today") loadCalEvents(); }, [activeTab, calMonth]);
+  useEffect(() => { if (session?.token) loadCalEvents(); }, [session?.token]);
 
   const calDays = (() => {
     const first = new Date(calMonth.year, calMonth.month, 1);
