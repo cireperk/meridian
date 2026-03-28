@@ -285,12 +285,20 @@ export default function App() {
         const email = userData.email || "";
         const oauthName = userData.user_metadata?.full_name || userData.user_metadata?.name || "";
         // Check if profile exists and user completed onboarding
-        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,onboarded`, accessToken);
+        const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,onboarded,setup_complete,decree_text,decree_name,decree_pages,coparent_name,children_names`, accessToken);
         if (profile?.length && profile[0].name && profile[0].onboarded) {
           // Existing user — sign in
+          if (profile[0].setup_complete) setSetupComplete(true);
+          if (profile[0].decree_text) { setDecreeText(profile[0].decree_text); setDecreeFileName(profile[0].decree_name || "Decree"); setDecreePages(profile[0].decree_pages || 0); }
+          if (profile[0].coparent_name) { setCoparentName(profile[0].coparent_name); localStorage.setItem("m_coparent_name", profile[0].coparent_name); }
+          if (profile[0].children_names) { setChildrenNames(profile[0].children_names); localStorage.setItem("m_children_names", profile[0].children_names); }
           const s = { token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: profile[0].name } };
           setSession(s); localStorage.setItem("m_session", JSON.stringify(s));
           setShowSplash(false); setAuthView("main"); setOauthProcessing(false); setAppReady(true);
+          // Load custody schedule
+          dbSelect("custody_schedules", `user_id=eq.${userId}&order=created_at.desc&limit=1`, accessToken).then((rows: any) => {
+            if (rows?.[0]) { setCustodySchedule(rows[0]); localStorage.setItem("m_custody_schedule", JSON.stringify(rows[0])); }
+          }).catch(() => {});
           dbSelect("conversations", `user_id=eq.${userId}&order=updated_at.desc`, accessToken).then((rows: any) => {
             if (rows?.length) {
               if (rows.some((r: any) => r.id === "_trial_banner_seen")) { setTrialBannerSeen(true); localStorage.setItem("m_trial_banner_seen", "1"); }
@@ -365,13 +373,18 @@ export default function App() {
             } else { setAuthView("onboarding"); setShowSplash(false); }
           }).catch(() => { setAuthView("onboarding"); setShowSplash(false); });
         }
-        // Load decree from DB if not in localStorage
-        if (!localStorage.getItem("m_decree_text") && session.user?.id) {
-          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages,coparent_name,children_names,setup_complete`, data.access_token).then((p: any) => {
-            if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
+        // Always load setup_complete + names (not gated by decree cache)
+        if (session.user?.id) {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=setup_complete,coparent_name,children_names`, data.access_token).then((p: any) => {
+            if (p?.[0]?.setup_complete) setSetupComplete(true);
             if (p?.[0]?.coparent_name) { setCoparentName(p[0].coparent_name); localStorage.setItem("m_coparent_name", p[0].coparent_name); }
             if (p?.[0]?.children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
-            if (p?.[0]?.setup_complete) setSetupComplete(true);
+          }).catch(() => {});
+        }
+        // Load decree from DB if not in localStorage
+        if (!localStorage.getItem("m_decree_text") && session.user?.id) {
+          dbSelect("profiles", `id=eq.${session.user.id}&select=decree_text,decree_name,decree_pages`, data.access_token).then((p: any) => {
+            if (p?.[0]?.decree_text) { setDecreeText(p[0].decree_text); setDecreeFileName(p[0].decree_name || "Decree"); setDecreePages(p[0].decree_pages || 0); }
           }).catch(() => {});
         }
         // Load custody schedule (always, not gated by decree cache)
