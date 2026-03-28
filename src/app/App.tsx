@@ -1250,10 +1250,14 @@ export default function App() {
     if (!session?.token) return;
     setCalLoading(true);
     try {
-      const start = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-01`;
-      const end = new Date(calMonth.year, calMonth.month + 1, 0);
-      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
-      const events = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${start}&date=lte.${endStr}&order=date,time`, session.token);
+      // Load current calendar month + 30 days ahead from today for "Coming Up"
+      const monthStart = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-01`;
+      const monthEnd = new Date(calMonth.year, calMonth.month + 1, 0);
+      const ahead = new Date(); ahead.setDate(ahead.getDate() + 30);
+      const rangeEnd = monthEnd > ahead ? monthEnd : ahead;
+      const startStr = monthStart < new Date().toISOString().slice(0, 10) ? monthStart : new Date().toISOString().slice(0, 10);
+      const endStr = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, "0")}-${String(rangeEnd.getDate()).padStart(2, "0")}`;
+      const events = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${startStr}&date=lte.${endStr}&order=date,time`, session.token);
       setCalEvents(events || []);
       try { localStorage.setItem("m_cal_events", JSON.stringify(events || [])); } catch {}
     } catch { setCalEvents([]); }
