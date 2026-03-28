@@ -1591,9 +1591,7 @@ export default function App() {
                   {/* App header */}
                   <div className="flex items-center justify-between px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-[22px] h-[22px] flex items-center justify-center">
-                        <div className="flex gap-[3px]"><div className="w-[3px] h-[18px] rounded-full bg-emerald-500" /><div className="w-[3px] h-[14px] rounded-full bg-emerald-400 mt-1" /></div>
-                      </div>
+                      <Logo size="sm" />
                       <span className="font-medium text-[15px] text-slate-800">Meridian</span>
                     </div>
                     <Clock className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />
@@ -1699,9 +1697,7 @@ export default function App() {
                   {/* App header */}
                   <div className="flex items-center justify-between px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-[22px] h-[22px] flex items-center justify-center">
-                        <div className="flex gap-[3px]"><div className="w-[3px] h-[18px] rounded-full bg-emerald-500" /><div className="w-[3px] h-[14px] rounded-full bg-emerald-400 mt-1" /></div>
-                      </div>
+                      <Logo size="sm" />
                       <span className="font-medium text-[15px] text-slate-800">Meridian</span>
                     </div>
                     <div className="flex items-center gap-3">
