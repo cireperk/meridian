@@ -937,7 +937,8 @@ export default function App() {
         vaultContext += chunk; contextLen += chunk.length;
       }
     }
-    const namesContext = (coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
+    const userName = session?.user?.name || "";
+    const namesContext = (userName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${userName ? `User's name: ${userName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
     const docsContext = (vaultContext || "\n\nNo documents uploaded yet.") + namesContext;
     const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
     const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
@@ -1198,7 +1199,8 @@ export default function App() {
     let finalText = "";
     try {
       const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
-      const coachNamesContext = (coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
+      const coachUserName = session?.user?.name || "";
+      const coachNamesContext = (coachUserName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coachUserName ? `User's name: ${coachUserName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
       const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}${coachNamesContext}`, messages: msgs }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
