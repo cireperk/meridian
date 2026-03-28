@@ -2634,17 +2634,16 @@ export default function App() {
                           { title: "Talking to Kids About Divorce", desc: "What to say, age by age.", href: "/guides/talking-to-kids-about-divorce.html" },
                           { title: "Co-Parenting with a Narcissist", desc: "Gray rock method and real scripts.", href: "/guides/coparenting-with-a-narcissist.html" },
                         ].map((guide) => (
-                          <button key={guide.href} onClick={() => {
-                            const url = `${window.location.origin}${guide.href}`;
-                            if (Capacitor.isNativePlatform()) { Browser.open({ url }); } else { window.open(url, "_blank"); }
-                          }} className="w-full text-left bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-3 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99] transition-all">
+                          <a key={guide.href} href={guide.href} target="_blank" rel="noopener noreferrer" onClick={(e) => {
+                            if (Capacitor.isNativePlatform()) { e.preventDefault(); Browser.open({ url: `${window.location.origin}${guide.href}` }).catch(() => { window.location.href = guide.href; }); }
+                          }} className="block w-full text-left bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-3 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99] transition-all">
                             <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-700 truncate">{guide.title}</p>
                               <p className="text-xs text-slate-400">{guide.desc}</p>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-                          </button>
+                          </a>
                         ))}
                       </div>
                     </div>
