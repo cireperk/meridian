@@ -1574,6 +1574,34 @@ export default function App() {
               </motion.div>
             </div>
 
+            {/* ===== SECTION 2.5: Conversation Preview ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <motion.div className="max-w-sm w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <div className="rounded-[2rem] border-2 border-slate-200 bg-slate-50 p-5 shadow-xl shadow-slate-900/5 relative overflow-hidden">
+                  <div className="w-20 h-1.5 bg-slate-200 rounded-full mx-auto mb-5" />
+                  <div className="space-y-3">
+                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.5 }}
+                      className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[13px] leading-relaxed px-4 py-3">
+                      My ex just told the kids we're selling the house before we even agreed on anything.
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.5 }}
+                      className="mr-auto max-w-[85%] rounded-2xl rounded-bl-md bg-white border border-slate-200 text-slate-600 text-[13px] leading-relaxed px-4 py-3">
+                      That's really hard — especially when you're trying to protect your kids from the conflict. Let's think through this together. What feels most urgent right now?
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.8, duration: 0.5 }}
+                      className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[13px] leading-relaxed px-4 py-3">
+                      I don't even know. I feel like I'm losing control of everything.
+                    </motion.div>
+                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 1.1, duration: 0.5 }}
+                      className="mr-auto max-w-[85%] rounded-2xl rounded-bl-md bg-white border border-slate-200 text-slate-600 text-[13px] leading-relaxed px-4 py-3">
+                      You're not losing control. You're dealing with a lot at once, and that's different. Let's start with what you <em>can</em> do right now...
+                    </motion.div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
+                </div>
+              </motion.div>
+            </div>
+
             {/* ===== SECTION 3: What Meridian Does ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
@@ -1595,6 +1623,27 @@ export default function App() {
                     </motion.div>
                   ))}
                 </div>
+              </motion.div>
+            </div>
+
+            {/* ===== SECTION 3.5: Message Coach Demo ===== */}
+            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">See it in action</p>
+                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1, duration: 0.5 }}
+                  className="rounded-2xl bg-red-50 border border-red-200 p-5 mb-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-red-400 mb-2">Your draft</p>
+                  <p className="text-sm text-red-900 leading-relaxed">You can't just change the schedule without asking me. This is exactly why I can't trust you with anything.</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.3 }}
+                  className="flex justify-center py-1">
+                  <ChevronDown className="w-5 h-5 text-slate-300" />
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.5 }}
+                  className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-500 mb-2">With Meridian</p>
+                  <p className="text-sm text-emerald-900 leading-relaxed">I noticed the schedule changed for this weekend. Can we discuss any changes ahead of time? It helps me plan and keeps things consistent for the kids.</p>
+                </motion.div>
               </motion.div>
             </div>
 
