@@ -1386,13 +1386,6 @@ export default function App() {
                       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
                     />
                   </svg>
-                  {/* Soft glow behind the logo */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 0.3, scale: 1 }}
-                    transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-                    className="absolute inset-0 -m-4 rounded-full bg-emerald-400/20 blur-2xl pointer-events-none"
-                  />
                 </motion.div>
                 <motion.h1
                   initial={{ opacity: 0, y: 12 }}
