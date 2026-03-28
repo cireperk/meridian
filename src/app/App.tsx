@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -2621,6 +2622,32 @@ export default function App() {
                         </div>
                       );
                     })()}
+
+                    {/* Guides */}
+                    <div className="mt-8">
+                      <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">Guides</p>
+                      <div className="space-y-2">
+                        {[
+                          { title: "Responding to a Hostile Co-Parent Text", desc: "Scripts for staying calm without escalating.", href: "/guides/respond-to-difficult-coparent.html" },
+                          { title: "Understanding Your Custody Decree", desc: "What the key sections actually mean.", href: "/guides/understanding-custody-decree.html" },
+                          { title: "When They Won't Follow the Agreement", desc: "How to document and respond — step by step.", href: "/guides/coparent-wont-follow-agreement.html" },
+                          { title: "Talking to Kids About Divorce", desc: "What to say, age by age.", href: "/guides/talking-to-kids-about-divorce.html" },
+                          { title: "Co-Parenting with a Narcissist", desc: "Gray rock method and real scripts.", href: "/guides/coparenting-with-a-narcissist.html" },
+                        ].map((guide) => (
+                          <button key={guide.href} onClick={() => {
+                            const url = `${window.location.origin}${guide.href}`;
+                            if (Capacitor.isNativePlatform()) { Browser.open({ url }); } else { window.open(url, "_blank"); }
+                          }} className="w-full text-left bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-3 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99] transition-all">
+                            <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-700 truncate">{guide.title}</p>
+                              <p className="text-xs text-slate-400">{guide.desc}</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
                     {/* Talk prompt — shows when user hasn't chatted yet */}
                     {conversations.length === 0 && (
