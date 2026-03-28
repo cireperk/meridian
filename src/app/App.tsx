@@ -6,7 +6,6 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Browser } from "@capacitor/browser";
 import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
@@ -750,6 +749,7 @@ export default function App() {
   const [showCustodySetup, setShowCustodySetup] = useState(false);
   const [custodyForm, setCustodyForm] = useState({ template: "week-on-week-off", start_date: "", start_parent: "me" as "me" | "coparent", handoff_time: "6:00 PM" });
   const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const [activeGuide, setActiveGuide] = useState<{ title: string; href: string } | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
@@ -2634,16 +2634,14 @@ export default function App() {
                           { title: "Talking to Kids About Divorce", desc: "What to say, age by age.", href: "/guides/talking-to-kids-about-divorce.html" },
                           { title: "Co-Parenting with a Narcissist", desc: "Gray rock method and real scripts.", href: "/guides/coparenting-with-a-narcissist.html" },
                         ].map((guide) => (
-                          <a key={guide.href} href={guide.href} target="_blank" rel="noopener noreferrer" onClick={(e) => {
-                            if (Capacitor.isNativePlatform()) { e.preventDefault(); Browser.open({ url: `${window.location.origin}${guide.href}` }).catch(() => { window.location.href = guide.href; }); }
-                          }} className="block w-full text-left bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-3 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99] transition-all">
+                          <button key={guide.href} onClick={() => setActiveGuide(guide)} className="w-full text-left bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-3 hover:border-emerald-300 hover:shadow-sm active:scale-[0.99] transition-all">
                             <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-slate-700 truncate">{guide.title}</p>
                               <p className="text-xs text-slate-400">{guide.desc}</p>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -3372,6 +3370,32 @@ export default function App() {
                     )}
                   </div>
                 </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Guide Reader Overlay */}
+          <AnimatePresence>
+            {activeGuide && (
+              <motion.div
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                className="fixed inset-0 z-50 bg-white flex flex-col"
+              >
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 shrink-0" style={{ paddingTop: `max(0.75rem, env(safe-area-inset-top))` }}>
+                  <button onClick={() => setActiveGuide(null)} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 transition-colors">
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                  <p className="flex-1 text-sm font-medium text-slate-700 truncate text-center pr-12">{activeGuide.title}</p>
+                </div>
+                <iframe
+                  src={activeGuide.href}
+                  className="flex-1 w-full border-0"
+                  title={activeGuide.title}
+                  style={{ colorScheme: "light" }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
