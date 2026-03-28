@@ -373,7 +373,9 @@ export default function App() {
             if (p?.[0]?.children_names) { setChildrenNames(p[0].children_names); localStorage.setItem("m_children_names", p[0].children_names); }
             if (p?.[0]?.setup_complete) setSetupComplete(true);
           }).catch(() => {});
-          // Load custody schedule
+        }
+        // Load custody schedule (always, not gated by decree cache)
+        if (session.user?.id) {
           dbSelect("custody_schedules", `user_id=eq.${session.user.id}&order=created_at.desc&limit=1`, data.access_token).then((rows: any) => {
             if (rows?.[0]) { setCustodySchedule(rows[0]); localStorage.setItem("m_custody_schedule", JSON.stringify(rows[0])); }
           }).catch(() => {});
@@ -458,6 +460,10 @@ export default function App() {
               setCoachSessions(sessions); localStorage.setItem("m_coach_sessions", JSON.stringify(sessions));
             }
           }
+        }).catch(() => {});
+        // Load custody schedule
+        dbSelect("custody_schedules", `user_id=eq.${data.user.id}&order=created_at.desc&limit=1`, data.access_token).then((rows: any) => {
+          if (rows?.[0]) { setCustodySchedule(rows[0]); localStorage.setItem("m_custody_schedule", JSON.stringify(rows[0])); }
         }).catch(() => {});
       }
     } catch (err: any) { setAuthError(err.message); } finally { setAuthLoading(false); }
