@@ -1574,30 +1574,85 @@ export default function App() {
               </motion.div>
             </div>
 
-            {/* ===== SECTION 2.5: Conversation Preview ===== */}
+            {/* ===== SECTION 2.5: App Preview — Today View ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-sm w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <div className="rounded-[2rem] border-2 border-slate-200 bg-slate-50 p-5 shadow-xl shadow-slate-900/5 relative overflow-hidden">
-                  <div className="w-20 h-1.5 bg-slate-200 rounded-full mx-auto mb-5" />
-                  <div className="space-y-3">
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.5 }}
-                      className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[13px] leading-relaxed px-4 py-3">
-                      My ex just told the kids we're selling the house before we even agreed on anything.
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.5 }}
-                      className="mr-auto max-w-[85%] rounded-2xl rounded-bl-md bg-white border border-slate-200 text-slate-600 text-[13px] leading-relaxed px-4 py-3">
-                      That's really hard — especially when you're trying to protect your kids from the conflict. Let's think through this together. What feels most urgent right now?
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.8, duration: 0.5 }}
-                      className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[13px] leading-relaxed px-4 py-3">
-                      I don't even know. I feel like I'm losing control of everything.
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 1.1, duration: 0.5 }}
-                      className="mr-auto max-w-[85%] rounded-2xl rounded-bl-md bg-white border border-slate-200 text-slate-600 text-[13px] leading-relaxed px-4 py-3">
-                      You're not losing control. You're dealing with a lot at once, and that's different. Let's start with what you <em>can</em> do right now...
-                    </motion.div>
+              <motion.div className="w-[300px]" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                {/* Phone frame */}
+                <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden">
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between px-7 pt-3 pb-1">
+                    <span className="text-[11px] font-semibold text-slate-800">9:41</span>
+                    <div className="w-20 h-[22px] bg-black rounded-full" />
+                    <div className="flex items-center gap-1">
+                      <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
+                      <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
+                    </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
+                  {/* App header */}
+                  <div className="flex items-center justify-between px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-[22px] h-[22px] flex items-center justify-center">
+                        <div className="flex gap-[3px]"><div className="w-[3px] h-[18px] rounded-full bg-emerald-500" /><div className="w-[3px] h-[14px] rounded-full bg-emerald-400 mt-1" /></div>
+                      </div>
+                      <span className="font-medium text-[15px] text-slate-800">Meridian</span>
+                    </div>
+                    <Clock className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />
+                  </div>
+                  {/* This week's schedule card */}
+                  <div className="mx-4 mb-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-2">This week's schedule</p>
+                    <p className="text-[14px] text-slate-800 mb-3">It's Alex's week with Emma.</p>
+                    <div className="flex justify-between mb-2">
+                      {["MON","TUE","WED","THU","FRI","SAT","SUN"].map((d,i)=>(
+                        <div key={d} className="flex flex-col items-center gap-1">
+                          <span className="text-[9px] font-medium text-slate-400">{d}</span>
+                          <div className={cn("w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px]",
+                            i < 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500",
+                            i === 4 && "ring-2 ring-slate-800 ring-offset-1"
+                          )}>{[14,15,16,17,18,19,20][i]}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[10px] text-slate-500">Your days</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /><span className="text-[10px] text-slate-500">Alex's days</span></div>
+                    </div>
+                  </div>
+                  {/* Coming up */}
+                  <div className="px-5 mb-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Coming up</p>
+                  </div>
+                  {[
+                    { month: "APR", day: "18", title: "Pick up Emma", sub: "Friday at 5:00 PM", tag: "Handoff", tagColor: "bg-blue-500" },
+                    { month: "APR", day: "19", title: "Soccer game", sub: "Saturday at 10:00 AM", tag: "Kids Activity", tagColor: "bg-purple-500" },
+                  ].map((evt, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.15, duration: 0.4 }}
+                      className="mx-4 mb-2 rounded-2xl border border-slate-100 bg-white p-3.5 flex items-center gap-3">
+                      <div className="text-center w-10 shrink-0">
+                        <p className="text-[9px] font-semibold text-emerald-600 uppercase">{evt.month}</p>
+                        <p className="text-[20px] font-light text-slate-800 leading-none">{evt.day}</p>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-slate-800">{evt.title}</p>
+                        <p className="text-[11px] text-slate-400">{evt.sub}</p>
+                      </div>
+                      <span className={cn("text-[9px] font-semibold text-white px-2 py-1 rounded-full shrink-0", evt.tagColor)}>{evt.tag}</span>
+                    </motion.div>
+                  ))}
+                  {/* Bottom nav */}
+                  <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 mt-3 px-2">
+                    {[
+                      { icon: Home, label: "Today", active: true },
+                      { icon: MessageSquare, label: "Talk", active: false },
+                      { icon: FolderLock, label: "Vault", active: false },
+                      { icon: User, label: "Profile", active: false },
+                    ].map((tab) => (
+                      <div key={tab.label} className="flex flex-col items-center gap-0.5">
+                        <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
+                        <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -1626,24 +1681,72 @@ export default function App() {
               </motion.div>
             </div>
 
-            {/* ===== SECTION 3.5: Message Coach Demo ===== */}
+            {/* ===== SECTION 3.5: Communication Coach Mockup ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+              <motion.div className="w-[300px]" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">See it in action</p>
-                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1, duration: 0.5 }}
-                  className="rounded-2xl bg-red-50 border border-red-200 p-5 mb-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-red-400 mb-2">Your draft</p>
-                  <p className="text-sm text-red-900 leading-relaxed">You can't just change the schedule without asking me. This is exactly why I can't trust you with anything.</p>
-                </motion.div>
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.3 }}
-                  className="flex justify-center py-1">
-                  <ChevronDown className="w-5 h-5 text-slate-300" />
-                </motion.div>
-                <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4, duration: 0.5 }}
-                  className="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-500 mb-2">With Meridian</p>
-                  <p className="text-sm text-emerald-900 leading-relaxed">I noticed the schedule changed for this weekend. Can we discuss any changes ahead of time? It helps me plan and keeps things consistent for the kids.</p>
-                </motion.div>
+                {/* Phone frame */}
+                <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden">
+                  {/* Status bar */}
+                  <div className="flex items-center justify-between px-7 pt-3 pb-1">
+                    <span className="text-[11px] font-semibold text-slate-800">9:41</span>
+                    <div className="w-20 h-[22px] bg-black rounded-full" />
+                    <div className="flex items-center gap-1">
+                      <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
+                      <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
+                    </div>
+                  </div>
+                  {/* App header */}
+                  <div className="flex items-center justify-between px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-[22px] h-[22px] flex items-center justify-center">
+                        <div className="flex gap-[3px]"><div className="w-[3px] h-[18px] rounded-full bg-emerald-500" /><div className="w-[3px] h-[14px] rounded-full bg-emerald-400 mt-1" /></div>
+                      </div>
+                      <span className="font-medium text-[15px] text-slate-800">Meridian</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-[18px] h-[18px] text-emerald-500" strokeWidth={1.5} />
+                      <Edit3 className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  {/* Coach content */}
+                  <div className="px-5 pb-2">
+                    <h3 className="text-[18px] font-light text-slate-800 mb-0.5">Communication Coach</h3>
+                    <p className="text-[12px] text-slate-400 mb-3">Craft calm, child-focused messages</p>
+                    <p className="text-[11px] text-slate-500 mb-2">&larr; New session</p>
+                  </div>
+                  {/* Situation card */}
+                  <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.4 }}
+                    className="mx-4 mb-3 rounded-2xl bg-amber-50 border border-amber-100 p-4">
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-600 mb-1.5">Your situation</p>
+                    <p className="text-[13px] text-slate-700 leading-relaxed">I need to ask Alex to swap weekends and don't want it to turn into a fight</p>
+                  </motion.div>
+                  {/* Response card */}
+                  <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5, duration: 0.5 }}
+                    className="mx-4 mb-3 rounded-2xl border border-slate-100 bg-white p-4">
+                    <p className="text-[12px] text-slate-500 leading-relaxed mb-3">I understand you need to request a weekend swap and want to keep things smooth. Here's a neutral, respectful message:</p>
+                    <p className="text-[12px] font-semibold text-slate-800 mb-2">Your message:</p>
+                    <p className="text-[12px] text-slate-700 leading-relaxed mb-3">Hi Alex, I was wondering if you'd be open to swapping weekends — I'd take Emma the 25th and you'd have her the following weekend instead. Let me know if that works for you. Thanks.</p>
+                    <p className="text-[12px] text-slate-700 leading-relaxed"><span className="font-semibold text-slate-800">Why this works:</span> This is brief, factual, and makes a polite request without over-explaining. It gives Alex the opportunity to decide rather than assuming, which shows respect for their time.</p>
+                  </motion.div>
+                  {/* Fade + bottom nav */}
+                  <div className="relative">
+                    <div className="absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                    <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 px-2">
+                      {[
+                        { icon: Home, label: "Today", active: false },
+                        { icon: MessageSquare, label: "Talk", active: true },
+                        { icon: FolderLock, label: "Vault", active: false },
+                        { icon: User, label: "Profile", active: false },
+                      ].map((tab) => (
+                        <div key={tab.label} className="flex flex-col items-center gap-0.5">
+                          <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
+                          <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             </div>
 
