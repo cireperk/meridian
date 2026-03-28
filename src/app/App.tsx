@@ -750,6 +750,7 @@ export default function App() {
   const [custodyForm, setCustodyForm] = useState({ template: "week-on-week-off", start_date: "", start_parent: "me" as "me" | "coparent", handoff_time: "6:00 PM" });
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const [activeGuide, setActiveGuide] = useState<{ title: string; href: string } | null>(null);
+  const [completingEvents, setCompletingEvents] = useState<Set<string>>(new Set());
   const [weekOffset, setWeekOffset] = useState(0);
   const activeConv = conversations.find((c) => c.id === activeConvId);
   const messages = activeConv?.messages || [];
@@ -1314,6 +1315,17 @@ export default function App() {
     await dbDelete("calendar_events", `id=eq.${eventId}`, session.token);
     setCalEvents(prev => prev.filter(e => e.id !== eventId));
     setCalDeleteConfirm(null);
+  };
+
+  const handleCompleteEvent = async (eventId: string) => {
+    if (completingEvents.has(eventId) || !session?.token) return;
+    setCompletingEvents(prev => new Set(prev).add(eventId));
+    dbUpdate("calendar_events", `id=eq.${eventId}`, { completed: true }, session.token).catch(() => {});
+    // Animate, then remove from list after delay
+    setTimeout(() => {
+      setCalEvents(prev => prev.map(e => e.id === eventId ? { ...e, completed: true } : e));
+      setCompletingEvents(prev => { const s = new Set(prev); s.delete(eventId); return s; });
+    }, 800);
   };
 
   const openAddEvent = (date?: string) => {
@@ -2590,7 +2602,7 @@ export default function App() {
                     {/* Coming Up */}
                     {(() => {
                       const upcoming = calEvents
-                        .filter(e => e.date >= todayStr)
+                        .filter(e => e.date >= todayStr && !e.completed)
                         .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))
                         .slice(0, 3);
                       if (upcoming.length === 0) return null;
@@ -2598,23 +2610,47 @@ export default function App() {
                         <div className="mt-8">
                           <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">Coming up</p>
                           <div className="space-y-2">
+                            <AnimatePresence mode="popLayout">
                             {upcoming.map((evt: any) => {
                               const typeInfo = EVENT_TYPES.find(t => t.id === evt.type);
                               const evtDate = new Date(evt.date + "T12:00:00");
+                              const isCompleting = completingEvents.has(evt.id);
                               return (
-                                <div key={evt.id} className="bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-4">
-                                  <div className="flex flex-col items-center shrink-0 w-10">
-                                    <span className="text-[10px] font-medium text-emerald-600 uppercase">{evtDate.toLocaleDateString("en-US", { month: "short" })}</span>
-                                    <span className="text-xl font-light text-slate-800">{evtDate.getDate()}</span>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700 truncate">{evt.title}</p>
+                                <motion.div
+                                  key={evt.id}
+                                  layout
+                                  exit={{ opacity: 0, scale: 0.8, height: 0, marginBottom: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } }}
+                                  className="bg-white border border-slate-200/60 rounded-xl p-4 flex items-center gap-4 overflow-hidden"
+                                >
+                                  <button onClick={() => handleCompleteEvent(evt.id)} className="shrink-0 relative w-10 flex flex-col items-center">
+                                    <AnimatePresence mode="wait">
+                                      {isCompleting ? (
+                                        <motion.div
+                                          key="check"
+                                          initial={{ scale: 0, opacity: 0 }}
+                                          animate={{ scale: 1, opacity: 1 }}
+                                          transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                          className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center"
+                                        >
+                                          <Check className="w-5 h-5 text-white" />
+                                        </motion.div>
+                                      ) : (
+                                        <motion.div key="date" exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }} className="flex flex-col items-center">
+                                          <span className="text-[10px] font-medium text-emerald-600 uppercase">{evtDate.toLocaleDateString("en-US", { month: "short" })}</span>
+                                          <span className="text-xl font-light text-slate-800">{evtDate.getDate()}</span>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </button>
+                                  <div className={cn("flex-1 min-w-0 transition-opacity duration-300", isCompleting && "opacity-40")}>
+                                    <p className={cn("text-sm font-medium text-slate-700 truncate", isCompleting && "line-through")}>{evt.title}</p>
                                     <p className="text-xs text-slate-400">{evtDate.toLocaleDateString("en-US", { weekday: "long" })}{evt.time ? ` at ${evt.time}` : ""}{evt.location ? ` · ${evt.location}` : ""}{evt.notes ? ` · ${evt.notes}` : ""}</p>
                                   </div>
-                                  {typeInfo && <span className={cn("text-[10px] font-medium px-2 py-1 rounded-full text-white shrink-0", typeInfo.color)}>{typeInfo.label}</span>}
-                                </div>
+                                  {typeInfo && !isCompleting && <span className={cn("text-[10px] font-medium px-2 py-1 rounded-full text-white shrink-0", typeInfo.color)}>{typeInfo.label}</span>}
+                                </motion.div>
                               );
                             })}
+                            </AnimatePresence>
                           </div>
                         </div>
                       );
