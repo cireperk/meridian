@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock, MapPin } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -743,7 +743,7 @@ export default function App() {
   const [calShowAdd, setCalShowAdd] = useState(false);
   const [calEditEvent, setCalEditEvent] = useState<any | null>(null);
   const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
-  const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "" });
+  const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
   // Custody schedule state
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
@@ -1295,7 +1295,7 @@ export default function App() {
 
   const handleCalSave = async () => {
     if (!calForm.title.trim() || !calForm.date || !session?.token) return;
-    const body = { user_id: session.user.id, title: calForm.title.trim(), date: calForm.date, time: calForm.time ? formatTime12(calForm.time) : null, type: calForm.type, notes: calForm.notes.trim() || null };
+    const body = { user_id: session.user.id, title: calForm.title.trim(), date: calForm.date, time: calForm.time ? formatTime12(calForm.time) : null, type: calForm.type, notes: calForm.notes.trim() || null, location: calForm.location.trim() || null };
     try {
       if (calEditEvent) {
         await dbUpdate("calendar_events", `id=eq.${calEditEvent.id}`, body, session.token);
@@ -1305,7 +1305,7 @@ export default function App() {
       await loadCalEvents();
       setCalShowAdd(false);
       setCalEditEvent(null);
-      setCalForm({ title: "", date: "", time: "", type: "handoff", notes: "" });
+      setCalForm({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
     } catch {}
   };
 
@@ -1325,7 +1325,7 @@ export default function App() {
   const openEditEvent = (evt: any) => {
     setCalEditEvent(evt);
     const timeVal = evt.time ? (() => { const [hm, p] = evt.time.split(" "); const [h, m] = hm.split(":").map(Number); const h24 = p === "PM" && h !== 12 ? h + 12 : p === "AM" && h === 12 ? 0 : h; return `${String(h24).padStart(2, "0")}:${String(m).padStart(2, "0")}`; })() : "";
-    setCalForm({ title: evt.title, date: evt.date, time: timeVal, type: evt.type, notes: evt.notes || "" });
+    setCalForm({ title: evt.title, date: evt.date, time: timeVal, type: evt.type, notes: evt.notes || "", location: evt.location || "" });
     setCalShowAdd(true);
   };
 
@@ -2556,7 +2556,7 @@ export default function App() {
                                                     <div className={cn("w-2.5 h-2.5 rounded-full mt-1.5 shrink-0", typeInfo?.color || "bg-slate-400")} />
                                                     <div className="flex-1 min-w-0">
                                                       <div className="text-sm font-medium text-slate-700">{evt.title}</div>
-                                                      <div className="text-xs text-slate-400 mt-0.5">{evt.time && <span>{evt.time}</span>}{evt.notes && <span> · {evt.notes}</span>}</div>
+                                                      <div className="text-xs text-slate-400 mt-0.5">{evt.time && <span>{evt.time}</span>}{evt.location && <span> · {evt.location}</span>}{evt.notes && <span> · {evt.notes}</span>}</div>
                                                     </div>
                                                   </div>
                                                 </button>
@@ -2609,7 +2609,7 @@ export default function App() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-slate-700 truncate">{evt.title}</p>
-                                    <p className="text-xs text-slate-400">{evtDate.toLocaleDateString("en-US", { weekday: "long" })}{evt.time ? ` at ${evt.time}` : ""}{evt.notes ? ` · ${evt.notes}` : ""}</p>
+                                    <p className="text-xs text-slate-400">{evtDate.toLocaleDateString("en-US", { weekday: "long" })}{evt.time ? ` at ${evt.time}` : ""}{evt.location ? ` · ${evt.location}` : ""}{evt.notes ? ` · ${evt.notes}` : ""}</p>
                                   </div>
                                   {typeInfo && <span className={cn("text-[10px] font-medium px-2 py-1 rounded-full text-white shrink-0", typeInfo.color)}>{typeInfo.label}</span>}
                                 </div>
@@ -3351,6 +3351,13 @@ export default function App() {
                             {t.label}
                           </button>
                         ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-medium text-slate-500 mb-1.5 block">Location <span className="text-slate-300">(optional)</span></label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input className="w-full pl-9 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="e.g. Whole Foods, 123 Main St" value={calForm.location} onChange={e => setCalForm(p => ({ ...p, location: e.target.value }))} />
                       </div>
                     </div>
                     <div>
