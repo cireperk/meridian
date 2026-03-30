@@ -1611,7 +1611,7 @@ export default function App() {
                       {previewSlide === 0 ? (
                         <motion.div key="today" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
                           {/* Phone frame — Today View */}
-                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden min-h-[580px] flex flex-col">
+                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden h-[600px] flex flex-col">
                             <div className="flex items-center justify-between px-7 pt-3 pb-1">
                               <span className="text-[11px] font-semibold text-slate-800">9:41</span>
                               <div className="w-20 h-[22px] bg-black rounded-full" />
@@ -1683,7 +1683,7 @@ export default function App() {
                       ) : (
                         <motion.div key="coach" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
                           {/* Phone frame — Communication Coach */}
-                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden min-h-[580px] flex flex-col">
+                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden h-[600px] flex flex-col">
                             <div className="flex items-center justify-between px-7 pt-3 pb-1">
                               <span className="text-[11px] font-semibold text-slate-800">9:41</span>
                               <div className="w-20 h-[22px] bg-black rounded-full" />
