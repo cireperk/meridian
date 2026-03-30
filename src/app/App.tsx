@@ -1604,140 +1604,122 @@ export default function App() {
               <motion.div className="w-full max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">See it in action</p>
 
-                {/* Carousel container */}
+                {/* Swipeable carousel */}
                 <div className="relative flex justify-center">
-                  <div className="w-[300px] relative">
-                    <AnimatePresence mode="wait">
-                      {previewSlide === 0 ? (
-                        <motion.div key="today" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                          {/* Phone frame — Today View */}
-                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden h-[600px] flex flex-col">
-                            <div className="flex items-center justify-between px-7 pt-3 pb-1">
-                              <span className="text-[11px] font-semibold text-slate-800">9:41</span>
-                              <div className="w-20 h-[22px] bg-black rounded-full" />
-                              <div className="flex items-center gap-1">
-                                <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
-                                <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between px-5 py-3">
-                              <div className="flex items-center gap-2">
-                                <Logo size="sm" />
-                                <span className="font-medium text-[15px] text-slate-800">Meridian</span>
-                              </div>
-                              <Clock className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />
-                            </div>
-                            <div className="mx-4 mb-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-2">This week's schedule</p>
-                              <p className="text-[14px] text-slate-800 mb-3">It's Alex's week with Emma.</p>
-                              <div className="flex justify-between mb-2">
-                                {["MON","TUE","WED","THU","FRI","SAT","SUN"].map((d,i)=>(
-                                  <div key={d} className="flex flex-col items-center gap-1">
-                                    <span className="text-[9px] font-medium text-slate-400">{d}</span>
-                                    <div className={cn("w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px]",
-                                      i < 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500",
-                                      i === 4 && "ring-2 ring-slate-800 ring-offset-1"
-                                    )}>{[14,15,16,17,18,19,20][i]}</div>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="flex items-center gap-4 mt-2">
-                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[10px] text-slate-500">Your days</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /><span className="text-[10px] text-slate-500">Alex's days</span></div>
-                              </div>
-                            </div>
-                            <div className="px-5 mb-2">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Coming up</p>
-                            </div>
-                            {[
-                              { month: "APR", day: "18", title: "Pick up Emma", sub: "Friday at 5:00 PM", tag: "Handoff", tagColor: "bg-blue-500" },
-                              { month: "APR", day: "19", title: "Soccer game", sub: "Saturday at 10:00 AM", tag: "Kids Activity", tagColor: "bg-purple-500" },
-                            ].map((evt, i) => (
-                              <div key={i} className="mx-4 mb-2 rounded-2xl border border-slate-100 bg-white p-3.5 flex items-center gap-3">
-                                <div className="text-center w-10 shrink-0">
-                                  <p className="text-[9px] font-semibold text-emerald-600 uppercase">{evt.month}</p>
-                                  <p className="text-[20px] font-light text-slate-800 leading-none">{evt.day}</p>
+                  <motion.div className="w-[300px] relative cursor-grab active:cursor-grabbing"
+                    drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15}
+                    onDragEnd={(_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
+                      const swipe = info.offset.x + info.velocity.x * 0.5;
+                      if (swipe < -40 && previewSlide === 0) setPreviewSlide(1);
+                      else if (swipe > 40 && previewSlide === 1) setPreviewSlide(0);
+                    }}>
+                    {/* Shared phone shell */}
+                    <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white shadow-2xl shadow-slate-900/10 overflow-hidden h-[600px] flex flex-col">
+                      {/* Status bar */}
+                      <div className="flex items-center justify-between px-7 pt-3 pb-1 shrink-0">
+                        <span className="text-[11px] font-semibold text-slate-800">9:41</span>
+                        <div className="w-20 h-[22px] bg-black rounded-full" />
+                        <div className="flex items-center gap-1">
+                          <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
+                          <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
+                        </div>
+                      </div>
+                      {/* App header */}
+                      <div className="flex items-center justify-between px-5 py-3 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <Logo size="sm" />
+                          <span className="font-medium text-[15px] text-slate-800">Meridian</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Clock className={cn("w-[18px] h-[18px]", previewSlide === 1 ? "text-emerald-500" : "text-slate-400")} strokeWidth={1.5} />
+                          {previewSlide === 1 && <Edit3 className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />}
+                        </div>
+                      </div>
+
+                      {/* Scrollable content area */}
+                      <div className="flex-1 overflow-hidden relative">
+                        <AnimatePresence mode="wait">
+                          {previewSlide === 0 ? (
+                            <motion.div key="today" className="absolute inset-0 overflow-y-auto" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+                              <div className="mx-4 mb-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-2">This week's schedule</p>
+                                <p className="text-[14px] text-slate-800 mb-3">It's Alex's week with Emma.</p>
+                                <div className="flex justify-between mb-2">
+                                  {["MON","TUE","WED","THU","FRI","SAT","SUN"].map((d,i)=>(
+                                    <div key={d} className="flex flex-col items-center gap-1">
+                                      <span className="text-[9px] font-medium text-slate-400">{d}</span>
+                                      <div className={cn("w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px]",
+                                        i < 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500",
+                                        i === 4 && "ring-2 ring-slate-800 ring-offset-1"
+                                      )}>{[14,15,16,17,18,19,20][i]}</div>
+                                    </div>
+                                  ))}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[13px] font-medium text-slate-800">{evt.title}</p>
-                                  <p className="text-[11px] text-slate-400">{evt.sub}</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[10px] text-slate-500">Your days</span></div>
+                                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /><span className="text-[10px] text-slate-500">Alex's days</span></div>
                                 </div>
-                                <span className={cn("text-[9px] font-semibold text-white px-2 py-1 rounded-full shrink-0", evt.tagColor)}>{evt.tag}</span>
                               </div>
-                            ))}
-                            <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 mt-auto px-2">
+                              <div className="px-5 mb-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Coming up</p>
+                              </div>
                               {[
-                                { icon: Home, label: "Today", active: true },
-                                { icon: MessageSquare, label: "Talk", active: false },
-                                { icon: FolderLock, label: "Vault", active: false },
-                                { icon: User, label: "Profile", active: false },
-                              ].map((tab) => (
-                                <div key={tab.label} className="flex flex-col items-center gap-0.5">
-                                  <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
-                                  <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
+                                { month: "APR", day: "18", title: "Pick up Emma", sub: "Friday at 5:00 PM", tag: "Handoff", tagColor: "bg-blue-500" },
+                                { month: "APR", day: "19", title: "Soccer game", sub: "Saturday at 10:00 AM", tag: "Kids Activity", tagColor: "bg-purple-500" },
+                              ].map((evt, i) => (
+                                <div key={i} className="mx-4 mb-2 rounded-2xl border border-slate-100 bg-white p-3.5 flex items-center gap-3">
+                                  <div className="text-center w-10 shrink-0">
+                                    <p className="text-[9px] font-semibold text-emerald-600 uppercase">{evt.month}</p>
+                                    <p className="text-[20px] font-light text-slate-800 leading-none">{evt.day}</p>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-medium text-slate-800">{evt.title}</p>
+                                    <p className="text-[11px] text-slate-400">{evt.sub}</p>
+                                  </div>
+                                  <span className={cn("text-[9px] font-semibold text-white px-2 py-1 rounded-full shrink-0", evt.tagColor)}>{evt.tag}</span>
                                 </div>
                               ))}
-                            </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div key="coach" className="absolute inset-0 overflow-y-auto" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+                              <div className="px-5 pb-2">
+                                <h3 className="text-[18px] font-light text-slate-800 mb-0.5">Communication Coach</h3>
+                                <p className="text-[12px] text-slate-400 mb-3">Craft calm, child-focused messages</p>
+                                <p className="text-[11px] text-slate-500 mb-2">&larr; New session</p>
+                              </div>
+                              <div className="mx-4 mb-3 rounded-2xl bg-amber-50 border border-amber-100 p-4">
+                                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-600 mb-1.5">Your situation</p>
+                                <p className="text-[13px] text-slate-700 leading-relaxed">I need to ask Alex to swap weekends and don't want it to turn into a fight</p>
+                              </div>
+                              <div className="mx-4 mb-3 rounded-2xl border border-slate-100 bg-white p-4">
+                                <p className="text-[12px] text-slate-500 leading-relaxed mb-3">I understand you need to request a weekend swap and want to keep things smooth. Here's a neutral, respectful message:</p>
+                                <p className="text-[12px] font-semibold text-slate-800 mb-2">Your message:</p>
+                                <p className="text-[12px] text-slate-700 leading-relaxed mb-3">Hi Alex, I was wondering if you'd be open to swapping weekends — I'd take Emma the 25th and you'd have her the following weekend instead. Let me know if that works for you. Thanks.</p>
+                                <p className="text-[12px] text-slate-700 leading-relaxed"><span className="font-semibold text-slate-800">Why this works:</span> This is brief, factual, and makes a polite request without over-explaining. It gives Alex the opportunity to decide rather than assuming, which shows respect for their time.</p>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        {/* Bottom fade */}
+                        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
+                      </div>
+
+                      {/* Bottom nav — always visible */}
+                      <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 px-2 shrink-0">
+                        {[
+                          { icon: Home, label: "Today", active: previewSlide === 0 },
+                          { icon: MessageSquare, label: "Talk", active: previewSlide === 1 },
+                          { icon: FolderLock, label: "Vault", active: false },
+                          { icon: User, label: "Profile", active: false },
+                        ].map((tab) => (
+                          <div key={tab.label} className="flex flex-col items-center gap-0.5">
+                            <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
+                            <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
                           </div>
-                        </motion.div>
-                      ) : (
-                        <motion.div key="coach" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                          {/* Phone frame — Communication Coach */}
-                          <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white p-0 shadow-2xl shadow-slate-900/10 relative overflow-hidden h-[600px] flex flex-col">
-                            <div className="flex items-center justify-between px-7 pt-3 pb-1">
-                              <span className="text-[11px] font-semibold text-slate-800">9:41</span>
-                              <div className="w-20 h-[22px] bg-black rounded-full" />
-                              <div className="flex items-center gap-1">
-                                <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
-                                <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between px-5 py-3">
-                              <div className="flex items-center gap-2">
-                                <Logo size="sm" />
-                                <span className="font-medium text-[15px] text-slate-800">Meridian</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <Clock className="w-[18px] h-[18px] text-emerald-500" strokeWidth={1.5} />
-                                <Edit3 className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />
-                              </div>
-                            </div>
-                            <div className="px-5 pb-2">
-                              <h3 className="text-[18px] font-light text-slate-800 mb-0.5">Communication Coach</h3>
-                              <p className="text-[12px] text-slate-400 mb-3">Craft calm, child-focused messages</p>
-                              <p className="text-[11px] text-slate-500 mb-2">&larr; New session</p>
-                            </div>
-                            <div className="mx-4 mb-3 rounded-2xl bg-amber-50 border border-amber-100 p-4">
-                              <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-600 mb-1.5">Your situation</p>
-                              <p className="text-[13px] text-slate-700 leading-relaxed">I need to ask Alex to swap weekends and don't want it to turn into a fight</p>
-                            </div>
-                            <div className="mx-4 mb-3 rounded-2xl border border-slate-100 bg-white p-4">
-                              <p className="text-[12px] text-slate-500 leading-relaxed mb-3">I understand you need to request a weekend swap and want to keep things smooth. Here's a neutral, respectful message:</p>
-                              <p className="text-[12px] font-semibold text-slate-800 mb-2">Your message:</p>
-                              <p className="text-[12px] text-slate-700 leading-relaxed mb-3">Hi Alex, I was wondering if you'd be open to swapping weekends — I'd take Emma the 25th and you'd have her the following weekend instead. Let me know if that works for you. Thanks.</p>
-                              <p className="text-[12px] text-slate-700 leading-relaxed"><span className="font-semibold text-slate-800">Why this works:</span> This is brief, factual, and makes a polite request without over-explaining. It gives Alex the opportunity to decide rather than assuming, which shows respect for their time.</p>
-                            </div>
-                            <div className="relative">
-                              <div className="absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
-                              <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 px-2">
-                                {[
-                                  { icon: Home, label: "Today", active: false },
-                                  { icon: MessageSquare, label: "Talk", active: true },
-                                  { icon: FolderLock, label: "Vault", active: false },
-                                  { icon: User, label: "Profile", active: false },
-                                ].map((tab) => (
-                                  <div key={tab.label} className="flex flex-col items-center gap-0.5">
-                                    <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
-                                    <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
 
                 {/* Dot indicators + labels */}
