@@ -2612,7 +2612,7 @@ export default function App() {
                       let summaryText = "";
                       if (myDays >= 5) summaryText = `It's your week${childFirst ? ` with ${childFirst}` : ""}.`;
                       else if (myDays <= 2) summaryText = `It's ${cpName}'s week${childFirst ? ` with ${childFirst}` : ""}.`;
-                      else summaryText = todayCustody === "me" ? `${childFirst || "Kids"} are with you today.` : `${childFirst || "Kids"} are with ${cpName} today.`;
+                      else { const subj = childFirst || "Kids"; const verb = subj === "Kids" ? "are" : "is"; summaryText = todayCustody === "me" ? `${subj} ${verb} with you today.` : `${subj} ${verb} with ${cpName} today.`; }
                       if (nextHandoff) {
                         const handoffDate = new Date(nextHandoff.dateStr + "T00:00:00");
                         const handoffDay = handoffDate.toLocaleDateString("en-US", { weekday: "long" });
