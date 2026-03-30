@@ -1726,7 +1726,7 @@ export default function App() {
                 <div className="flex items-center justify-center gap-6 mt-6">
                   {[
                     { label: "Your schedule" },
-                    { label: "Message coach" },
+                    { label: "Coach" },
                   ].map((item, i) => (
                     <button key={i} onClick={() => setPreviewSlide(i)} className="flex flex-col items-center gap-2 group">
                       <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-300",
