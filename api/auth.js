@@ -8,9 +8,9 @@ export default async function handler(req, res) {
   }
 
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(500).json({ error: "Server auth not configured" });
   }
 
@@ -27,11 +27,17 @@ export default async function handler(req, res) {
   }
 
   // Try sign-in first
-  const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+  let tokenRes;
+  try {
+    tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (err) {
+    console.error("Supabase sign-in request failed:", err);
+    return res.status(502).json({ error: "Unable to reach the account service. Please try again." });
+  }
 
   if (tokenRes.ok) {
     const tokenData = await tokenRes.json();
@@ -55,12 +61,19 @@ export default async function handler(req, res) {
   }
 
   // Use regular signup endpoint so Supabase sends confirmation email
-  const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
-    method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const signupData = await signupRes.json();
+  let signupRes;
+  let signupData;
+  try {
+    signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    signupData = await signupRes.json();
+  } catch (err) {
+    console.error("Supabase signup request failed:", err);
+    return res.status(502).json({ error: "Unable to complete signup. Please try again." });
+  }
 
   if (!signupRes.ok) {
     if (signupData.msg?.includes("already") || signupData.message?.includes("already")) {
