@@ -238,6 +238,8 @@ export default function App() {
   });
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordRecoveryToken, setPasswordRecoveryToken] = useState("");
   const [authName, setAuthName] = useState("");
   const [authError, setAuthError] = useState("");
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -246,6 +248,7 @@ export default function App() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+  const [resetPasswordUpdated, setResetPasswordUpdated] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
@@ -268,6 +271,20 @@ export default function App() {
   const [coachDeleteConfirmId, setCoachDeleteConfirmId] = useState<string | null>(null);
   const activeCoachSession = coachSessions.find((s) => s.id === activeCoachSessionId);
   const [thumbs, setThumbs] = useState<Record<number, "up" | "down">>({});
+
+  const processRecoveryTokens = useCallback((hash: string) => {
+    const params = new URLSearchParams(hash.includes("#") ? hash.substring(hash.indexOf("#") + 1) : hash);
+    const accessToken = params.get("access_token");
+    if (!accessToken) return;
+    setPasswordRecoveryToken(accessToken);
+    setAuthError("");
+    setNewPassword("");
+    setResetPasswordUpdated(false);
+    setAuthView("reset-password");
+    setShowSplash(false);
+    setOauthProcessing(false);
+    setAppReady(true);
+  }, []);
 
   // Process OAuth tokens from hash fragment
   const processOAuthTokens = useCallback(async (hash: string) => {
@@ -331,10 +348,23 @@ export default function App() {
   // Handle OAuth callback + deep link hashes on page load
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes("access_token=")) {
-      setOauthProcessing(true);
+    const hashParams = new URLSearchParams(hash.includes("#") ? hash.substring(hash.indexOf("#") + 1) : hash);
+    if (hashParams.get("error_code") === "otp_expired") {
       window.history.replaceState(null, "", window.location.pathname);
-      processOAuthTokens(hash);
+      setAuthError("This reset link is invalid or expired. Request a new link.");
+      setAuthView("forgot");
+      setShowSplash(false);
+      setAppReady(true);
+      return;
+    }
+    if (hash.includes("access_token=")) {
+      window.history.replaceState(null, "", window.location.pathname);
+      if (hashParams.get("type") === "recovery") {
+        processRecoveryTokens(hash);
+      } else {
+        setOauthProcessing(true);
+        processOAuthTokens(hash);
+      }
     } else if (hash === "#signup" || hash === "#signin") {
       window.history.replaceState(null, "", window.location.pathname);
       setAppReady(true);
@@ -353,7 +383,11 @@ export default function App() {
     if (!Capacitor.isNativePlatform()) return;
     const listener = CapApp.addListener("appUrlOpen", (event: { url: string }) => {
       if (event.url.includes("access_token=")) {
-        processOAuthTokens(event.url);
+        if (new URL(event.url).hash.includes("type=recovery")) {
+          processRecoveryTokens(new URL(event.url).hash);
+        } else {
+          processOAuthTokens(event.url);
+        }
       }
     });
     return () => { listener.then((l) => l.remove()); };
@@ -486,9 +520,33 @@ export default function App() {
     if (!authEmail) { setAuthError("Enter your email address above"); return; }
     setAuthError(""); setAuthLoading(true);
     try {
-      await sbFetch("/auth/v1/recover", { method: "POST", body: { email: authEmail } });
+      const redirectTo = isNative ? "https://www.mymeridianapp.com/" : `${window.location.origin}/`;
+      await sbFetch(`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, { method: "POST", body: { email: authEmail } });
       setResetSent(true);
-    } catch { setResetSent(true); /* don't reveal if email exists */ } finally { setAuthLoading(false); }
+    } catch (err: any) {
+      setAuthError(err.message || "We couldn't send a reset link. Please try again.");
+    } finally { setAuthLoading(false); }
+  };
+
+  const handleResetPassword = async () => {
+    setAuthError("");
+    if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setAuthError("Use at least 8 characters, including an uppercase letter and a number.");
+      return;
+    }
+    if (!passwordRecoveryToken) {
+      setAuthError("This reset link is invalid or has expired. Request a new link.");
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      await sbFetch("/auth/v1/user", { method: "PUT", body: { password: newPassword }, token: passwordRecoveryToken });
+      setPasswordRecoveryToken("");
+      setResetPasswordUpdated(true);
+      setNewPassword("");
+    } catch (err: any) {
+      setAuthError(err.message || "We couldn't update your password. Request a new reset link and try again.");
+    } finally { setAuthLoading(false); }
   };
 
   const handleOnboarding = async () => {
@@ -2108,7 +2166,7 @@ export default function App() {
       )}
 
       {/* ==================== AUTH ==================== */}
-      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView.startsWith("onboard-")) && !showSplash ? (
+      {SUPABASE_URL && (!session?.user?.name || authView === "signin" || authView === "signup" || authView === "forgot" || authView === "reset-password" || authView.startsWith("onboard-")) && !showSplash ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center px-8 bg-gradient-to-b from-white via-emerald-50/20 to-white overflow-hidden z-40">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
@@ -2322,6 +2380,28 @@ export default function App() {
                         <Button onClick={handleForgotPassword} disabled={!authEmail || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Sending..." : "Send Reset Link"}</Button>
                       </div>
                       <button onClick={() => { setAuthView("signin"); setAuthError(""); }} className="mt-6 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back to Sign In</button>
+                    </>
+                  )}
+                </motion.div>
+              ) : authView === "reset-password" ? (
+                <motion.div key="reset-password" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  {resetPasswordUpdated ? (
+                    <>
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4"><Check className="w-6 h-6 text-emerald-500" /></motion.div>
+                      <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Password updated</h2>
+                      <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Your password has been changed. Sign in with your new password.</p>
+                      <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthPassword(""); setResetPasswordUpdated(false); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Choose a new password</h2>
+                      <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Create a new password for your Meridian account.</p>
+                      <div className="w-full flex flex-col gap-3">
+                        <label htmlFor="new-password" className="sr-only">New password</label>
+                        <input id="new-password" className="w-full pl-4 pr-4 py-3 bg-slate-50/80 border border-slate-200/60 rounded-xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleResetPassword()} />
+                        {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
+                        <Button onClick={handleResetPassword} disabled={!newPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Updating..." : "Update Password"}</Button>
+                      </div>
                     </>
                   )}
                 </motion.div>
