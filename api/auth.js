@@ -8,17 +8,11 @@ export default async function handler(req, res) {
   }
 
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return res.status(500).json({ error: "Server auth not configured" });
   }
-
-  const adminHeaders = {
-    apikey: SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-    "Content-Type": "application/json",
-  };
 
   const { email, password, intent } = req.body;
 
@@ -35,7 +29,7 @@ export default async function handler(req, res) {
   // Try sign-in first
   const tokenRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
-    headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
 
@@ -63,20 +57,24 @@ export default async function handler(req, res) {
   // Use regular signup endpoint so Supabase sends confirmation email
   const signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: "POST",
-    headers: { apikey: SERVICE_ROLE_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const signupData = await signupRes.json();
 
   if (!signupRes.ok) {
     if (signupData.msg?.includes("already") || signupData.message?.includes("already")) {
-      return res.status(401).json({ error: "Incorrect password" });
+      return res.status(409).json({ error: "An account with this email may already exist. Try signing in or resetting your password." });
     }
     return res.status(signupRes.status).json({ error: signupData.msg || signupData.message || "Signup failed" });
   }
 
+  const signupUser = signupData.user ?? (signupData.id ? signupData : null);
   if (!signupData.access_token) {
-    return res.status(500).json({ error: "Signup succeeded but no session returned" });
+    if (signupUser?.id) {
+      return res.status(200).json({ user: signupUser, isNew: true, confirmationRequired: true });
+    }
+    return res.status(502).json({ error: "Could not complete signup. Please try again." });
   }
 
   return res.status(200).json({ ...signupData, isNew: true });

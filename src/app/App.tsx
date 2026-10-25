@@ -246,6 +246,7 @@ export default function App() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [expandedSetting, setExpandedSetting] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+  const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
   const [selectedPlan, setSelectedPlan] = useState("yearly");
@@ -437,6 +438,7 @@ export default function App() {
     setAuthError(""); setAuthLoading(true);
     try {
       const data = await authSubmit(authEmail, authPassword, authView);
+      if (data.confirmationRequired) { setSignupConfirmationSent(true); return; }
       if (data.isNew) { clearUserData(); setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
       else {
         let name = "";
@@ -450,7 +452,7 @@ export default function App() {
             if (p[0].setup_complete) setSetupComplete(true);
           }
         } catch {}
-        const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); setAuthView("main");
+        const s = { token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name } }; setSession(s); localStorage.setItem("m_session", JSON.stringify(s)); setAuthView(name ? "main" : "onboarding");
         // Load conversations + coach sessions from Supabase
         dbSelect("conversations", `user_id=eq.${data.user.id}&order=updated_at.desc`, data.access_token).then((rows: any) => {
           if (rows?.length) {
@@ -661,7 +663,7 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); };
+  const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); setSignupConfirmationSent(false); };
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const handleWaitlist = async () => {
@@ -1460,7 +1462,7 @@ export default function App() {
               <div className="flex items-center gap-5">
                 <a href="/guides/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Guides</a>
                 <a href="/professionals/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">For Professionals</a>
-                <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); }}
+                <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); setSignupConfirmationSent(false); }}
                   className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
                   Sign In
                 </button>
@@ -2323,6 +2325,13 @@ export default function App() {
                     </>
                   )}
                 </motion.div>
+              ) : authView === "signup" && signupConfirmationSent ? (
+                <motion.div key="signup-confirmation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4"><Check className="w-6 h-6 text-emerald-500" /></motion.div>
+                  <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Check your email</h2>
+                  <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[300px]">If this email can be registered, a confirmation link is on its way to <span className="text-slate-600 font-medium">{authEmail}</span>. Confirm your email, then sign in.</p>
+                  <Button onClick={() => { setAuthView("signin"); setAuthError(""); setSignupConfirmationSent(false); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
+                </motion.div>
               ) : (authView === "signin" || authView === "signup") ? (
                 <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome" : "Create your account"}</h2>
@@ -2374,7 +2383,7 @@ export default function App() {
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
                     <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? (authView === "signin" ? "Signing in..." : "Creating account...") : (authView === "signin" ? "Sign In" : "Create Account")}</Button>
                   </div>
-                  <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(""); setAuthPassword(""); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
+                  <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(""); setAuthPassword(""); setSignupConfirmationSent(false); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
                   {!isNative && (
                     <button onClick={() => { setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
                       <ArrowLeft className="w-3 h-3" /> Back
