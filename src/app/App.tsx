@@ -21,6 +21,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/b
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const HERO_REPLIES = {
+  neutral: "Thanks for letting me know. I'll have Emma ready for pickup at 5:00. Please message me if your timing changes.",
+  warmer: "Thanks for the update. Emma will be ready for you at 5:00. I appreciate you letting me know.",
+  firm: "I'll have Emma ready for pickup at 5:00 as scheduled. Please let me know in advance if the timing needs to change.",
+} as const;
 
 const sbFetch = async (path: string, { method = "GET", body, token }: any = {}) => {
   const headers: any = { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" };
@@ -772,6 +777,7 @@ export default function App() {
   const [oauthProcessing, setOauthProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [previewSlide, setPreviewSlide] = useState(0);
+  const [heroTone, setHeroTone] = useState<keyof typeof HERO_REPLIES>("neutral");
   const [showLaunchSplash, setShowLaunchSplash] = useState(isNative);
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -1650,24 +1656,32 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 1: Hero ===== */}
-            <div className="min-h-[calc(100dvh-60px)] flex flex-col items-center justify-center px-6 max-w-xl mx-auto relative z-10">
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
+            <div className="min-h-[calc(100dvh-60px)] grid grid-cols-1 items-center gap-10 px-6 py-12 max-w-7xl mx-auto relative z-10 lg:grid-cols-2 lg:gap-14 lg:px-10 xl:px-14">
+              <div className="w-full max-w-xl mx-auto lg:mx-0">
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="mb-8 lg:hidden">
                 <div className="flex items-center gap-4">
                   <Logo size="lg" />
                   <span className="font-sans font-medium text-2xl tracking-normal text-slate-800">Meridian</span>
                 </div>
               </motion.div>
 
-              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.15]">
-                Hard chapter.<br />
-                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal">Not the last one.</span>
+              <div className="mb-5 hidden items-center justify-center gap-3 lg:flex lg:justify-start">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-4 w-4" /></span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support for hard moments</span>
+              </div>
+
+              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-3xl sm:text-5xl font-light tracking-tight text-slate-800 text-center lg:text-left mb-3 leading-[1.08] lg:text-[3.5rem] xl:text-[3.8rem]">
+                <span className="hidden lg:inline">Handle co-parenting with<br /></span>
+                <span className="lg:hidden">Hard chapter.<br /></span>
+                <span className="hidden bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-normal lg:inline lg:font-serif lg:italic">more clarity.</span>
+                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent font-normal lg:hidden">Not the last one.</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-sm text-slate-500 text-center mb-8 max-w-sm leading-relaxed">
-                Meridian walks with you through divorce, co-parenting, and everything you're rebuilding.
+              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-auto text-sm text-slate-600 text-center lg:text-left mb-7 max-w-lg leading-relaxed sm:text-base lg:mx-0 lg:text-lg lg:leading-8">
+                Draft calmer messages, understand custody documents, and keep important dates organized—with thoughtful guidance whenever you need it.
               </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center gap-4 w-full max-w-xs">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-center lg:items-start gap-4 w-full max-w-xs sm:max-w-md mx-auto lg:mx-0">
                 {/* Mobile: iOS → app download primary; non-iOS → web primary */}
                 <div className="flex flex-col items-center gap-3 sm:hidden w-full">
                   {isIOS ? (
@@ -1693,16 +1707,68 @@ export default function App() {
                   )}
                 </div>
                 {/* Desktop: web primary, app download secondary */}
-                <div className="hidden sm:flex flex-col items-center gap-3 w-full">
-                  <Button size="lg" onClick={enterApp} className="w-full h-13 px-8 text-base font-medium bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/25 transition-all duration-500 rounded-2xl">
-                    Get started — free for 3 days
+                <div className="hidden sm:flex flex-col items-center gap-3 w-full lg:flex-row lg:justify-start">
+                  <Button size="lg" onClick={enterApp} className="w-full lg:w-auto h-13 px-7 text-base font-medium bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-700/15 transition-all duration-300 rounded-2xl">
+                    Try Meridian free <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
-                  <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" className="w-full h-11 flex items-center justify-center gap-2 text-sm font-medium text-emerald-600 border border-emerald-300 hover:bg-emerald-50 rounded-2xl transition-colors">
+                  <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" className="w-full lg:w-auto h-13 px-5 flex items-center justify-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 rounded-2xl transition-colors">
                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-                    Also on iPhone
+                    View on the App Store
                   </a>
                 </div>
-                <p className="w-full text-center text-[11px] text-slate-400 -mt-2">Standard trials last 3 days; eligible professional referrals get 14 days.</p>
+                <p className="w-full text-center lg:text-left text-[11px] text-slate-500 -mt-2">3 days free, then $4.99/month. Cancel anytime.</p>
+              </motion.div>
+              <div className="mt-2 hidden flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 lg:flex lg:justify-start">
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-600" />No shared co-parent account</span>
+                <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-600" />Delete your data anytime</span>
+              </div>
+              <p className="mx-auto mt-4 hidden max-w-lg text-[10px] leading-relaxed text-slate-400 lg:block lg:mx-0">When you use AI features, your messages and relevant document text may be sent to Anthropic to generate responses. <a href="/privacy" className="underline underline-offset-2 hover:text-slate-600">Privacy details</a>.</p>
+              </div>
+
+              <motion.div initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto hidden w-full max-w-[620px] lg:block">
+              <div className="absolute -inset-8 rounded-[4rem] bg-gradient-to-br from-emerald-100/80 via-teal-50/70 to-amber-50/80 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-28px_rgba(31,68,54,0.28)]">
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                  <div className="flex items-center gap-3">
+                    <Logo size="sm" />
+                    <span className="text-sm font-semibold text-slate-800">Message coach</span>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700"><Shield className="h-4 w-4" />Private</span>
+                </div>
+                <div className="p-6 sm:p-7">
+                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Message from Alex</p>
+                  <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-slate-100 px-4 py-4 text-[13px] leading-5 text-slate-700">I’m picking Emma up at 5. Don’t make me wait again like last time.</div>
+                  <div className="mb-3 mt-5 flex items-center gap-2 text-xs font-semibold text-emerald-700"><Sparkles className="h-4 w-4" />Meridian suggestion</div>
+                  <div className="overflow-hidden rounded-2xl rounded-tl-md border border-emerald-200 bg-emerald-50/40">
+                    <p className="min-h-[88px] px-5 py-4 text-[13px] leading-6 text-slate-700">{HERO_REPLIES[heroTone]}</p>
+                    <div className="flex items-center justify-between border-t border-emerald-100 px-4 py-3">
+                      <span className="text-[10px] text-slate-600">Calm · Clear · Child-focused</span>
+                      <button onClick={() => copyToClipboard(HERO_REPLIES[heroTone], -1)} className="flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-emerald-50">
+                        {copied === -1 ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copied === -1 ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-5">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Adjust the tone</p>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        ["neutral", "Neutral"],
+                        ["warmer", "Warmer"],
+                        ["firm", "Firm boundary"],
+                      ] as const).map(([tone, label]) => (
+                        <button key={tone} onClick={() => setHeroTone(tone)} aria-pressed={heroTone === tone} className={cn("rounded-full border px-3.5 py-2 text-[11px] transition-colors", heroTone === tone ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600 hover:border-emerald-200")}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -bottom-5 -right-4 flex max-w-[270px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-lg shadow-slate-900/10 xl:-right-6">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Shield className="h-4 w-4" /></span>
+                <span><strong className="block text-[11px] font-semibold text-slate-800">Your space is yours</strong><span className="mt-1 block text-[10px] leading-relaxed text-slate-600">Your co-parent can’t see what you write.</span></span>
+              </div>
               </motion.div>
 
               {/* Scroll hint */}
