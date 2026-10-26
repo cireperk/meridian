@@ -961,78 +961,110 @@ export default function App() {
     const userMsg = (overrideMsg || input).trim(); if (!userMsg || loading || streaming) return;
     setInput(""); if (textareaRef.current) textareaRef.current.style.height = "auto";
     let convId = activeConvId;
-    if (!convId) { convId = `conv_${Date.now()}`; setConversations((prev) => [{ id: convId, title: userMsg.slice(0, 50), messages: [], createdAt: new Date().toISOString() }, ...prev]); setActiveConvId(convId); }
-    setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c));
+    if (!convId) { convId = `conv_${Date.now()}`; setActiveConvId(convId); }
+    const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
+    const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
+    const conversationId = convId;
+    setConversations((prev) => {
+      const existing = prev.find((c) => c.id === conversationId);
+      if (existing) {
+        return prev.map((c) => c.id === conversationId ? { ...c, messages: [...c.messages, { role: "user", content: userMsg }] } : c);
+      }
+      return [{ id: conversationId, title: userMsg.slice(0, 50), messages: [{ role: "user", content: userMsg }], createdAt: new Date().toISOString() }, ...prev];
+    });
     setLoading(true);
-    // Build vault docs context — use extraction summary for decrees (much smaller), raw text for other docs
-    const MAX_CONTEXT_CHARS = 20000;
-    let vaultContext = "";
-    // If we have a decree extraction, use the compact summary instead of raw decree text
-    if (decreeExtraction?.status === "complete") {
-      const parts = [`\n\n[DECREE SUMMARY]`];
-      if (decreeExtraction.raw_summary) parts.push(decreeExtraction.raw_summary);
-      if (decreeExtraction.custody_type) parts.push(`Custody: ${decreeExtraction.custody_type}`);
-      if (decreeExtraction.custody_schedule?.details) parts.push(`Schedule: ${decreeExtraction.custody_schedule.details}`);
-      if (decreeExtraction.child_support) parts.push(`Child Support: ${JSON.stringify(decreeExtraction.child_support)}`);
-      if (decreeExtraction.holiday_schedule) parts.push(`Holidays: ${JSON.stringify(decreeExtraction.holiday_schedule)}`);
-      if (decreeExtraction.geographic_restriction) parts.push(`Geographic Restriction: ${JSON.stringify(decreeExtraction.geographic_restriction)}`);
-      if (decreeExtraction.children) parts.push(`Children: ${JSON.stringify(decreeExtraction.children)}`);
-      if (decreeExtraction.medical_decision_rights) parts.push(`Medical Rights: ${decreeExtraction.medical_decision_rights}`);
-      if (decreeExtraction.right_of_first_refusal) parts.push(`Right of First Refusal: ${JSON.stringify(decreeExtraction.right_of_first_refusal)}`);
-      if (decreeExtraction.pickup_dropoff) parts.push(`Pickup/Dropoff: ${JSON.stringify(decreeExtraction.pickup_dropoff)}`);
-      if (decreeExtraction.communication_requirements) parts.push(`Communication: ${decreeExtraction.communication_requirements}`);
-      vaultContext += parts.join("\n");
-    }
-    // Add non-decree docs (capped)
-    let contextLen = vaultContext.length;
-    for (const d of vaultDocs.filter(d => d.text_content && d.category !== "decree")) {
-      const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`;
-      if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
-      vaultContext += chunk; contextLen += chunk.length;
-    }
-    // If no extraction and decree exists, use truncated raw text
-    if (!decreeExtraction) {
-      for (const d of vaultDocs.filter(d => d.text_content && d.category === "decree")) {
-        const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (Decree)]\n${d.text_content}`;
+    const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === conversationId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
+    const abort = new AbortController(); abortRef.current = abort;
+    try {
+      // Build vault docs context — use extraction summary for decrees (much smaller), raw text for other docs
+      const MAX_CONTEXT_CHARS = 20000;
+      let vaultContext = "";
+      if (decreeExtraction?.status === "complete") {
+        const parts = [`\n\n[DECREE SUMMARY]`];
+        if (decreeExtraction.raw_summary) parts.push(decreeExtraction.raw_summary);
+        if (decreeExtraction.custody_type) parts.push(`Custody: ${decreeExtraction.custody_type}`);
+        if (decreeExtraction.custody_schedule?.details) parts.push(`Schedule: ${decreeExtraction.custody_schedule.details}`);
+        if (decreeExtraction.child_support) parts.push(`Child Support: ${JSON.stringify(decreeExtraction.child_support)}`);
+        if (decreeExtraction.holiday_schedule) parts.push(`Holidays: ${JSON.stringify(decreeExtraction.holiday_schedule)}`);
+        if (decreeExtraction.geographic_restriction) parts.push(`Geographic Restriction: ${JSON.stringify(decreeExtraction.geographic_restriction)}`);
+        if (decreeExtraction.children) parts.push(`Children: ${JSON.stringify(decreeExtraction.children)}`);
+        if (decreeExtraction.medical_decision_rights) parts.push(`Medical Rights: ${decreeExtraction.medical_decision_rights}`);
+        if (decreeExtraction.right_of_first_refusal) parts.push(`Right of First Refusal: ${JSON.stringify(decreeExtraction.right_of_first_refusal)}`);
+        if (decreeExtraction.pickup_dropoff) parts.push(`Pickup/Dropoff: ${JSON.stringify(decreeExtraction.pickup_dropoff)}`);
+        if (decreeExtraction.communication_requirements) parts.push(`Communication: ${decreeExtraction.communication_requirements}`);
+        vaultContext += parts.join("\n");
+      }
+      let contextLen = vaultContext.length;
+      for (const d of vaultDocs.filter(d => d.text_content && d.category !== "decree")) {
+        const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`;
         if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
         vaultContext += chunk; contextLen += chunk.length;
       }
-    }
-    const userName = session?.user?.name || "";
-    const namesContext = (userName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${userName ? `User's name: ${userName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
-    const docsContext = (vaultContext || "\n\nNo documents uploaded yet.") + namesContext;
-    const currentMsgs = conversations.find((c) => c.id === convId)?.messages || [];
-    const history = [...currentMsgs, { role: "user", content: userMsg }].map((m: any) => ({ role: m.role, content: m.content }));
-    const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
-    const abort = new AbortController(); abortRef.current = abort;
-    try {
-      let res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+      if (!decreeExtraction) {
+        for (const d of vaultDocs.filter(d => d.text_content && d.category === "decree")) {
+          const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (Decree)]\n${d.text_content}`;
+          if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
+          vaultContext += chunk; contextLen += chunk.length;
+        }
+      }
+      const userName = session?.user?.name || "";
+      const namesContext = (userName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${userName ? `User's name: ${userName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
+      const docsContext = (vaultContext || "\n\nNo documents uploaded yet.") + namesContext;
+      const requestBody = JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1000, output_config: { effort: "low" }, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history });
+      let res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody, signal: abort.signal });
       if (res.status === 429) {
         updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "Give me just a moment..." }]); setLoading(false);
         await new Promise(r => setTimeout(r, 15000));
         updateConvMessages((prev: any[]) => { const u = [...prev]; u.pop(); return u; }); setLoading(true);
-        res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 1000, system: `${SYSTEM_PROMPT}${docsContext}`, messages: history }), signal: abort.signal });
+        res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: requestBody, signal: abort.signal });
       }
-      if (!res.ok) throw new Error("API error");
-      const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => null);
+        throw new Error(errorBody?.error?.message || errorBody?.message || `Chat request failed (${res.status})`);
+      }
+      if (!res.body) throw new Error("Chat response stream was empty");
+      const reader = res.body.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       updateConvMessages((prev: any[]) => [...prev, { role: "assistant", content: "" }]); setLoading(false); setStreaming(true);
-      try {
-        while (true) { const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true }); const lines = buffer.split("\n"); buffer = lines.pop() || "";
-          for (const line of lines) { if (!line.startsWith("data: ")) continue; const data = line.slice(6); if (data === "[DONE]") continue; try { const parsed = JSON.parse(data); if (parsed.type === "content_block_delta" && parsed.delta?.text) { fullText += parsed.delta.text; updateConvMessages((prev: any[]) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: fullText }; return u; }); } } catch {} }
+      const readDataLine = (line: string) => {
+        if (!line.startsWith("data:")) return;
+        const data = line.slice(5).trim();
+        if (data === "[DONE]") return;
+        const parsed = JSON.parse(data);
+        if (parsed.type === "error") throw new Error(parsed.error?.message || "Chat response failed");
+        if (parsed.type === "content_block_delta" && parsed.delta?.text) {
+          fullText += parsed.delta.text;
+          updateConvMessages((prev: any[]) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: fullText }; return u; });
         }
-      } catch (e: any) { if (e.name === "AbortError") { setStreaming(false); return; } throw e; }
+      };
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            readDataLine(line);
+          }
+        }
+        buffer += decoder.decode();
+        if (buffer.startsWith("data:")) readDataLine(buffer);
+      } catch (e: any) { if (e.name === "AbortError") return; throw e; }
       setStreaming(false);
-      if (!fullText) updateConvMessages((prev: any[]) => { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: "Something went wrong. Please try again." }; return u; });
+      if (!fullText) throw new Error("The assistant returned an empty response. Please try again.");
     } catch (e: any) {
       if (e.name === "AbortError") return;
       console.error("Chat error:", e);
-      const errMsg = "Something went wrong — please try again in a moment.";
+      const errMsg = e.message || "Something went wrong — please try again in a moment.";
       updateConvMessages((prev: any[]) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant" && !last.content) { const u = [...prev]; u[u.length - 1] = { role: "assistant", content: errMsg }; return u; }
         return [...prev, { role: "assistant", content: errMsg }];
       });
-      setLoading(false); setStreaming(false);
+    } finally {
+      setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -1262,7 +1294,7 @@ export default function App() {
       const coachVaultContext = vaultDocs.filter(d => d.text_content).map(d => `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`).join("") || "";
       const coachUserName = session?.user?.name || "";
       const coachNamesContext = (coachUserName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${coachUserName ? `User's name: ${coachUserName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
-      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 800, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}${coachNamesContext}`, messages: msgs }), signal: abort.signal });
+      const res = await fetch(`/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 800, output_config: { effort: "low" }, system: `${COACH_SYSTEM_PROMPT}${coachVaultContext}${coachNamesContext}`, messages: msgs }), signal: abort.signal });
       if (!res.ok) throw new Error("API error");
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let fullText = ""; let buffer = "";
       try {
