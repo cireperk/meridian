@@ -1702,7 +1702,7 @@ export default function App() {
                     Also on iPhone
                   </a>
                 </div>
-                <p className="text-[11px] text-slate-400 -mt-2">Standard trials last 3 days; eligible professional referrals get 14 days.</p>
+                <p className="w-full text-center text-[11px] text-slate-400 -mt-2">Standard trials last 3 days; eligible professional referrals get 14 days.</p>
               </motion.div>
 
               {/* Scroll hint */}
@@ -2068,7 +2068,7 @@ export default function App() {
                       Also on iPhone
                     </a>
                   </div>
-                  <p className="text-[11px] text-slate-400">Standard trial: 3 days. Eligible professional referrals: 14 days. Plans start at $4.99/month.</p>
+                  <p className="w-full text-center text-[11px] text-slate-400">Standard trial: 3 days. Eligible professional referrals: 14 days. Plans start at $4.99/month.</p>
                 </div>
 
                 {/* Email capture */}
