@@ -159,6 +159,7 @@ WHAT YOU DO:
 - Help people understand their divorce decree in plain English
 - Help them think through co-parenting conflicts without escalating
 - Draft calm, neutral messages to their co-parent when asked
+- When a decree summary or decree document passages are provided below, use them to answer decree questions. Never say you do not have the decree when its content is included; if the relevant detail is not in the provided content, say you couldn't find that specific detail.
 
 BOUNDARIES:
 - You're not a lawyer. If something needs legal advice, say "That's a question for your attorney" and move on.
@@ -976,6 +977,7 @@ export default function App() {
     const updateConvMessages = (fn: any) => { setConversations((prev) => prev.map((c) => c.id === conversationId ? { ...c, messages: typeof fn === "function" ? fn(c.messages) : fn } : c)); };
     const abort = new AbortController(); abortRef.current = abort;
     try {
+      const chatVaultDocs = (vaultLoaded ? vaultDocs : await loadVaultDocs()) || vaultDocs;
       // Build vault docs context — use extraction summary for decrees (much smaller), raw text for other docs
       const MAX_CONTEXT_CHARS = 20000;
       let vaultContext = "";
@@ -994,18 +996,49 @@ export default function App() {
         if (decreeExtraction.communication_requirements) parts.push(`Communication: ${decreeExtraction.communication_requirements}`);
         vaultContext += parts.join("\n");
       }
+      const decree = chatVaultDocs.find((doc: any) => doc.category === "decree" && doc.text_content);
+      const decreeSource = decree?.text_content || decreeText;
+      if (decreeSource) {
+        const decreeBudget = Math.max(0, Math.min(14000, MAX_CONTEXT_CHARS - vaultContext.length));
+        let decreeExcerpt = decreeSource;
+        if (decreeBudget === 0) {
+          decreeExcerpt = "";
+        } else if (decreeExcerpt.length > decreeBudget) {
+          const terms = [...new Set(userMsg.toLowerCase().match(/[a-z]{4,}/g) || [])]
+            .filter(term => !["about", "after", "before", "could", "does", "from", "have", "help", "into", "that", "their", "them", "there", "they", "this", "what", "when", "where", "which", "with", "would", "your"].includes(term))
+            .map(term => term.endsWith("s") ? term.slice(0, -1) : term);
+          const matches: Array<{ start: number; end: number; score: number }> = [];
+          for (const term of terms) {
+            const pattern = new RegExp(`\\b${term}(?:s)?\\b`, "gi");
+            for (const match of decreeSource.matchAll(pattern)) {
+              const index = match.index ?? 0;
+              const start = Math.max(0, index - 700);
+              const end = Math.min(decreeSource.length, index + 1800);
+              const excerpt = decreeSource.slice(start, end).toLowerCase();
+              const score = terms.reduce((total, queryTerm) => total + (excerpt.includes(queryTerm) ? 1 : 0), 0);
+              matches.push({ start, end, score });
+            }
+          }
+          const selected: Array<{ start: number; end: number; score: number }> = [];
+          let selectedLength = 0;
+          for (const match of matches.sort((a, b) => b.score - a.score)) {
+            if (selected.some(item => match.start < item.end && match.end > item.start)) continue;
+            const length = match.end - match.start;
+            if (selectedLength + length > decreeBudget) continue;
+            selected.push(match);
+            selectedLength += length;
+          }
+          decreeExcerpt = selected.length
+            ? selected.sort((a, b) => a.start - b.start).map(match => decreeSource.slice(match.start, match.end)).join("\n[…]\n")
+            : decreeSource.slice(0, decreeBudget);
+        }
+        if (decreeExcerpt) vaultContext += `\n\n[DECREE DOCUMENT — passages relevant to the user's question]\n${decreeExcerpt}`;
+      }
       let contextLen = vaultContext.length;
-      for (const d of vaultDocs.filter(d => d.text_content && d.category !== "decree")) {
+      for (const d of chatVaultDocs.filter((doc: any) => doc.text_content && doc.category !== "decree")) {
         const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (${VAULT_CATEGORIES.find(c => c.id === d.category)?.label || d.category})]\n${d.text_content}`;
         if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
         vaultContext += chunk; contextLen += chunk.length;
-      }
-      if (!decreeExtraction) {
-        for (const d of vaultDocs.filter(d => d.text_content && d.category === "decree")) {
-          const chunk = `\n\n[VAULT DOCUMENT: ${d.file_name} (Decree)]\n${d.text_content}`;
-          if (contextLen + chunk.length > MAX_CONTEXT_CHARS) { vaultContext += chunk.slice(0, MAX_CONTEXT_CHARS - contextLen) + "\n[...truncated]"; break; }
-          vaultContext += chunk; contextLen += chunk.length;
-        }
       }
       const userName = session?.user?.name || "";
       const namesContext = (userName || coparentName || childrenNames) ? `\n\n[USER'S FAMILY DETAILS]\n${userName ? `User's name: ${userName}\n` : ""}${coparentName ? `Co-parent: ${coparentName}\n` : ""}${childrenNames ? `Children: ${childrenNames}` : ""}` : "";
@@ -1083,14 +1116,17 @@ export default function App() {
 
   // --- Vault ---
   const loadVaultDocs = useCallback(async () => {
-    if (!session?.token) return;
+    if (!session?.token) return vaultDocs;
     setVaultLoading(true);
     try {
       const docs = await dbSelect("documents", `user_id=eq.${session.user.id}&order=created_at.desc`, session.token);
       setVaultDocs(docs || []);
       try { localStorage.setItem("m_vault_docs", JSON.stringify(docs || [])); } catch {}
-    } catch {} finally { setVaultLoading(false); setVaultLoaded(true); }
-  }, [session?.token, session?.user?.id]);
+      return docs || [];
+    } catch {
+      return vaultDocs;
+    } finally { setVaultLoading(false); setVaultLoaded(true); }
+  }, [session?.token, session?.user?.id, vaultDocs]);
 
   useEffect(() => { if (activeTab === "vault" || activeTab === "talk") loadVaultDocs(); }, [activeTab]);
   // Also load vault docs on session init so chat always has context
