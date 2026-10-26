@@ -7,6 +7,14 @@
       "maxDuration": 60
     }
   },
+  "rewrites": [
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/support", "destination": "/support.html" },
+    { "source": "/signup", "destination": "/index.html" },
+    { "source": "/signin", "destination": "/index.html" },
+    { "source": "/forgot-password", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

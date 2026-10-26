@@ -10,7 +10,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-<url>
+  <url>
+    <loc>https://www.mymeridianapp.com/professionals/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://www.mymeridianapp.com/guides/coparenting-with-a-narcissist.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -36,17 +41,22 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/privacy.html</loc>
+    <loc>https://www.mymeridianapp.com/guides/notes/why-i-built-meridian.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.mymeridianapp.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/terms.html</loc>
+    <loc>https://www.mymeridianapp.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.mymeridianapp.com/support.html</loc>
+    <loc>https://www.mymeridianapp.com/support</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

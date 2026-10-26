@@ -9,6 +9,15 @@ html { height: 100dvh; height: 100%; }
 body { height: 100dvh; height: 100%; margin: 0; overflow: hidden; }
 #root { height: 100%; }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Scrollbar hide */
 .scrollbar-hide::-webkit-scrollbar { width: 0; height: 0; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

@@ -1,3 +1,6 @@
+import process from "node:process";
+import { applyProfessionalReferral, verifyProfessionalReferralToken } from "../lib/professional-referrals.js";
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -14,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server auth not configured" });
   }
 
-  const { email, password, intent } = req.body;
+  const { email, password, intent, referral: referralToken } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -41,6 +44,31 @@ export default async function handler(req, res) {
 
   if (tokenRes.ok) {
     const tokenData = await tokenRes.json();
+    const user = tokenData.user;
+    const pendingReferralToken = user?.user_metadata?.meridian_professional_referral_token;
+    const signingSecret = process.env.PROFESSIONAL_REFERRAL_SIGNING_SECRET;
+    const referral = pendingReferralToken && signingSecret
+      ? verifyProfessionalReferralToken(pendingReferralToken, signingSecret)
+      : null;
+    const accountAgeMs = user?.created_at ? Date.now() - Date.parse(user.created_at) : Infinity;
+    if (
+      referral &&
+      !user.app_metadata?.meridian_professional_referral_id &&
+      Number.isFinite(accountAgeMs) &&
+      accountAgeMs <= 30 * 24 * 60 * 60 * 1000
+    ) {
+      try {
+        await applyProfessionalReferral({
+          supabaseUrl: SUPABASE_URL,
+          serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
+          userId: user.id,
+          referral,
+        });
+      } catch (err) {
+        console.error("Professional referral activation failed during sign-in:", err);
+        return res.status(503).json({ error: "We couldn't activate your professional trial. Please try again or contact support." });
+      }
+    }
     return res.status(200).json({ ...tokenData, isNew: false });
   }
 
@@ -60,6 +88,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Password must include a number" });
   }
 
+  let professionalReferral = null;
+  if (referralToken) {
+    const signingSecret = process.env.PROFESSIONAL_REFERRAL_SIGNING_SECRET;
+    if (!signingSecret) {
+      return res.status(503).json({ error: "Professional referral trials are not configured. Please contact your provider." });
+    }
+    professionalReferral = verifyProfessionalReferralToken(referralToken, signingSecret);
+    if (!professionalReferral) {
+      return res.status(400).json({ error: "This professional referral link is invalid or expired." });
+    }
+  }
+
   // Use regular signup endpoint so Supabase sends confirmation email
   let signupRes;
   let signupData;
@@ -67,7 +107,11 @@ export default async function handler(req, res) {
     signupRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
       method: "POST",
       headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({
+        email,
+        password,
+        ...(professionalReferral ? { data: { meridian_professional_referral_token: referralToken } } : {}),
+      }),
     });
     signupData = await signupRes.json();
   } catch (err) {
@@ -83,6 +127,20 @@ export default async function handler(req, res) {
   }
 
   const signupUser = signupData.user ?? (signupData.id ? signupData : null);
+  if (professionalReferral && signupUser?.id) {
+    try {
+      await applyProfessionalReferral({
+        supabaseUrl: SUPABASE_URL,
+        serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
+        userId: signupUser.id,
+        referral: professionalReferral,
+      });
+    } catch (err) {
+      console.error("Professional referral activation failed after signup:", err);
+      return res.status(502).json({ error: "Your account was created, but we couldn't activate the professional trial. Please sign in again or contact support." });
+    }
+  }
+
   if (!signupData.access_token) {
     if (signupUser?.id) {
       return res.status(200).json({ user: signupUser, isNew: true, confirmationRequired: true });

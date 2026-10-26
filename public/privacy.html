@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy | Meridian</title>
-  <meta name="description" content="Meridian's privacy policy. Your data is yours — we never sell, share, or use it to train AI.">
+  <meta name="description" content="Learn what Meridian collects, how account data is stored, and how AI features process your messages and documents.">
   <link rel="canonical" href="https://www.mymeridianapp.com/privacy">
   <link rel="icon" href="/favicon-32.png" type="image/png">
   <style>
@@ -30,18 +30,19 @@
     .footer a { color: #10b981; text-decoration: none; }
     @media (max-width: 640px) { h1 { font-size: 26px; } .article { padding: 32px 20px 60px; } }
   </style>
+  <link rel="stylesheet" href="/site.css">
 </head>
 <body>
   <div class="header">
     <a href="/">Meridian</a>
-    <a href="/" class="cta-btn">Try free</a>
+    <a href="/signup" class="cta-btn">Try free</a>
   </div>
 
   <article class="article">
     <h1>Privacy Policy</h1>
     <p class="date">Effective January 2026</p>
 
-    <p>Meridian is built for people navigating one of the hardest chapters of their lives. We believe your privacy isn't just a feature — it's a right. This policy explains exactly what we collect, why, and what we'll never do.</p>
+    <p>Meridian is built for people navigating one of the hardest chapters of their lives. We believe your privacy isn't just a feature — it's a right. This policy explains what we collect, why, and how your information is handled.</p>
 
     <h2>What we collect</h2>
     <ul>
@@ -49,41 +50,45 @@
       <li><strong>Conversations:</strong> Messages you exchange with Meridian's assistant are stored securely so you can access your history across sessions.</li>
       <li><strong>Documents:</strong> Files you upload to your Vault (decrees, agreements, etc.) are stored in encrypted cloud storage tied to your account.</li>
       <li><strong>Calendar events:</strong> Dates, times, and notes you add to your co-parenting calendar.</li>
+      <li><strong>Referral attribution:</strong> If you sign up with a professional referral link, we store its practice attribution with your account to apply the extended trial.</li>
     </ul>
 
     <h2>What we never do</h2>
     <ul>
-      <li>We <strong>never sell, share, or monetize</strong> your personal data. Period.</li>
-      <li>We <strong>never use your conversations or documents to train AI models.</strong> Your words stay yours.</li>
+      <li>We do not <strong>sell</strong> your personal data. We share information with service providers that help operate Meridian, including Anthropic when you use AI features.</li>
       <li>We <strong>never show ads</strong> or share data with advertisers.</li>
-      <li>We <strong>never allow your co-parent, attorneys, or anyone else</strong> to access your account or data.</li>
+      <li>Your co-parent and other users do not have shared access to your account or data.</li>
     </ul>
 
     <h2>How we protect your data</h2>
     <ul>
       <li>All data is transmitted over HTTPS and encrypted at rest.</li>
       <li>Authentication is handled with industry-standard security practices including bcrypt password hashing and secure token management.</li>
-      <li>Document storage uses isolated, access-controlled cloud buckets — only you can retrieve your files.</li>
+      <li>Document storage uses access-controlled cloud storage tied to your account.</li>
     </ul>
 
     <h2>AI conversations</h2>
-    <p>When you chat with Meridian, your messages are sent to Anthropic's Claude API to generate responses. Anthropic does not use API inputs or outputs to train their models. Your conversations are processed in real time and are not retained by Anthropic beyond what's needed to deliver the response.</p>
+    <p>When you use Meridian's AI features, your message and relevant document text may be sent to Anthropic's Claude API to generate a response. Meridian stores conversation history and documents in your account so you can use them in the app. Anthropic processes the information it receives under its applicable policies and terms. Do not submit information you are not comfortable having processed by these services.</p>
+
+    <h2>Product analytics</h2>
+    <p>Meridian records a limited set of first-party event names, such as signup steps, guide searches, and professional referral requests, to understand how the service is used. Event records do not include message or document content, search terms, email addresses, or account identifiers. Events are processed in our hosting provider's logs.</p>
 
     <h2>Google and Apple sign-in</h2>
     <p>If you sign in with Google or Apple, we receive only your name and email address. We do not access your contacts, calendar, drive, or any other services.</p>
 
     <h2>Deleting your data</h2>
-    <p>You can delete individual conversations, documents, and calendar events at any time. To delete your entire account and all associated data, contact us at <a href="mailto:support@mymeridianapp.com">support@mymeridianapp.com</a> and we'll remove everything within 48 hours.</p>
+    <p>You can delete individual conversations, documents, and calendar events in the app. To request deletion of your entire account and associated data, contact <a href="mailto:privacy@mymeridianapp.com">privacy@mymeridianapp.com</a>.</p>
 
     <h2>Changes to this policy</h2>
-    <p>If we make meaningful changes, we'll notify you in the app. We'll never quietly weaken your privacy protections.</p>
+    <p>If we make meaningful changes, we'll update this policy and notify you in the app where appropriate.</p>
 
     <hr class="divider">
     <p>Questions? Reach us at <a href="mailto:support@mymeridianapp.com">support@mymeridianapp.com</a></p>
   </article>
 
   <div class="footer">
-    <p><a href="/">Meridian</a> — Calm and clarity through divorce and co-parenting.</p>
+    <p>&copy; <span data-current-year></span> <a href="/">Meridian</a> — Calm and clarity through divorce and co-parenting. · <a href="/terms">Terms of Service</a> · <a href="/guides/">Guides</a> · <a href="/professionals/">For Professionals</a></p>
   </div>
+  <script src="/site.js" defer></script>
 </body>
 </html>

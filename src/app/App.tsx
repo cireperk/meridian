@@ -10,7 +10,8 @@ import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOp
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { trackEvent } from "./analytics";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Logo } from "./components/Logo";
 
 marked.setOptions({ breaks: true, gfm: true });
@@ -30,8 +31,8 @@ const sbFetch = async (path: string, { method = "GET", body, token }: any = {}) 
   return text ? JSON.parse(text) : null;
 };
 
-const authSubmit = async (email: string, password: string, intent: string) => {
-  const res = await fetch(`/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, intent }) });
+const authSubmit = async (email: string, password: string, intent: string, referral?: string | null) => {
+  const res = await fetch(`/api/auth`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, intent, referral }) });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Auth failed");
   return data;
@@ -234,6 +235,9 @@ export default function App() {
   }, [session, sessionRestored]);
   const [authView, setAuthView] = useState(() => {
     const hasSession = !!localStorage.getItem("m_session") && localStorage.getItem("m_session") !== "null";
+    if (window.location.pathname === "/signup") return "signup";
+    if (window.location.pathname === "/signin") return "signin";
+    if (window.location.pathname === "/forgot-password") return "forgot";
     if (hasSession) return "main";
     return Capacitor.isNativePlatform() ? "signin" : "main";
   });
@@ -251,6 +255,7 @@ export default function App() {
   const [resetSent, setResetSent] = useState(false);
   const [resetPasswordUpdated, setResetPasswordUpdated] = useState(false);
   const [signupConfirmationSent, setSignupConfirmationSent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [subscription, setSubscription] = useState<{ status: string | null; trialEnd: string | null; loading: boolean }>({ status: null, trialEnd: null, loading: true });
   const [selectedPlan, setSelectedPlan] = useState("yearly");
@@ -305,6 +310,8 @@ export default function App() {
         const profile = await dbSelect("profiles", `id=eq.${userId}&select=name,onboarded,setup_complete,decree_text,decree_name,decree_pages,coparent_name,children_names`, accessToken);
         if (profile?.length && profile[0].name && profile[0].onboarded) {
           // Existing user — sign in
+          trackEvent("signin_completed");
+          localStorage.removeItem("m_professional_referral");
           if (profile[0].setup_complete) setSetupComplete(true);
           if (profile[0].decree_text) { setDecreeText(profile[0].decree_text); setDecreeFileName(profile[0].decree_name || "Decree"); setDecreePages(profile[0].decree_pages || 0); }
           if (profile[0].coparent_name) { setCoparentName(profile[0].coparent_name); localStorage.setItem("m_coparent_name", profile[0].coparent_name); }
@@ -337,6 +344,22 @@ export default function App() {
           }).catch(() => {});
         } else {
           // New user — clear stale data and go to onboarding
+          trackEvent("signup_completed");
+          const referralToken = localStorage.getItem("m_professional_referral");
+          if (referralToken) {
+            try {
+              const referralResponse = await fetch("/api/referral-apply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: accessToken, referralToken }),
+              });
+              const referralResult = await referralResponse.json();
+              if (!referralResponse.ok) throw new Error(referralResult.error || "We couldn't activate the professional trial.");
+              localStorage.removeItem("m_professional_referral");
+            } catch (err: any) {
+              setAuthError(err.message || "We couldn't activate the professional trial. Please contact support.");
+            }
+          }
           clearUserData();
           setSession({ token: accessToken, refresh_token: refreshToken || "", user: { id: userId, email, name: oauthName } });
           setAuthView("onboarding"); setShowSplash(false); setOauthProcessing(false); setAppReady(true);
@@ -349,7 +372,19 @@ export default function App() {
   // Handle OAuth callback + deep link hashes on page load
   useEffect(() => {
     const hash = window.location.hash;
+    const referralFromUrl = new URLSearchParams(window.location.search).get("ref");
+    if (referralFromUrl) localStorage.setItem("m_professional_referral", referralFromUrl);
     const hashParams = new URLSearchParams(hash.includes("#") ? hash.substring(hash.indexOf("#") + 1) : hash);
+    const routeAuthView = window.location.pathname === "/signup" ? "signup"
+      : window.location.pathname === "/signin" ? "signin"
+      : window.location.pathname === "/forgot-password" ? "forgot"
+      : null;
+    if (routeAuthView) {
+      setAuthView(routeAuthView);
+      setShowSplash(false);
+      setAppReady(true);
+      return;
+    }
     if (hashParams.get("error_code") === "otp_expired") {
       window.history.replaceState(null, "", window.location.pathname);
       setAuthError("This reset link is invalid or expired. Request a new link.");
@@ -367,9 +402,11 @@ export default function App() {
         processOAuthTokens(hash);
       }
     } else if (hash === "#signup" || hash === "#signin") {
-      window.history.replaceState(null, "", window.location.pathname);
+      const route = hash === "#signup" ? "signup" : "signin";
+      window.history.replaceState(null, "", `/${route}`);
       setAppReady(true);
-      setAuthView(hash === "#signup" ? "signup" : "signin");
+      setAuthView(route);
+      setShowSplash(false);
     } else if (!localStorage.getItem("m_session") && !isNative) {
       // No session, no OAuth — show splash
       setShowSplash(true);
@@ -471,9 +508,23 @@ export default function App() {
 
   const handleAuth = async () => {
     setAuthError(""); setAuthLoading(true);
+    if (authView === "signup") trackEvent("signup_attempted");
+    if (authView === "signin") trackEvent("signin_attempted");
     try {
-      const data = await authSubmit(authEmail, authPassword, authView);
-      if (data.confirmationRequired) { setSignupConfirmationSent(true); return; }
+      const referralToken = authView === "signup"
+        ? new URLSearchParams(window.location.search).get("ref") || localStorage.getItem("m_professional_referral")
+        : null;
+      const data = await authSubmit(authEmail, authPassword, authView, referralToken);
+      if (data.confirmationRequired) {
+        trackEvent("signup_completed");
+        localStorage.removeItem("m_professional_referral");
+        if (new URLSearchParams(window.location.search).has("ref")) window.history.replaceState(null, "", window.location.pathname);
+        setSignupConfirmationSent(true);
+        return;
+      }
+      localStorage.removeItem("m_professional_referral");
+      if (new URLSearchParams(window.location.search).has("ref")) window.history.replaceState(null, "", window.location.pathname);
+      trackEvent(data.isNew ? "signup_completed" : "signin_completed");
       if (data.isNew) { clearUserData(); setSession({ token: data.access_token, refresh_token: data.refresh_token, user: { id: data.user.id, email: authEmail, name: "" } }); setAuthView("onboarding"); }
       else {
         let name = "";
@@ -609,15 +660,21 @@ export default function App() {
 
     // 3. Fall back to DB check (for trial calculation and DB-synced subscriptions)
     try {
-      const p = await dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token);
-      if (Array.isArray(p) && p[0]?.created_at) {
-        const createdAt = new Date(p[0].created_at);
-        const trialEnd = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-        const status = p[0].subscription_status || null;
+      const [profiles, authUser] = await Promise.all([
+        dbSelect("profiles", `id=eq.${userId}&select=subscription_status,current_period_end,created_at`, token),
+        sbFetch("/auth/v1/user", { token }),
+      ]);
+      const profile = Array.isArray(profiles) ? profiles[0] : null;
+      const trialDays = authUser?.app_metadata?.meridian_professional_trial_days === 14 ? 14 : TRIAL_DAYS;
+      const createdAtValue = authUser?.created_at || profile?.created_at;
+      if (createdAtValue) {
+        const createdAt = new Date(createdAtValue);
+        const trialEnd = new Date(createdAt.getTime() + trialDays * 24 * 60 * 60 * 1000);
+        const status = profile?.subscription_status || null;
         if (status) localStorage.setItem("m_sub_status", status);
         setSubscription({ status, trialEnd: trialEnd.toISOString(), loading: false });
       } else {
-        setSubscription({ status: null, trialEnd: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(), loading: false });
+        setSubscription({ status: null, trialEnd: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString(), loading: false });
       }
     } catch {
       setSubscription({ status: "active", trialEnd: null, loading: false });
@@ -720,9 +777,8 @@ export default function App() {
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoEnded, setVideoEnded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const prefersReducedMotion = useReducedMotion();
 
-  const enterApp = () => { setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); setSignupConfirmationSent(false); };
+  const enterApp = () => { window.history.replaceState(null, "", `/signup${window.location.search}`); setShowSplash(false); setAuthView("signup"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); setSignupConfirmationSent(false); };
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistStatus, setWaitlistStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const handleWaitlist = async () => {
@@ -1476,6 +1532,7 @@ export default function App() {
 
   // ============================================================
   return (
+    <MotionConfig reducedMotion="user">
     <>
       <input ref={fileRef} type="file" accept=".txt,.md,.pdf,.doc,.docx" className="hidden" onChange={handleFileUpload} />
       <input ref={vaultFileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.xlsx,.csv" className="hidden" onChange={handleVaultUpload} />
@@ -1585,14 +1642,11 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <div className="flex items-center gap-5">
-                <a href="/guides/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Guides</a>
-                <a href="/professionals/" className="text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">For Professionals</a>
-                <button onClick={() => { setShowSplash(false); setAuthView("signin"); setAuthError(""); setAuthEmail(""); setAuthPassword(""); setSignupConfirmationSent(false); }}
-                  className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">
-                  Sign In
-                </button>
-              </div>
+              <nav aria-label="Main navigation" className="flex items-center gap-4 sm:gap-5">
+                <a href="/guides/" className="hidden sm:inline-block text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">Guides</a>
+                <a href="/professionals/" className="hidden sm:inline-block text-sm font-medium text-slate-400 hover:text-emerald-600 transition-colors">For Professionals</a>
+                <a href="/signin" className="text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Sign In</a>
+              </nav>
             </div>
 
             {/* ===== SECTION 1: Hero ===== */}
@@ -1648,7 +1702,7 @@ export default function App() {
                     Also on iPhone
                   </a>
                 </div>
-                <p className="text-[11px] text-slate-400 -mt-2">No credit card needed. Private forever.</p>
+                <p className="text-[11px] text-slate-400 -mt-2">Standard trials last 3 days; eligible professional referrals get 14 days.</p>
               </motion.div>
 
               {/* Scroll hint */}
@@ -1663,14 +1717,14 @@ export default function App() {
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider mb-3 text-center">Your privacy is the product</p>
-                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-4 text-center leading-snug">A safe space. Not a legal record.</h2>
-                <p className="text-sm text-slate-500 text-center mb-10 max-w-sm mx-auto leading-relaxed">Other co-parenting apps build for court admissibility. Everything you write becomes a permanent record. Meridian is different.</p>
+                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-4 text-center leading-snug">A personal account, not a shared co-parenting portal.</h2>
+                <p className="text-sm text-slate-500 text-center mb-10 max-w-sm mx-auto leading-relaxed">Your conversations and documents are associated with your account. When you use AI features, relevant content is sent to Anthropic to generate responses.</p>
 
                 <div className="space-y-4">
                   {[
-                    { icon: Shield, title: "Private by default", desc: "Your conversations stay between you and Meridian. Not your co-parent. Not a courtroom. Not advertisers." },
-                    { icon: EyeOff, title: "Nothing is shared", desc: "We don't sell data, we don't build ad profiles, and we never will." },
-                    { icon: Trash2, title: "You're in control", desc: "Delete your data anytime. No questions, no hoops." },
+                    { icon: Shield, title: "Not a shared account", desc: "Your co-parent and other Meridian users do not have shared access to your account." },
+                    { icon: EyeOff, title: "No advertising profiles", desc: "We do not sell your personal data or use it for advertising." },
+                    { icon: Trash2, title: "Manage what's saved", desc: "Delete individual conversations and documents in the app, or contact us to request full account deletion." },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
@@ -1927,13 +1981,13 @@ export default function App() {
                   {[
                     { q: "Is Meridian a therapist or a lawyer?", a: "Neither \u2014 think of it as a knowledgeable friend who\u2019s available anytime. It won\u2019t replace professional advice, but it can help you think clearly, understand your documents, and figure out what to say \u2014 especially at 2am when no one else is picking up." },
                     { q: "What does Meridian actually do?", a: "Everything you need in one place. Store and reference your legal documents. Get coached on exactly what to say to your co-parent. Understand your decree in plain English. Manage your schedule, handoffs, and deadlines. Build healthier habits for yourself and your kids. Meridian is your private command center for getting through the hardest chapter \u2014 and becoming a better version of yourself on the other side." },
-                    { q: "Is my data private?", a: "Completely. Your conversations and documents are encrypted and never shared with anyone \u2014 not your ex, not a court, not even us. Meridian is built for you alone." },
-                    { q: "Is it really free?", a: "You get a full 3-day free trial with no credit card required. After that, Meridian is $4.99/month. Money can be tight during times like these \u2014 cost should never be a barrier to getting the support you need. Cancel anytime, no questions asked." },
-                    { q: "Can my ex see what I write here?", a: "No. There is no shared access, no co-parent portal, no way for anyone else to see your account. This is your private space." },
+                    { q: "Is my data private?", a: "Your account isn't shared with your co-parent. Data is encrypted in transit and at rest. When you use AI features, your messages and relevant document text are sent to Anthropic to generate responses.", link: "Privacy Policy" },
+                    { q: "Is it really free?", a: "Standard signups get a 3-day free trial; eligible clients who sign up through a participating professional's referral link get 14 days. After the trial, Meridian is $4.99/month. Cancel anytime." },
+                    { q: "Can my ex see what I write here?", a: "Your co-parent does not have shared account access or a co-parent portal. AI features send messages and relevant document text to Anthropic to generate responses.", link: "Privacy Policy" },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                      <button onClick={() => setExpandedSetting(expandedSetting === `faq-${i}` ? null : `faq-${i}`)} className="w-full p-5 text-left flex items-start justify-between gap-3">
+                      <button aria-expanded={expandedSetting === `faq-${i}`} aria-controls={`faq-answer-${i}`} onClick={() => setExpandedSetting(expandedSetting === `faq-${i}` ? null : `faq-${i}`)} className="w-full p-5 text-left flex items-start justify-between gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                         <span className="text-sm font-medium text-slate-700">{item.q}</span>
                         <motion.div animate={{ rotate: expandedSetting === `faq-${i}` ? 45 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 mt-0.5">
                           <Plus className="w-4 h-4 text-slate-400" />
@@ -1941,8 +1995,8 @@ export default function App() {
                       </button>
                       <AnimatePresence>
                         {expandedSetting === `faq-${i}` && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
-                            <p className="px-5 pb-5 pt-0 text-[13px] text-slate-500 leading-relaxed">{item.a}</p>
+                          <motion.div id={`faq-answer-${i}`} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
+                            <p className="px-5 pb-5 pt-0 text-[13px] text-slate-500 leading-relaxed">{item.a} {item.link && <a href="/privacy" className="text-emerald-700 underline underline-offset-2">{item.link}</a>}</p>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -2014,7 +2068,7 @@ export default function App() {
                       Also on iPhone
                     </a>
                   </div>
-                  <p className="text-[11px] text-slate-400">Free for 3 days, then $4.99/mo. Cancel anytime.</p>
+                  <p className="text-[11px] text-slate-400">Standard trial: 3 days. Eligible professional referrals: 14 days. Plans start at $4.99/month.</p>
                 </div>
 
                 {/* Email capture */}
@@ -2060,9 +2114,9 @@ export default function App() {
                     <span className="text-[11px] text-slate-600">·</span>
                     <a href="/professionals/" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">For Professionals</a>
                     <span className="text-[11px] text-slate-600">·</span>
-                    <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</button>
+                    <a href="/privacy" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Privacy Policy</a>
                     <span className="text-[11px] text-slate-600">·</span>
-                    <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Terms of Service</button>
+                    <a href="/terms" className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-2">Terms of Service</a>
                   </div>
                 </div>
               </motion.div>
@@ -2108,7 +2162,7 @@ export default function App() {
             </div>
             <p className="text-xs text-slate-400 mb-6">Effective January 2026</p>
             <div className="space-y-6 text-sm text-slate-600 leading-relaxed">
-              <p>Meridian is built for people navigating one of the hardest chapters of their lives. We believe your privacy isn't just a feature — it's a right. This policy explains exactly what we collect, why, and what we'll never do.</p>
+              <p>Meridian is built for people navigating one of the hardest chapters of their lives. This policy explains what we collect, why, and how your information is handled.</p>
 
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">What we collect</h2>
@@ -2117,16 +2171,16 @@ export default function App() {
                   <li><strong>Conversations:</strong> Messages you exchange with Meridian's AI assistant are stored securely so you can access your history across sessions.</li>
                   <li><strong>Documents:</strong> Files you upload to your Vault (decrees, agreements, etc.) are stored in encrypted cloud storage tied to your account.</li>
                   <li><strong>Calendar events:</strong> Dates, times, and notes you add to your co-parenting calendar.</li>
+                  <li><strong>Referral attribution:</strong> If you sign up with a professional referral link, we store its practice attribution with your account to apply the extended trial.</li>
                 </ul>
               </div>
 
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">What we never do</h2>
                 <ul className="list-disc pl-5 space-y-1.5">
-                  <li>We <strong>never sell, share, or monetize</strong> your personal data. Period.</li>
-                  <li>We <strong>never use your conversations or documents to train AI models.</strong> Your words stay yours.</li>
+                  <li>We do not <strong>sell</strong> your personal data. We share information with service providers that help operate Meridian, including Anthropic when you use AI features.</li>
                   <li>We <strong>never show ads</strong> or share data with advertisers.</li>
-                  <li>We <strong>never allow your co-parent, attorneys, or anyone else</strong> to access your account or data.</li>
+                  <li>Your account is not shared with your co-parent or other Meridian users.</li>
                 </ul>
               </div>
 
@@ -2135,13 +2189,18 @@ export default function App() {
                 <ul className="list-disc pl-5 space-y-1.5">
                   <li>All data is transmitted over HTTPS and encrypted at rest.</li>
                   <li>Authentication is handled by Supabase with industry-standard security practices including bcrypt password hashing and secure token management.</li>
-                  <li>Document storage uses isolated, access-controlled cloud buckets — only you can retrieve your files.</li>
+                  <li>Document storage uses access-controlled cloud storage tied to your account.</li>
                 </ul>
               </div>
 
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">AI conversations</h2>
-                <p>When you chat with Meridian, your messages are sent to Anthropic's Claude API to generate responses. Anthropic does not use API inputs or outputs to train their models. Your conversations are processed in real time and are not retained by Anthropic beyond what's needed to deliver the response.</p>
+                <p>When you use Meridian's AI features, your message and relevant document text may be sent to Anthropic's Claude API to generate a response. Meridian stores conversation history and documents in your account so you can use them in the app. Anthropic processes information it receives under its applicable policies and terms. Do not submit information you are not comfortable having processed by these services.</p>
+              </div>
+
+              <div>
+                <h2 className="text-base font-medium text-slate-800 mb-2">Product analytics</h2>
+                <p>Meridian records a limited set of first-party event names, such as signup steps, guide searches, and professional referral requests, to understand how the service is used. Event records do not include message or document content, search terms, email addresses, or account identifiers. Events are processed in our hosting provider's logs.</p>
               </div>
 
               <div>
@@ -2151,7 +2210,7 @@ export default function App() {
 
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">Deleting your data</h2>
-                <p>You can delete individual conversations, documents, and calendar events at any time. To delete your entire account and all associated data, contact us at <a href="mailto:support@mymeridianapp.com" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">support@mymeridianapp.com</a> and we'll remove everything within 48 hours.</p>
+                <p>You can delete individual conversations, documents, and calendar events in the app. To request deletion of your entire account and associated data, contact <a href="mailto:privacy@mymeridianapp.com" className="text-emerald-600 hover:text-emerald-700 underline underline-offset-2">privacy@mymeridianapp.com</a>.</p>
               </div>
 
               <div>
@@ -2197,7 +2256,7 @@ export default function App() {
               <div>
                 <h2 className="text-base font-medium text-slate-800 mb-2">Subscription & billing</h2>
                 <ul className="list-disc pl-5 space-y-1.5">
-                  <li>Meridian offers a <strong>3-day free trial</strong> for new users.</li>
+                  <li>Meridian offers a <strong>3-day free trial</strong> for standard signups. Eligible users who sign up through a participating professional's referral link receive a <strong>14-day free trial</strong>.</li>
                   <li>After the trial, Meridian Pro is available at <strong>$4.99/month</strong> or <strong>$39.99/year</strong>.</li>
                   <li>Subscriptions <strong>automatically renew</strong> at the end of each billing period unless canceled at least 24 hours before the renewal date.</li>
                   <li>On iOS, payment is charged to your Apple ID account. Manage or cancel your subscription in your device's Settings → Apple ID → Subscriptions.</li>
@@ -2239,7 +2298,7 @@ export default function App() {
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-emerald-100/40 to-teal-100/30 blur-3xl pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-emerald-100/30 to-cyan-50/20 blur-3xl pointer-events-none" />
           <motion.div className="max-w-[380px] w-full flex flex-col items-center relative z-10" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
-            <button onClick={() => setShowSplash(true)} className="flex items-center gap-3 mb-12 hover:opacity-80 transition-opacity">
+            <button onClick={() => { window.history.replaceState(null, "", "/"); setShowSplash(true); }} className="flex items-center gap-3 mb-12 hover:opacity-80 transition-opacity">
               <Logo size="md" />
               <span className="font-sans font-medium text-lg tracking-normal text-slate-800">Meridian</span>
             </button>
@@ -2436,7 +2495,7 @@ export default function App() {
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4"><Check className="w-6 h-6 text-emerald-500" /></motion.div>
                       <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Check your email</h2>
                       <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">If an account exists for <span className="text-slate-600 font-medium">{authEmail}</span>, you'll receive a password reset link shortly.</p>
-                      <Button onClick={() => { setAuthView("signin"); setAuthError(""); setResetSent(false); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
+                      <Button onClick={() => { window.history.replaceState(null, "", "/signin"); setAuthView("signin"); setAuthError(""); setResetSent(false); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
                     </>
                   ) : (
                     <>
@@ -2447,7 +2506,7 @@ export default function App() {
                         {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
                         <Button onClick={handleForgotPassword} disabled={!authEmail || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? "Sending..." : "Send Reset Link"}</Button>
                       </div>
-                      <button onClick={() => { setAuthView("signin"); setAuthError(""); }} className="mt-6 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back to Sign In</button>
+                      <button onClick={() => { window.history.replaceState(null, "", "/signin"); setAuthView("signin"); setAuthError(""); }} className="mt-6 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"><ArrowLeft className="w-3 h-3" /> Back to Sign In</button>
                     </>
                   )}
                 </motion.div>
@@ -2458,7 +2517,7 @@ export default function App() {
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4"><Check className="w-6 h-6 text-emerald-500" /></motion.div>
                       <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Password updated</h2>
                       <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[280px]">Your password has been changed. Sign in with your new password.</p>
-                      <Button onClick={() => { setAuthView("signin"); setAuthError(""); setAuthPassword(""); setResetPasswordUpdated(false); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
+                      <Button onClick={() => { window.history.replaceState(null, "", "/signin"); setAuthView("signin"); setAuthError(""); setAuthPassword(""); setResetPasswordUpdated(false); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
                     </>
                   ) : (
                     <>
@@ -2478,20 +2537,26 @@ export default function App() {
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }} className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4"><Check className="w-6 h-6 text-emerald-500" /></motion.div>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">Check your email</h2>
                   <p className="text-sm text-slate-400 mb-8 text-center leading-relaxed max-w-[300px]">If this email can be registered, a confirmation link is on its way to <span className="text-slate-600 font-medium">{authEmail}</span>. Confirm your email, then sign in.</p>
-                  <Button onClick={() => { setAuthView("signin"); setAuthError(""); setSignupConfirmationSent(false); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
+                  <Button onClick={() => { window.history.replaceState(null, "", "/signin"); setAuthView("signin"); setAuthError(""); setSignupConfirmationSent(false); setAuthPassword(""); }} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15">Back to Sign In</Button>
                 </motion.div>
               ) : (authView === "signin" || authView === "signup") ? (
                 <motion.div key={authView} className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                   <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-2 text-center">{authView === "signin" ? "Welcome" : "Create your account"}</h2>
                   <p className="text-sm text-slate-400 mb-8 text-center">{authView === "signin" ? "Let's pick up where you left off." : "You've taken the first step. Let's make the road ahead clearer."}</p>
+                  {authView === "signup" && (
+                    <label htmlFor="terms-consent" className="mb-5 flex items-start gap-2 text-xs leading-relaxed text-slate-500">
+                      <input id="terms-consent" type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} className="mt-0.5 accent-emerald-600" />
+                      <span>I agree to the <a href="/terms" className="text-emerald-700 underline underline-offset-2">Terms of Service</a> and acknowledge the <a href="/privacy" className="text-emerald-700 underline underline-offset-2">Privacy Policy</a>.</span>
+                    </label>
+                  )}
                   <div className="w-full flex flex-col gap-3">
-                    <button onClick={() => { const redirect = isNative ? "https://www.mymeridianapp.com" : window.location.origin; window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirect}`; }}
-                      className="w-full h-11 flex items-center justify-center gap-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all">
+                    <button disabled={authView === "signup" && !termsAccepted} onClick={() => { trackEvent(authView === "signup" ? "signup_attempted" : "signin_attempted"); const redirect = isNative ? "https://www.mymeridianapp.com" : window.location.origin; window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${redirect}`; }}
+                      className="w-full h-11 flex items-center justify-center gap-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                       <svg className="w-4.5 h-4.5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                       Continue with Google
                     </button>
-                    <button onClick={() => { const redirect = isNative ? "https://www.mymeridianapp.com" : window.location.origin; window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${redirect}`; }}
-                      className="w-full h-11 flex items-center justify-center gap-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all">
+                    <button disabled={authView === "signup" && !termsAccepted} onClick={() => { trackEvent(authView === "signup" ? "signup_attempted" : "signin_attempted"); const redirect = isNative ? "https://www.mymeridianapp.com" : window.location.origin; window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=apple&redirect_to=${redirect}`; }}
+                      className="w-full h-11 flex items-center justify-center gap-3 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                       <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
                       Continue with Apple
                     </button>
@@ -2509,7 +2574,7 @@ export default function App() {
                     </div>
                     {authView === "signin" && (
                       <div className="flex justify-center">
-                        <button onClick={() => { setAuthView("forgot"); setAuthError(""); setResetSent(false); }} className="text-[13px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors">Forgot password?</button>
+                        <button onClick={() => { window.history.replaceState(null, "", "/forgot-password"); setAuthView("forgot"); setAuthError(""); setResetSent(false); }} className="text-[13px] text-emerald-600 hover:text-emerald-700 font-medium transition-colors">Forgot password?</button>
                       </div>
                     )}
                     {authView === "signup" && authPassword.length > 0 && (
@@ -2529,11 +2594,11 @@ export default function App() {
                       </div>
                     )}
                     {authError && <div className="text-red-600 text-[13px] text-center py-2 bg-red-50 rounded-lg">{authError}</div>}
-                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? (authView === "signin" ? "Signing in..." : "Creating account...") : (authView === "signin" ? "Sign In" : "Create Account")}</Button>
+                    <Button onClick={handleAuth} disabled={!authEmail || !authPassword || authLoading || (authView === "signup" && !termsAccepted)} className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 disabled:opacity-40">{authLoading ? (authView === "signin" ? "Signing in..." : "Creating account...") : (authView === "signin" ? "Sign In" : "Create Account")}</Button>
                   </div>
-                  <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { setAuthView(authView === "signin" ? "signup" : "signin"); setAuthError(""); setAuthPassword(""); setSignupConfirmationSent(false); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
+                  <p className="mt-6 text-xs text-slate-400">{authView === "signin" ? "New here?" : "Already have an account?"}{" "}<button onClick={() => { const nextView = authView === "signin" ? "signup" : "signin"; window.history.replaceState(null, "", `/${nextView}`); setAuthView(nextView); setAuthError(""); setAuthPassword(""); setSignupConfirmationSent(false); }} className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{authView === "signin" ? "Create an account" : "Sign in"}</button></p>
                   {!isNative && (
-                    <button onClick={() => { setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
+                    <button onClick={() => { window.history.replaceState(null, "", "/"); setShowSplash(true); setAuthView("main"); setAuthError(""); }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1">
                       <ArrowLeft className="w-3 h-3" /> Back
                     </button>
                   )}
@@ -2607,9 +2672,9 @@ export default function App() {
               <div className="flex items-center justify-center gap-3 mt-2 mb-1 flex-wrap">
                 <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
                 <span className="text-slate-300">·</span>
-                <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                <a href="/privacy" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</a>
                 <span className="text-slate-300">·</span>
-                <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
+                <a href="/terms" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</a>
               </div>
               <button onClick={handleSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition-colors mt-1">Sign out</button>
             </motion.div>
@@ -3543,7 +3608,7 @@ export default function App() {
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
                       <div className="space-y-2">
                         {[
-                          { id: "privacy", icon: Shield, label: "Privacy & Data", content: <>Your conversations and documents are encrypted and stored securely. Meridian never shares your personal information with third parties. You can delete your account and all associated data at any time by contacting us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a>.</> },
+                          { id: "privacy", icon: Shield, label: "Privacy & Data", content: <>Data is encrypted in transit and at rest. AI features send your messages and relevant document text to Anthropic to generate responses. Read our <a href="/privacy" className="text-blue-500 underline">Privacy Policy</a> or contact <a href="mailto:privacy@mymeridianapp.com" className="text-blue-500 underline">privacy@mymeridianapp.com</a> to request full account deletion.</> },
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: <>Have a question or running into an issue? Reach out to us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a> and we'll get back to you within 24 hours.</> },
                           { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a grounding companion for anyone navigating divorce and co-parenting. Built with care, designed for calm and clarity. Meridian is not a law firm and does not provide legal advice." },
                         ].map((item) => (
@@ -3590,7 +3655,7 @@ export default function App() {
                           <div className="flex items-center justify-center gap-2 mt-3">
                             <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-emerald-500/70 underline underline-offset-2">Terms of Use (EULA)</a>
                             <span className="text-emerald-300">·</span>
-                            <button onClick={() => setShowPrivacy(true)} className="text-[10px] text-emerald-500/70 underline underline-offset-2">Privacy Policy</button>
+                            <a href="/privacy" className="text-[10px] text-emerald-500/70 underline underline-offset-2">Privacy Policy</a>
                           </div>
                         </div>
                       ) : (
@@ -3602,9 +3667,9 @@ export default function App() {
                           <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
                             <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
                             <span className="text-slate-300">·</span>
-                            <button onClick={() => setShowPrivacy(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                            <a href="/privacy" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</a>
                             <span className="text-slate-300">·</span>
-                            <button onClick={() => setShowTerms(true)} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
+                            <a href="/terms" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</a>
                           </div>
                         </>
                       )}
@@ -4216,9 +4281,9 @@ export default function App() {
                   <div className="flex items-center justify-center gap-3 mt-4 flex-wrap">
                     <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Use (EULA)</a>
                     <span className="text-slate-300">·</span>
-                    <button onClick={() => { setShowSubscribeModal(false); setShowPrivacy(true); }} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</button>
+                    <a href="/privacy" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Privacy Policy</a>
                     <span className="text-slate-300">·</span>
-                    <button onClick={() => { setShowSubscribeModal(false); setShowTerms(true); }} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</button>
+                    <a href="/terms" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">Terms of Service</a>
                   </div>
                 </motion.div>
               </motion.div>
@@ -4232,5 +4297,6 @@ export default function App() {
         </>
       )}
     </>
+    </MotionConfig>
   );
 }
