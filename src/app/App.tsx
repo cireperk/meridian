@@ -1856,7 +1856,7 @@ export default function App() {
                       <div className="mb-3 flex items-end justify-between px-0.5 sm:mb-4 lg:px-1">
                         <div>
                           <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[10px]">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-                          <p className="text-lg font-light tracking-tight text-slate-800 sm:text-xl">Good morning.</p>
+                          <p className="text-lg font-light tracking-tight text-slate-800 sm:text-xl">Good morning, <span className="font-serif italic text-emerald-600">Eric.</span></p>
                         </div>
                         <span className="mb-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm"><CalendarDays className="h-4 w-4" /></span>
                       </div>
