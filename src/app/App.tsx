@@ -1658,7 +1658,7 @@ export default function App() {
             {/* ===== SECTION 1: Hero ===== */}
             <div className="min-h-[calc(100dvh-60px)] grid grid-cols-1 items-center gap-7 px-6 py-8 max-w-7xl mx-auto relative z-10 lg:grid-cols-2 lg:gap-14 lg:px-10 lg:py-12 xl:px-14">
               <div className="w-full max-w-xl mx-auto lg:mx-0">
-              <div className="mb-4 flex items-center justify-start gap-2.5 lg:hidden">
+              <div className="mb-4 flex items-center justify-center gap-2.5 lg:hidden">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-3.5 w-3.5" /></span>
                 <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Private support for hard moments</span>
               </div>
@@ -1668,20 +1668,20 @@ export default function App() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support for hard moments</span>
               </div>
 
-              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[1.9rem] min-[380px]:text-[2.45rem] sm:text-5xl font-light tracking-tight text-slate-800 text-left mb-3 leading-[1.04] lg:text-[3.5rem] xl:text-[3.8rem]">
+              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[1.9rem] min-[380px]:text-[2.45rem] sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.04] lg:text-left lg:text-[3.5rem] xl:text-[3.8rem]">
                 <span className="hidden lg:inline">Handle co-parenting with<br /></span>
                 <span className="lg:hidden">Handle co-parenting<br />with </span>
                 <span className="hidden bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-normal lg:inline lg:font-serif lg:italic">more clarity.</span>
                 <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-serif font-normal italic lg:hidden">more clarity.</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-0 text-[15px] text-slate-600 text-left mb-5 max-w-lg leading-relaxed sm:text-base lg:mb-7 lg:text-lg lg:leading-8">
+              <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-auto text-[15px] text-slate-600 text-center mb-5 max-w-lg leading-relaxed sm:text-base lg:mx-0 lg:mb-7 lg:text-left lg:text-lg lg:leading-8">
                 Draft calmer messages, understand custody documents, and keep important dates organized—with thoughtful guidance whenever you need it.
               </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-start gap-3 w-full max-w-xs sm:max-w-md mx-0 lg:gap-4">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 0.8] }} className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto sm:max-w-md lg:mx-0 lg:items-start lg:gap-4">
                 {/* Mobile: iOS → app download primary; non-iOS → web primary */}
-                <div className="flex flex-col items-start gap-2.5 sm:hidden w-full">
+                <div className="flex flex-col items-center gap-2.5 sm:hidden w-full">
                   {isIOS ? (
                     <>
                       <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" className="w-full h-12 flex items-center justify-center gap-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-700/15 rounded-2xl transition-all duration-300">
@@ -1714,7 +1714,7 @@ export default function App() {
                     View on the App Store
                   </a>
                 </div>
-                <p className="w-full text-left text-[11px] text-slate-500">3 days free, then $4.99/month. Cancel anytime.</p>
+                <p className="w-full text-center text-[11px] text-slate-500 lg:text-left">3 days free, then $4.99/month. Cancel anytime.</p>
               </motion.div>
               <div className="mt-2 hidden flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500 lg:flex lg:justify-start">
                 <span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-600" />No shared co-parent account</span>
