@@ -377,7 +377,7 @@ export default function App() {
           setAuthView("onboarding"); setShowSplash(false); setOauthProcessing(false); setAppReady(true);
           if (oauthName) setEditName(oauthName);
         }
-      } catch (err: any) { setAuthError("Sign-in failed. Please try again."); setShowSplash(false); setAuthView("main"); setOauthProcessing(false); setAppReady(true); }
+      } catch (err: any) { setAuthError("Sign-in failed. Please try again."); setShowSplash(false); setAuthView("signin"); setOauthProcessing(false); setAppReady(true); }
     })();
   }, []);
 
@@ -401,6 +401,15 @@ export default function App() {
       window.history.replaceState(null, "", window.location.pathname);
       setAuthError("This reset link is invalid or expired. Request a new link.");
       setAuthView("forgot");
+      setShowSplash(false);
+      setAppReady(true);
+      return;
+    }
+    const searchParams = new URLSearchParams(window.location.search);
+    if (["error", "error_code", "error_description"].some(param => hashParams.has(param) || searchParams.has(param))) {
+      window.history.replaceState(null, "", "/signin");
+      setAuthError("Google sign-in couldn't be completed. Please try again.");
+      setAuthView("signin");
       setShowSplash(false);
       setAppReady(true);
       return;
@@ -1171,6 +1180,15 @@ export default function App() {
       setLoading(false);
       setStreaming(false);
     }
+  };
+
+  const handleHomeMessageSubmit = () => {
+    const message = input.trim();
+    if (!message || loading || streaming) return;
+    setActiveTab("talk");
+    setTalkMode("chat");
+    setShowHistory(false);
+    void handleSend(message);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } };
@@ -2977,9 +2995,9 @@ export default function App() {
                             </button>
                           ))}
                         </div>
-                        <form onSubmit={(event) => { event.preventDefault(); if (!input.trim() || loading || streaming) return; setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); handleSend(input); }} className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-colors focus-within:border-emerald-300">
-                          <Textarea ref={textareaRef} aria-label="Message Meridian" className="min-h-[42px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="What would you like help with today?" value={input} onChange={(event) => { setInput(event.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
-                          <Button type="submit" size="sm" disabled={!input.trim() || loading || streaming} aria-label="Send message" className="h-10 w-10 shrink-0 rounded-xl bg-emerald-700 p-0 text-white hover:bg-emerald-800 disabled:bg-slate-200"><Send className="h-4 w-4" /></Button>
+                        <form onSubmit={(event) => { event.preventDefault(); handleHomeMessageSubmit(); }} className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-colors focus-within:border-emerald-300">
+                          <Textarea ref={textareaRef} aria-label="Message Meridian" className="min-h-[42px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="What would you like help with today?" value={input} onChange={(event) => { setInput(event.target.value); resizeTextarea(); }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); handleHomeMessageSubmit(); } }} rows={1} />
+                          <Button type="button" onClick={() => handleHomeMessageSubmit()} size="sm" disabled={!input.trim() || loading || streaming} aria-label="Send message" className="h-10 w-10 shrink-0 rounded-xl bg-emerald-700 p-0 text-white hover:bg-emerald-800 disabled:bg-slate-200"><Send className="h-4 w-4" /></Button>
                         </form>
                         <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
                       </section>
