@@ -3199,8 +3199,7 @@ export default function App() {
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
-              <div className="hidden items-center gap-2 text-[11px] font-medium text-slate-400 lg:flex"><Shield className="h-4 w-4 text-emerald-600" />Your private space</div>
-              <div className="flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-1">
                 {conversations.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={() => { if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && activeTab === "talk" && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
                 )}
@@ -3233,13 +3232,6 @@ export default function App() {
 
                     <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
                       <section className="order-1 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-1 lg:p-7">
-                        <div className="mb-5 flex items-start gap-3">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Sparkles className="h-5 w-5" /></span>
-                          <div>
-                            <h3 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl">Bring the moving pieces together</h3>
-                            <p className="mt-1 text-sm text-slate-400">Keep plans, documents, and conversations in one private place. Start with whatever needs attention.</p>
-                          </div>
-                        </div>
                         <div className="mb-4 grid gap-2">
                           {([
                             { id: "draft", title: "Draft a message", detail: "Say it calmly and clearly", icon: MessageSquare },
@@ -3258,12 +3250,6 @@ export default function App() {
                           <Button type="button" onClick={() => handleHomeMessageSubmit()} size="sm" disabled={!input.trim() || loading || streaming} aria-label="Send message" className="h-10 w-10 shrink-0 rounded-xl bg-emerald-700 p-0 text-white hover:bg-emerald-800 disabled:bg-slate-200"><Send className="h-4 w-4" /></Button>
                         </form>
                         <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
-                        <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-[11px] font-semibold text-slate-700">More of your support, connected</p>
-                          </div>
-                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">Bring calendars, cloud files, and professional and community support into the picture.</p>
-                        </div>
                       </section>
 
                       <aside className="order-2 space-y-3 lg:order-2">
