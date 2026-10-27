@@ -111,25 +111,32 @@ const CUSTODY_TEMPLATES: Record<string, { label: string; desc: string; pattern: 
   "every-other-weekend": { label: "Every other weekend", desc: "Weekdays with one, weekends alternate", pattern: [5, 2] },
 };
 
-const getCustodyForDate = (dateStr: string, schedule: any): "me" | "coparent" | null => {
+const CUSTODY_OVERRIDE_NOTE_PREFIX = "meridian:custody-override:";
+const isCustodyOverride = (event: any) => event.type === "other" && typeof event.notes === "string" && event.notes.startsWith(CUSTODY_OVERRIDE_NOTE_PREFIX);
+
+const getCustodyForDate = (dateStr: string, schedule: any, events: any[] = []): "me" | "coparent" | null => {
+  const override = events.find(event => event.date === dateStr && isCustodyOverride(event));
+  const overrideParent = override?.notes.slice(CUSTODY_OVERRIDE_NOTE_PREFIX.length);
+  if (overrideParent === "me" || overrideParent === "coparent") return overrideParent;
   if (!schedule) return null;
   const tmpl = CUSTODY_TEMPLATES[schedule.template];
   const pattern = schedule.template === "custom" ? schedule.custom_pattern : tmpl?.pattern;
   if (!pattern?.length) return null;
-  const start = new Date(schedule.start_date + "T00:00:00");
-  const target = new Date(dateStr + "T00:00:00");
+  const start = new Date(`${schedule.start_date}T00:00:00Z`);
+  const target = new Date(`${dateStr}T00:00:00Z`);
   const diffDays = Math.floor((target.getTime() - start.getTime()) / 86400000);
   if (diffDays < 0) return null;
-  const halfCycle = pattern.reduce((a: number, b: number) => a + b, 0);
-  const fullCycle = halfCycle * 2;
+  const patternLength = pattern.reduce((a: number, b: number) => a + b, 0);
+  const alternatesByWeek = schedule.template === "2-2-3" || schedule.template === "every-other-weekend" || schedule.template === "custom";
+  const fullCycle = patternLength * (alternatesByWeek ? 2 : 1);
   const pos = ((diffDays % fullCycle) + fullCycle) % fullCycle;
-  let isFirstHalf = pos < halfCycle;
-  let posInHalf = isFirstHalf ? pos : pos - halfCycle;
+  const isAlternateWeek = alternatesByWeek && pos >= patternLength;
+  const posInPattern = pos % patternLength;
   let accumulated = 0;
   for (let i = 0; i < pattern.length; i++) {
     accumulated += pattern[i];
-    if (posInHalf < accumulated) {
-      const isStartParent = isFirstHalf ? (i % 2 === 0) : (i % 2 !== 0);
+    if (posInPattern < accumulated) {
+      const isStartParent = (i % 2 === 0) !== isAlternateWeek;
       return isStartParent ? schedule.start_parent : (schedule.start_parent === "me" ? "coparent" : "me");
     }
   }
@@ -872,6 +879,8 @@ export default function App() {
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
   const [custodyForm, setCustodyForm] = useState({ template: "week-on-week-off", start_date: "", start_parent: "me" as "me" | "coparent", handoff_time: "6:00 PM" });
+  const [custodyOverrideSaving, setCustodyOverrideSaving] = useState(false);
+  const [custodyOverrideError, setCustodyOverrideError] = useState("");
   const [showFullCalendar, setShowFullCalendar] = useState(false);
   const [activeGuide, setActiveGuide] = useState<{ title: string; href: string } | null>(null);
   const [completingEvents, setCompletingEvents] = useState<Set<string>>(new Set());
@@ -1445,6 +1454,7 @@ export default function App() {
       // Load current calendar month + 30 days ahead from today for "Coming Up"
       const monthStart = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-01`;
       const monthEnd = new Date(calMonth.year, calMonth.month + 1, 0);
+      monthEnd.setDate(monthEnd.getDate() + 11);
       const ahead = new Date(); ahead.setDate(ahead.getDate() + 30);
       const rangeEnd = monthEnd > ahead ? monthEnd : ahead;
       const startStr = monthStart < new Date().toISOString().slice(0, 10) ? monthStart : new Date().toISOString().slice(0, 10);
@@ -1485,10 +1495,22 @@ export default function App() {
 
   const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
 
-  const openTodayCalendar = () => {
+  const openCustodySetup = () => {
+    setCustodyForm(custodySchedule ? {
+      template: custodySchedule.template || "week-on-week-off",
+      start_date: custodySchedule.start_date || "",
+      start_parent: custodySchedule.start_parent || "me",
+      handoff_time: custodySchedule.handoff_time || "6:00 PM",
+    } : { template: "week-on-week-off", start_date: "", start_parent: "me", handoff_time: "6:00 PM" });
+    setShowCustodySetup(true);
+  };
+
+  const openTodayCalendar = (date = todayStr) => {
+    const [year, month] = date.split("-").map(Number);
     setActiveTab("today");
+    setCalMonth({ year, month: month - 1 });
     setShowFullCalendar(true);
-    setCalSelectedDate(null);
+    setCalSelectedDate(date);
     window.setTimeout(() => document.getElementById("today-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
   };
 
@@ -1496,6 +1518,36 @@ export default function App() {
     setActiveTab("today");
     setShowFullCalendar(false);
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 50);
+  };
+
+  const updateCustodyOverride = async (parent: "me" | "coparent" | null) => {
+    if (!calSelectedDate || !session?.token || !session?.user?.id) return;
+    setCustodyOverrideSaving(true);
+    setCustodyOverrideError("");
+    const query = `user_id=eq.${encodeURIComponent(session.user.id)}&date=eq.${calSelectedDate}&type=eq.other&limit=100`;
+    try {
+      const existingRows = await dbSelect("calendar_events", query, session.token);
+      const existing = existingRows?.find(isCustodyOverride);
+      if (parent === null) {
+        if (existing) await sbFetch(`/rest/v1/calendar_events?id=eq.${encodeURIComponent(existing.id)}`, { method: "DELETE", token: session.token });
+        setCalEvents(events => events.filter(event => !(isCustodyOverride(event) && event.date === calSelectedDate)));
+      } else {
+        const body = { user_id: session.user.id, title: "Custody adjustment", date: calSelectedDate, time: null, type: "other", notes: `${CUSTODY_OVERRIDE_NOTE_PREFIX}${parent}`, location: null };
+        if (existing) {
+          await sbFetch(`/rest/v1/calendar_events?id=eq.${encodeURIComponent(existing.id)}`, { method: "PATCH", body, token: session.token });
+        } else {
+          await sbFetch("/rest/v1/calendar_events", { method: "POST", body, token: session.token });
+        }
+        const savedRows = await dbSelect("calendar_events", query, session.token);
+        const saved = savedRows?.find(isCustodyOverride);
+        if (!saved) throw new Error("The updated custody day could not be confirmed. Please try again.");
+        setCalEvents(events => [...events.filter(event => !(isCustodyOverride(event) && event.date === calSelectedDate)), saved]);
+      }
+    } catch (error) {
+      setCustodyOverrideError(error instanceof Error ? error.message : "Could not update this custody day. Please try again.");
+    } finally {
+      setCustodyOverrideSaving(false);
+    }
   };
 
   const handleCalSave = async () => {
@@ -1545,7 +1597,9 @@ export default function App() {
     setCalShowAdd(true);
   };
 
-  const selectedDateEvents = calEvents.filter(e => e.date === calSelectedDate);
+  const selectedDateEvents = calEvents.filter(e => e.date === calSelectedDate && !isCustodyOverride(e));
+  const selectedDateCustody = calSelectedDate ? getCustodyForDate(calSelectedDate, custodySchedule, calEvents) : null;
+  const selectedDateCustodyOverride = calEvents.some(e => e.date === calSelectedDate && isCustodyOverride(e));
 
   const spring = { type: "spring" as const, stiffness: 500, damping: 30 };
 
@@ -2924,10 +2978,11 @@ export default function App() {
 
                       <aside className="order-1 space-y-3 lg:order-2">
                         {(() => {
-                          const custodyToday = getCustodyForDate(todayStr, custodySchedule);
+                          const custodyToday = getCustodyForDate(todayStr, custodySchedule, calEvents);
+                          const custodyOverrideToday = calEvents.some(event => event.date === todayStr && isCustodyOverride(event));
                           const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
                           const nextEvent = calEvents
-                            .filter(event => event.date >= todayStr && !event.completed)
+                            .filter(event => event.date >= todayStr && !event.completed && !isCustodyOverride(event))
                             .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))[0];
                           return (
                             <div className="rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]">
@@ -2936,7 +2991,7 @@ export default function App() {
                                 <span className="text-xs font-medium text-slate-500 lg:text-emerald-100/80">{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
                               </div>
                               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
-                              <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? `${childFirst || "Your child"} is with you today.` : custodyToday === "coparent" ? `${childFirst || "Your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
+                                  <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? custodyOverrideToday ? `${childFirst || "Your child"} is marked as with you today.` : `Your schedule says ${childFirst || "your child"} is with you today.` : custodyToday === "coparent" ? custodyOverrideToday ? `${childFirst || "Your child"} is marked as with ${toName(coparentName || "your co-parent")} today.` : `Your schedule says ${childFirst || "your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
                               <div className="my-3 border-t border-slate-100 lg:my-5 lg:border-white/10" />
                               {nextEvent && (
                                 <div className="flex items-start gap-2.5 text-xs text-slate-500 lg:text-white/75">
@@ -2945,6 +3000,10 @@ export default function App() {
                                 </div>
                               )}
                               <button onClick={openTodayCalendar} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
+                              {custodySchedule && <div className="mt-3 flex items-center justify-between gap-3 text-[11px] lg:text-white/70">
+                                <button onClick={() => openTodayCalendar(todayStr)} className="text-emerald-700 hover:text-emerald-800 lg:text-emerald-200 lg:hover:text-white">Correct today</button>
+                                <button onClick={openCustodySetup} className="text-slate-500 hover:text-slate-700 lg:text-white/70 lg:hover:text-white">Edit usual schedule</button>
+                              </div>}
                             </div>
                           );
                         })()}
@@ -2970,7 +3029,7 @@ export default function App() {
                       const steps = [
                         { id: "decree", done: hasDecree, label: "Upload your decree", desc: hasDecree ? (decreeExtraction ? "Analyzed and ready" : "Uploaded") : "Unlocks personalized answers and legal context", action: () => { if (!hasDecree) fileRef.current?.click(); else { setActiveTab("vault" as any); } } },
                         { id: "details", done: hasDetails, label: "Confirm your details", desc: hasDetails ? `${toName(coparentName)} · ${toName(childrenNames)}` : (hasDecree && decreeExtraction ? "We found some details — tap to confirm" : "Co-parent and children's names"), action: () => setActiveTab("profile" as any) },
-                        { id: "schedule", done: hasSchedule, label: "Set your custody schedule", desc: hasSchedule ? "Schedule active" : "Unlocks the weekly view and handoff tracking", action: () => { if (!hasSchedule) setShowCustodySetup(true); } },
+                        { id: "schedule", done: hasSchedule, label: "Set your custody schedule", desc: hasSchedule ? "Schedule active" : "Unlocks the weekly view and handoff tracking", action: () => { if (!hasSchedule) openCustodySetup(); } },
                         { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
                       ];
                       const completed = steps.filter(s => s.done).length;
@@ -3034,12 +3093,11 @@ export default function App() {
                         d.setDate(monday.getDate() + i);
                         return { dateStr: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`, day: d.getDate(), label: WEEK_DAYS[i] };
                       });
-                      const custodyDays = weekDays.map(d => ({ ...d, custody: getCustodyForDate(d.dateStr, custodySchedule) }));
-                      const myDays = custodyDays.filter(d => d.custody === "me").length;
+                      const custodyDays = weekDays.map(d => ({ ...d, custody: getCustodyForDate(d.dateStr, custodySchedule, calEvents) }));
                       const nextHandoff = custodyDays.find((d, i) => i > 0 && d.custody !== custodyDays[i - 1].custody && new Date(d.dateStr + "T00:00:00") >= today);
                       const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
                       const cpName = toName(coparentName || "co-parent");
-                      const todayCustody = getCustodyForDate(todayStr, custodySchedule);
+                      const todayCustody = getCustodyForDate(todayStr, custodySchedule, calEvents);
                       const isCurrentWeek = weekOffset === 0;
                       const weekLabel = isCurrentWeek ? "This week's schedule" : (() => {
                         const monDate = new Date(monday);
@@ -3048,9 +3106,9 @@ export default function App() {
                       })();
 
                       let summaryText = "";
-                      if (myDays >= 5) summaryText = `It's your week${childFirst ? ` with ${childFirst}` : ""}.`;
-                      else if (myDays <= 2) summaryText = `It's ${cpName}'s week${childFirst ? ` with ${childFirst}` : ""}.`;
-                      else { const subj = childFirst || "Kids"; const verb = subj === "Kids" ? "are" : "is"; summaryText = todayCustody === "me" ? `${subj} ${verb} with you today.` : `${subj} ${verb} with ${cpName} today.`; }
+                      const subj = childFirst || "Kids";
+                      const verb = subj === "Kids" ? "are" : "is";
+                      summaryText = todayCustody === "me" ? `${subj} ${verb} with you today.` : todayCustody === "coparent" ? `${subj} ${verb} with ${cpName} today.` : "Your schedule is ready to view.";
                       if (nextHandoff) {
                         const handoffDate = new Date(nextHandoff.dateStr + "T00:00:00");
                         const handoffDay = handoffDate.toLocaleDateString("en-US", { weekday: "long" });
@@ -3111,9 +3169,9 @@ export default function App() {
                                   {calDays.map((cell: any, i: number) => {
                                     const isTodayCell = cell.dateStr === todayStr;
                                     const isSelected = cell.dateStr === calSelectedDate;
-                                    const dayEvents = calEvents.filter((e: any) => e.date === cell.dateStr);
+                                    const dayEvents = calEvents.filter((e: any) => e.date === cell.dateStr && !isCustodyOverride(e));
                                     const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
-                                    const custodyDay = getCustodyForDate(cell.dateStr, custodySchedule);
+                                    const custodyDay = getCustodyForDate(cell.dateStr, custodySchedule, calEvents);
                                     return (
                                       <button key={i} onClick={() => setCalSelectedDate(cell.dateStr === calSelectedDate ? null : cell.dateStr)}
                                         className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isTodayCell && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
@@ -3134,6 +3192,22 @@ export default function App() {
                                           <h3 className="text-sm font-medium text-slate-700">{new Date(calSelectedDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h3>
                                           <button onClick={() => openAddEvent()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all"><Plus className="w-4 h-4" /></button>
                                         </div>
+                                        {custodySchedule && (
+                                          <div className="mb-4 rounded-xl border border-emerald-100 bg-white p-3.5">
+                                            <p className="text-xs font-medium text-slate-700">Who is your child with?</p>
+                                            <p className="mt-1 text-[11px] text-slate-400">{selectedDateCustodyOverride ? "This is a one-day change to your usual schedule." : "Based on your usual schedule. Change this day if plans are different."}</p>
+                                            <div className="mt-3 flex gap-2">
+                                              {([
+                                                { parent: "me", label: "With me" },
+                                                { parent: "coparent", label: `With ${toName(coparentName || "co-parent")}` },
+                                              ] as const).map(({ parent, label }) => (
+                                                <button key={parent} onClick={() => updateCustodyOverride(parent)} disabled={custodyOverrideSaving} aria-pressed={selectedDateCustody === parent} className={cn("flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50", selectedDateCustody === parent ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-emerald-300")}>{label}</button>
+                                              ))}
+                                            </div>
+                                            {selectedDateCustodyOverride && <button onClick={() => updateCustodyOverride(null)} disabled={custodyOverrideSaving} className="mt-2 text-[11px] text-slate-400 underline underline-offset-2 disabled:opacity-50">Use usual schedule</button>}
+                                            {custodyOverrideError && <p role="alert" className="mt-2 text-[11px] text-red-600">{custodyOverrideError}</p>}
+                                          </div>
+                                        )}
                                         {selectedDateEvents.length === 0 ? (
                                           <div className="text-center py-6">
                                             <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
@@ -3185,7 +3259,7 @@ export default function App() {
                     {/* Coming Up */}
                     {(() => {
                       const upcoming = calEvents
-                        .filter(e => e.date >= todayStr && !e.completed)
+                        .filter(e => e.date >= todayStr && !e.completed && !isCustodyOverride(e))
                         .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))
                         .slice(0, 3);
                       if (upcoming.length === 0) return null;
@@ -4037,7 +4111,7 @@ export default function App() {
                 <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
                   <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-5" />
                   <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-lg font-light text-slate-700">Custody schedule</h3>
+                    <h3 className="text-lg font-light text-slate-700">{custodySchedule ? "Edit usual schedule" : "Custody schedule"}</h3>
                     <button onClick={() => setShowCustodySetup(false)} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50"><X size={14} /></button>
                   </div>
 
