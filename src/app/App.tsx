@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock, MapPin, Settings } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, ArrowRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock, MapPin, Settings } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -1929,26 +1929,28 @@ export default function App() {
             </div>
 
             {/* ===== SECTION: Privacy Promise ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <p className="text-xs font-medium text-emerald-600 uppercase tracking-wider mb-3 text-center">Your privacy is the product</p>
-                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-4 text-center leading-snug">A personal account, not a shared co-parenting portal.</h2>
-                <p className="text-sm text-slate-500 text-center mb-10 max-w-sm mx-auto leading-relaxed">Your conversations and documents are associated with your account. When you use AI features, relevant content is sent to Anthropic to generate responses.</p>
-
-                <div className="space-y-4">
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
+              <motion.div className="grid w-full max-w-6xl gap-8 rounded-[32px] border border-emerald-100/80 bg-gradient-to-br from-white via-white to-emerald-50/80 p-6 shadow-[0_24px_70px_-48px_rgba(15,118,92,0.3)] sm:p-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-14 lg:p-14" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <div>
+                  <p className="text-xs font-semibold text-emerald-700 uppercase tracking-[0.16em] mb-4">Your privacy is the product</p>
+                  <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-slate-800 mb-5 leading-tight">A personal space. Not a shared account.</h2>
+                  <p className="text-sm sm:text-base text-slate-500 leading-relaxed">Your conversations and documents stay associated with your account. You choose what to keep, and when AI features are used, relevant content is sent to Anthropic to generate responses.</p>
+                  <a href="/privacy" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800">How privacy works <ChevronRight className="h-4 w-4" /></a>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                   {[
                     { icon: Shield, title: "Not a shared account", desc: "Your co-parent and other Meridian users do not have shared access to your account." },
                     { icon: EyeOff, title: "No advertising profiles", desc: "We do not sell your personal data or use it for advertising." },
                     { icon: Trash2, title: "Manage what's saved", desc: "Delete individual conversations and documents in the app, or contact us to request full account deletion." },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                      className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center shrink-0">
-                        <item.icon className="w-5 h-5 text-emerald-600" strokeWidth={1.5} />
+                      className="flex items-start gap-3 rounded-2xl border border-slate-100/90 bg-white/90 p-4 shadow-sm sm:flex-col sm:p-5 lg:flex-row lg:items-center">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
+                        <item.icon className="h-5 w-5 text-emerald-700" strokeWidth={1.5} />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
-                        <p className="text-[13px] text-slate-500 leading-relaxed">{item.desc}</p>
+                        <p className="mb-1 text-sm font-semibold text-slate-800">{item.title}</p>
+                        <p className="text-xs leading-relaxed text-slate-500">{item.desc}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -1957,27 +1959,42 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 2: The Mirror ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <h2 className="text-2xl sm:text-3xl font-light text-slate-800 mb-2 leading-snug">
-                  We know where you are.
-                </h2>
-                <p className="text-lg sm:text-xl font-light text-emerald-600 mb-8">We've been there.</p>
-
-                <div className="space-y-5 text-[15px] sm:text-base text-slate-600 leading-relaxed">
-                  <p>Googling custody laws at midnight. Re-reading a text from your ex for the fifth time trying to figure out how to respond without making it worse. Holding it together for the kids and quietly breaking down in the car.</p>
-                  <p>You don't need another article that says "prioritize self-care" and "control what you can control." You need someone who gets it and can actually help you figure out what to do next.</p>
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
+              <motion.div className="grid w-full max-w-6xl gap-8 overflow-hidden rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.22)] sm:p-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16 lg:p-14" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <div>
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">When life gets complicated</p>
+                  <h2 className="mb-5 text-3xl font-light leading-tight tracking-tight text-slate-800 sm:text-4xl">We know where you are.<br /><span className="font-serif italic text-emerald-700">We’ve been there.</span></h2>
+                  <div className="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                    <p>Googling custody laws at midnight. Re-reading a text, trying to respond without making things worse. Holding it together for the kids while quietly breaking down in the car.</p>
+                    <p>You don’t need another reminder to “control what you can control.” You need a place to sort through what’s happening and find a next step that feels possible.</p>
+                  </div>
                 </div>
-
+                <div className="relative rounded-[26px] bg-gradient-to-br from-[#0f3f35] via-[#145747] to-[#0f766e] p-6 text-white sm:p-8">
+                  <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-emerald-300/10 blur-2xl" aria-hidden="true" />
+                  <p className="relative text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200">One step at a time</p>
+                  <p className="relative mt-4 max-w-md font-serif text-2xl leading-snug sm:text-3xl">You don’t have to solve everything tonight.</p>
+                  <p className="relative mt-3 max-w-md text-sm leading-relaxed text-emerald-50/80">Start with the piece that needs your attention most. Keep the details close. Come back to the rest when you’re ready.</p>
+                  <div className="relative mt-7 grid gap-2 sm:grid-cols-3">
+                    {[
+                      { icon: CalendarDays, label: "The dates" },
+                      { icon: FolderLock, label: "The documents" },
+                      { icon: ArrowRight, label: "The next step" },
+                    ].map(({ icon: Icon, label }) => (
+                      <div key={label} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-xs font-medium text-white/90 backdrop-blur-sm">
+                        <Icon className="h-4 w-4 shrink-0 text-emerald-200" strokeWidth={1.7} />{label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </motion.div>
             </div>
 
             {/* ===== SECTION 3: What Meridian Does ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
-              <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
+              <motion.div className="w-full max-w-6xl" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 text-center">More than a conversation</p>
                 <h2 className="mb-8 text-center text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">A steadier place to manage the moving pieces.</h2>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {[
                     { icon: FolderLock, title: "Keep the details together", desc: "Your documents, plans, schedules, and important dates in one private space.", status: "Available now" },
                     { icon: Sparkles, title: "Make sense of what’s next", desc: "Think through a hard moment, understand a document, or prepare a calm response.", status: "Available now" },
@@ -2017,149 +2034,147 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 3.5: App Preview Carousel ===== */}
-            <div className="flex flex-col items-center px-6 py-24 relative z-10">
-              <motion.div className="w-full max-w-lg" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">See it in action</p>
-
-                {/* Swipeable carousel */}
-                <div className="relative flex justify-center">
-                  <motion.div className="w-[300px] relative cursor-grab active:cursor-grabbing"
-                    drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.15}
-                    onDragEnd={(_: any, info: { offset: { x: number }; velocity: { x: number } }) => {
-                      const swipe = info.offset.x + info.velocity.x * 0.5;
-                      if (swipe < -40 && previewSlide === 0) setPreviewSlide(1);
-                      else if (swipe > 40 && previewSlide === 1) setPreviewSlide(0);
-                    }}>
-                    {/* Shared phone shell */}
-                    <div className="rounded-[2.5rem] border-[3px] border-slate-200 bg-white shadow-2xl shadow-slate-900/10 overflow-hidden h-[600px] flex flex-col">
-                      {/* Status bar */}
-                      <div className="flex items-center justify-between px-7 pt-3 pb-1 shrink-0">
-                        <span className="text-[11px] font-semibold text-slate-800">9:41</span>
-                        <div className="w-20 h-[22px] bg-black rounded-full" />
-                        <div className="flex items-center gap-1">
-                          <div className="flex gap-[2px]">{[12,10,8,6].map((h,i)=><div key={i} className="w-[3px] rounded-full bg-slate-800" style={{height:h}}/>)}</div>
-                          <div className="w-[18px] h-[9px] rounded-[2px] border border-slate-800 relative ml-1"><div className="absolute inset-[1.5px] right-[2px] bg-emerald-500 rounded-[1px]" /></div>
-                        </div>
-                      </div>
-                      {/* App header */}
-                      <div className="flex items-center justify-between px-5 py-3 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <Logo size="sm" />
-                          <span className="font-medium text-[15px] text-slate-800">Meridian</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Clock className={cn("w-[18px] h-[18px]", previewSlide === 1 ? "text-emerald-500" : "text-slate-400")} strokeWidth={1.5} />
-                          {previewSlide === 1 && <Edit3 className="w-[18px] h-[18px] text-slate-400" strokeWidth={1.5} />}
-                        </div>
-                      </div>
-
-                      {/* Scrollable content area */}
-                      <div className="flex-1 overflow-hidden relative">
-                        <AnimatePresence mode="wait">
-                          {previewSlide === 0 ? (
-                            <motion.div key="today" className="absolute inset-0 overflow-y-auto" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
-                              <div className="mx-4 mb-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-2">This week's schedule</p>
-                                <p className="text-[14px] text-slate-800 mb-3">It's Alex's week with Emma.</p>
-                                <div className="flex justify-between mb-2">
-                                  {["MON","TUE","WED","THU","FRI","SAT","SUN"].map((d,i)=>(
-                                    <div key={d} className="flex flex-col items-center gap-1">
-                                      <span className="text-[9px] font-medium text-slate-400">{d}</span>
-                                      <div className={cn("w-[30px] h-[30px] rounded-full flex items-center justify-center text-[12px]",
-                                        i < 5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500",
-                                        i === 4 && "ring-2 ring-slate-800 ring-offset-1"
-                                      )}>{[14,15,16,17,18,19,20][i]}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="flex items-center gap-4 mt-2">
-                                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[10px] text-slate-500">Your days</span></div>
-                                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-200" /><span className="text-[10px] text-slate-500">Alex's days</span></div>
-                                </div>
-                              </div>
-                              <div className="px-5 mb-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Coming up</p>
-                              </div>
-                              {[
-                                { month: "APR", day: "18", title: "Pick up Emma", sub: "Friday at 5:00 PM", tag: "Handoff", tagColor: "bg-blue-500" },
-                                { month: "APR", day: "19", title: "Soccer game", sub: "Saturday at 10:00 AM", tag: "Kids Activity", tagColor: "bg-purple-500" },
-                              ].map((evt, i) => (
-                                <div key={i} className="mx-4 mb-2 rounded-2xl border border-slate-100 bg-white p-3.5 flex items-center gap-3">
-                                  <div className="text-center w-10 shrink-0">
-                                    <p className="text-[9px] font-semibold text-emerald-600 uppercase">{evt.month}</p>
-                                    <p className="text-[20px] font-light text-slate-800 leading-none">{evt.day}</p>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-medium text-slate-800">{evt.title}</p>
-                                    <p className="text-[11px] text-slate-400">{evt.sub}</p>
-                                  </div>
-                                  <span className={cn("text-[9px] font-semibold text-white px-2 py-1 rounded-full shrink-0", evt.tagColor)}>{evt.tag}</span>
-                                </div>
-                              ))}
-                            </motion.div>
-                          ) : (
-                            <motion.div key="coach" className="absolute inset-0 overflow-y-auto" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
-                              <div className="px-5 pb-2">
-                                <h3 className="text-[18px] font-light text-slate-800 mb-0.5">Communication Coach</h3>
-                                <p className="text-[12px] text-slate-400 mb-3">Craft calm, child-focused messages</p>
-                                <p className="text-[11px] text-slate-500 mb-2">&larr; New session</p>
-                              </div>
-                              <div className="mx-4 mb-3 rounded-2xl bg-amber-50 border border-amber-100 p-4">
-                                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-600 mb-1.5">Your situation</p>
-                                <p className="text-[13px] text-slate-700 leading-relaxed">I need to ask Alex to swap weekends and don't want it to turn into a fight</p>
-                              </div>
-                              <div className="mx-4 mb-3 rounded-2xl border border-slate-100 bg-white p-4">
-                                <p className="text-[12px] text-slate-500 leading-relaxed mb-3">I understand you need to request a weekend swap and want to keep things smooth. Here's a neutral, respectful message:</p>
-                                <p className="text-[12px] font-semibold text-slate-800 mb-2">Your message:</p>
-                                <p className="text-[12px] text-slate-700 leading-relaxed mb-3">Hi Alex, I was wondering if you'd be open to swapping weekends — I'd take Emma the 25th and you'd have her the following weekend instead. Let me know if that works for you. Thanks.</p>
-                                <p className="text-[12px] text-slate-700 leading-relaxed"><span className="font-semibold text-slate-800">Why this works:</span> This is brief, factual, and makes a polite request without over-explaining. It gives Alex the opportunity to decide rather than assuming, which shows respect for their time.</p>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                        {/* Bottom fade */}
-                        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
-                      </div>
-
-                      {/* Bottom nav — always visible */}
-                      <div className="flex items-center justify-around border-t border-slate-100 pt-2 pb-4 px-2 shrink-0">
-                        {[
-                          { icon: Home, label: "Today", active: previewSlide === 0 },
-                          { icon: MessageSquare, label: "Talk", active: previewSlide === 1 },
-                          { icon: FolderLock, label: "Vault", active: false },
-                          { icon: User, label: "Profile", active: false },
-                        ].map((tab) => (
-                          <div key={tab.label} className="flex flex-col items-center gap-0.5">
-                            <tab.icon className={cn("w-[18px] h-[18px]", tab.active ? "text-emerald-600" : "text-slate-300")} strokeWidth={1.5} />
-                            <span className={cn("text-[9px] font-medium", tab.active ? "text-emerald-600" : "text-slate-300")}>{tab.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
+            <div className="flex flex-col items-center px-6 py-14 sm:py-16 relative z-10">
+              <motion.div className="w-full max-w-6xl" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
+                <div className="mb-9 flex flex-col items-center text-center">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">See it in action</p>
+                  <h2 className="text-3xl font-light tracking-tight text-slate-800 sm:text-4xl">A look inside Meridian</h2>
+                  <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">Your plans, documents, and next steps—organized around what matters to you.</p>
                 </div>
 
-                {/* Dot indicators + labels */}
-                <div className="flex items-center justify-center gap-6 mt-6">
-                  {[
-                    { label: "Your schedule" },
-                    { label: "Coach" },
-                  ].map((item, i) => (
-                    <button key={i} onClick={() => setPreviewSlide(i)} className="flex flex-col items-center gap-2 group">
-                      <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-300",
-                        previewSlide === i ? "bg-emerald-500 scale-110" : "bg-slate-200 group-hover:bg-slate-300"
-                      )} />
-                      <span className={cn("text-[11px] font-medium transition-colors duration-300",
-                        previewSlide === i ? "text-emerald-600" : "text-slate-400"
-                      )}>{item.label}</span>
-                    </button>
-                  ))}
+                <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_28px_80px_-40px_rgba(15,23,42,0.28)]">
+                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div className="flex items-center gap-2.5">
+                      <Logo size="sm" />
+                      <span className="text-sm font-semibold text-slate-800">Your private space</span>
+                      <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-500 sm:inline-flex">Sample view</span>
+                    </div>
+                    <div className="flex w-full rounded-xl bg-slate-100 p-1 sm:w-auto" role="tablist" aria-label="Meridian sample screens">
+                      {[
+                        { label: "Today", icon: Home, index: 0 },
+                        { label: "Vault", icon: FolderLock, index: 1 },
+                      ].map(({ label, icon: Icon, index }) => (
+                        <button key={label} id={`preview-tab-${index}`} role="tab" aria-selected={previewSlide === index} aria-controls="meridian-preview-panel" onClick={() => setPreviewSlide(index)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-xs font-semibold transition-colors sm:flex-none", previewSlide === index ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
+                          <Icon className="h-4 w-4" />{label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid min-h-[440px] bg-[#f7f9f8] md:grid-cols-[168px_minmax(0,1fr)]">
+                    <aside className="hidden border-r border-slate-100 bg-white p-4 md:block">
+                      <p className="mb-4 px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">Meridian</p>
+                      {[
+                        { label: "Today", icon: Home, active: previewSlide === 0 },
+                        { label: "Talk", icon: MessageSquare, active: false },
+                        { label: "Vault", icon: FolderLock, active: previewSlide === 1 },
+                        { label: "Calendar", icon: CalendarDays, active: false },
+                      ].map(({ label, icon: Icon, active }) => (
+                        <div key={label} className={cn("mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-medium", active ? "bg-emerald-50 text-emerald-800" : "text-slate-400")}>
+                          <Icon className="h-4 w-4" strokeWidth={1.7} />{label}
+                        </div>
+                      ))}
+                      <div className="mt-8 rounded-2xl bg-emerald-50/80 p-3">
+                        <Shield className="h-4 w-4 text-emerald-700" />
+                        <p className="mt-2 text-[10px] font-semibold text-slate-700">Your space, your pace</p>
+                        <p className="mt-1 text-[9px] leading-relaxed text-slate-500">Keep the important pieces together.</p>
+                      </div>
+                    </aside>
+
+                    <div id="meridian-preview-panel" role="tabpanel" aria-labelledby={`preview-tab-${previewSlide}`} className="min-w-0 p-4 sm:p-6 lg:p-8">
+                      <AnimatePresence mode="wait">
+                        {previewSlide === 0 ? (
+                          <motion.div key="today-preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                              <div>
+                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Today</p>
+                                <h3 className="text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">A clearer view of what’s ahead.</h3>
+                              </div>
+                              <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-[10px] font-medium text-emerald-800"><Shield className="h-3.5 w-3.5" />Private to you</span>
+                            </div>
+                            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                              <div className="rounded-[22px] bg-gradient-to-br from-[#123f36] to-[#0f766e] p-5 text-white sm:p-6">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200">Your day, at a glance</p>
+                                <p className="mt-3 max-w-sm text-xl font-medium leading-snug sm:text-2xl">Bring the moving pieces together.</p>
+                                <p className="mt-2 max-w-sm text-xs leading-relaxed text-emerald-50/80 sm:text-sm">A home for the dates, documents, and next steps you want to keep close.</p>
+                                <div className="mt-6 flex flex-wrap gap-2">
+                                  {[
+                                    { label: "Calendar", icon: CalendarDays },
+                                    { label: "Documents", icon: FolderLock },
+                                    { label: "Next steps", icon: Check },
+                                  ].map(({ label, icon: Icon }) => (
+                                    <span key={label} className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-2 text-[10px] font-medium text-white/90">
+                                      <Icon className="h-3.5 w-3.5" />{label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                                {[
+                                  { icon: CalendarDays, title: "Your schedule", desc: "Important dates and plans, together.", color: "bg-emerald-50 text-emerald-700" },
+                                  { icon: FolderLock, title: "Your documents", desc: "Keep key details close at hand.", color: "bg-amber-50 text-amber-700" },
+                                ].map(({ icon: Icon, title, desc, color }) => (
+                                  <div key={title} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                                    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", color)}><Icon className="h-4 w-4" /></span>
+                                    <span><strong className="block text-xs font-semibold text-slate-800">{title}</strong><span className="mt-1 block text-[10px] leading-relaxed text-slate-500">{desc}</span></span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                              {[
+                                { icon: MessageSquare, title: "Talk it through", desc: "Make room to think clearly." },
+                                { icon: FileText, title: "Understand a document", desc: "Get a plain-language explanation." },
+                                { icon: Sparkles, title: "Find a next step", desc: "Start with what needs attention." },
+                              ].map(({ icon: Icon, title, desc }) => (
+                                <div key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5">
+                                  <Icon className="h-4 w-4 shrink-0 text-emerald-700" />
+                                  <span><strong className="block text-[11px] font-semibold text-slate-700">{title}</strong><span className="mt-0.5 block text-[9px] text-slate-400">{desc}</span></span>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div key="vault-preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                              <div>
+                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Your Vault</p>
+                                <h3 className="text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">Important details, in one place.</h3>
+                              </div>
+                              <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-[10px] font-medium text-emerald-800"><Lock className="h-3.5 w-3.5" />Your private files</span>
+                            </div>
+                            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                              <div className="space-y-3">
+                                {[
+                                  { icon: FileText, title: "Parenting plan.pdf", meta: "PDF · Added to your Vault", tone: "text-rose-600 bg-rose-50" },
+                                  { icon: CalendarDays, title: "School calendar", meta: "Schedule · Saved for reference", tone: "text-emerald-700 bg-emerald-50" },
+                                  { icon: FileText, title: "Important notes", meta: "Document · Added to your Vault", tone: "text-blue-700 bg-blue-50" },
+                                ].map(({ icon: Icon, title, meta, tone }) => (
+                                  <div key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                                    <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", tone)}><Icon className="h-5 w-5" /></span>
+                                    <span className="min-w-0 flex-1"><strong className="block truncate text-xs font-semibold text-slate-800">{title}</strong><span className="mt-1 block text-[10px] text-slate-500">{meta}</span></span>
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-5 sm:p-6">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm"><Shield className="h-5 w-5" /></span>
+                                <h4 className="mt-4 text-base font-semibold text-slate-800">Your documents stay yours.</h4>
+                                <p className="mt-2 text-xs leading-relaxed text-slate-600">Your Vault belongs to your account. Choose what to keep, and use document tools when you need help understanding what’s there.</p>
+                                <p className="mt-5 flex items-center gap-2 text-[10px] font-medium text-emerald-800"><Lock className="h-3.5 w-3.5" />Private account storage</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             </div>
 
             {/* ===== SECTION 4.5: Testimonials ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
               <div className="max-w-lg w-full space-y-6">
                 <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-2">People like you</motion.p>
@@ -2178,7 +2193,7 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 4.6: From the Guides ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
               <div className="max-w-lg w-full">
                 <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">From the guides</motion.p>
@@ -2208,7 +2223,7 @@ export default function App() {
             </div>
 
             {/* ===== SECTION 4.75: FAQ ===== */}
-            <div className="flex items-center justify-center px-6 py-24 relative z-10">
+            <div className="flex items-center justify-center px-6 py-14 sm:py-16 relative z-10">
               <div className="max-w-lg w-full">
                 <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">Common questions</motion.p>

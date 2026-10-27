@@ -61,12 +61,21 @@
     .hero-note { font-size: 12px; color: #64748b; margin-top: 12px; }
 
     section { max-width: 640px; margin: 0 auto; padding: 60px 24px; }
+    section.mirror, section.product-preview-section, section.platform { max-width: 1080px; }
 
-    .mirror p { font-size: 15px; color: #475569; margin-bottom: 16px; }
-    .mirror h2 { font-size: 24px; font-weight: 300; color: #1e293b; margin-bottom: 8px; }
-    .mirror .accent { font-size: 18px; font-weight: 300; color: #047857; margin-bottom: 32px; }
+    .mirror-card { display: grid; grid-template-columns: 1.05fr .95fr; align-items: center; gap: 48px; padding: 48px; border: 1px solid #e2e8f0; border-radius: 30px; background: #fff; box-shadow: 0 24px 70px -48px rgba(15,23,42,.22); }
+    .eyebrow { color: #047857; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    .mirror-copy h2 { margin: 16px 0 20px; color: #1e293b; font-size: 38px; font-weight: 300; letter-spacing: -.03em; line-height: 1.15; }
+    .mirror-copy h2 em { color: #047857; font-family: Georgia, serif; font-weight: 400; }
+    .mirror-copy p:not(.eyebrow) { margin-top: 14px; color: #475569; font-size: 15px; line-height: 1.7; }
+    .mirror-note { position: relative; overflow: hidden; padding: 32px; border-radius: 24px; color: #fff; background: linear-gradient(145deg, #123f36, #0f766e); }
+    .mirror-note .eyebrow { color: #a7f3d0; }
+    .mirror-note h3 { margin-top: 16px; font-family: Georgia, serif; font-size: 27px; font-weight: 400; line-height: 1.3; }
+    .mirror-note > p:not(.eyebrow) { margin-top: 12px; color: rgba(236,253,245,.82); font-size: 14px; line-height: 1.7; }
+    .mirror-tags { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; }
+    .mirror-tags span { padding: 10px 8px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; background: rgba(255,255,255,.1); color: #f0fdf4; font-size: 11px; text-align: center; }
 
-    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     .features .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; text-align: center; margin-bottom: 24px; grid-column: 1 / -1; }
     .feature-card { padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
     .feature-card h3 { font-size: 14px; font-weight: 500; color: #1e293b; margin-bottom: 4px; }
@@ -80,8 +89,10 @@
     .connection-item { display: flex; min-height: 60px; align-items: center; justify-content: center; gap: 8px; padding: 10px; border: 1px solid #f1f5f9; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 11px; font-weight: 500; }
     .connection-item svg { width: 26px; height: 26px; flex: 0 0 auto; }
 
-    .promises { text-align: center; }
-    .promises p { font-size: 18px; font-weight: 300; color: #1e293b; margin-bottom: 20px; }
+    section.promises { display: grid; max-width: 1080px; grid-template-columns: .8fr 1.2fr; align-items: center; gap: 28px; margin: 0 auto; padding: 32px; border: 1px solid #d1fae5; border-radius: 24px; background: linear-gradient(135deg,#fff,#ecfdf5); }
+    .promises p { margin: 0; color: #475569; font-size: 13px; line-height: 1.7; }
+    .promises p:first-child { color: #1e293b; font-size: 20px; font-weight: 500; line-height: 1.35; }
+    .promises a { color: #047857; font-weight: 600; }
 
     .testimonials .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; text-align: center; margin-bottom: 24px; }
     .testimonial { padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; margin-bottom: 16px; }
@@ -99,32 +110,34 @@
     .founder-story strong { color: #1e293b; }
 
     /* Product preview */
-    .phone-preview { display: flex; justify-content: center; padding: 20px 0; }
-    .phone-frame { width: 280px; border: 2px solid #e2e8f0; border-radius: 32px; padding: 16px; background: #f8fafc; box-shadow: 0 20px 60px rgba(0,0,0,0.08); position: relative; }
-    .phone-notch { width: 80px; height: 6px; background: #e2e8f0; border-radius: 3px; margin: 0 auto 16px; }
-    .preview-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; color: #1e293b; font-size: 12px; font-weight: 650; }
-    .preview-brand span:last-child { color: #047857; font-size: 9px; font-weight: 500; }
-    .preview-today { padding: 16px; border-radius: 18px; color: white; background: linear-gradient(145deg, #155e4b, #0f766e); }
-    .preview-today small, .preview-today strong { display: block; }
-    .preview-today small { margin-bottom: 8px; color: #b7e4d1; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
-    .preview-today strong { font-family: Georgia, serif; font-size: 19px; font-weight: 400; }
-    .preview-today p { margin-top: 6px; color: #e5f5ec; font-size: 11px; }
-    .preview-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 14px; background: white; }
-    .preview-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #047857; background: #ecfdf5; font-size: 15px; }
-    .preview-row strong, .preview-row small { display: block; }
-    .preview-row strong { color: #1e293b; font-size: 11px; }
-    .preview-row small { margin-top: 2px; color: #64748b; font-size: 9px; line-height: 1.4; }
-
-    /* Message coach transformation */
-    .rewrite-demo { max-width: 480px; margin: 0 auto; }
-    .rewrite-demo .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; text-align: center; margin-bottom: 24px; }
-    .rewrite-card { padding: 20px; border-radius: 16px; margin-bottom: 12px; font-size: 14px; line-height: 1.6; }
-    .rewrite-before { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-    .rewrite-after { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
-    .rewrite-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .rewrite-before .rewrite-label { color: #dc2626; }
-    .rewrite-after .rewrite-label { color: #047857; }
-    .rewrite-arrow { text-align: center; font-size: 20px; color: #cbd5e1; margin: 4px 0; }
+    .dashboard-shell { overflow: hidden; border: 1px solid #e2e8f0; border-radius: 26px; background: #fff; box-shadow: 0 28px 80px -44px rgba(15,23,42,.28); }
+    .dashboard-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-size: 13px; font-weight: 600; }
+    .dashboard-bar span { color: #64748b; font-size: 10px; font-weight: 500; }
+    .dashboard-body { display: grid; grid-template-columns: 150px minmax(0,1fr); min-height: 350px; background: #f7f9f8; }
+    .dashboard-nav { padding: 22px 14px; border-right: 1px solid #e2e8f0; background: #fff; }
+    .dashboard-nav span { display: block; margin-bottom: 9px; padding: 10px 12px; border-radius: 10px; color: #64748b; font-size: 11px; }
+    .dashboard-nav span:first-child { color: #047857; background: #ecfdf5; font-weight: 600; }
+    .dashboard-main { padding: 24px; }
+    .dashboard-main .eyebrow { font-size: 9px; }
+    .dashboard-main h3 { margin-top: 7px; color: #1e293b; font-size: 24px; font-weight: 400; letter-spacing: -.02em; }
+    .dashboard-main > p { margin-top: 6px; color: #64748b; font-size: 12px; }
+    .dashboard-cards { display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; margin-top: 20px; }
+    .dashboard-focus { grid-row: span 2; padding: 22px; border-radius: 18px; color: #fff; background: linear-gradient(145deg, #123f36, #0f766e); }
+    .dashboard-focus small { color: #a7f3d0; font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .dashboard-focus strong { display: block; max-width: 270px; margin-top: 12px; font-family: Georgia, serif; font-size: 22px; font-weight: 400; line-height: 1.3; }
+    .dashboard-mini { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 15px; background: #fff; }
+    .dashboard-mini i { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 11px; color: #047857; background: #ecfdf5; font-size: 16px; font-style: normal; }
+    .dashboard-mini strong, .dashboard-mini small { display: block; }
+    .dashboard-mini strong { color: #1e293b; font-size: 11px; }
+    .dashboard-mini small { margin-top: 3px; color: #64748b; font-size: 9px; }
+    .rewrite-demo { max-width: 1080px; margin: 0 auto; }
+    .rewrite-demo .label { margin-bottom: 24px; color: #047857; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-align: center; text-transform: uppercase; }
+    .rewrite-demo h2 { margin: 0 auto 28px; color: #1e293b; font-size: 30px; font-weight: 300; text-align: center; }
+    .next-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .next-step { padding: 22px; border: 1px solid #e2e8f0; border-radius: 18px; background: #fff; box-shadow: 0 12px 32px -28px rgba(15,23,42,.28); }
+    .next-step span { color: #047857; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .next-step h3 { margin-top: 12px; color: #1e293b; font-size: 15px; font-weight: 600; }
+    .next-step p { margin-top: 6px; color: #64748b; font-size: 12px; line-height: 1.6; }
 
     .final-cta { text-align: center; padding: 60px 24px 40px; max-width: 640px; margin: 0 auto; }
     .final-cta p { font-size: 18px; font-weight: 300; color: #1e293b; margin-bottom: 16px; }
@@ -145,14 +158,29 @@
     .mobile-primary { display: none; }
     .desktop-primary { display: block; }
 
+    @media (max-width: 760px) {
+      .features { grid-template-columns: repeat(2, 1fr); }
+    }
+
     @media (max-width: 480px) {
       .hero h1 { font-size: 28px; }
+      .mirror-card { grid-template-columns: 1fr; gap: 24px; padding: 24px; }
+      .mirror-copy h2 { font-size: 30px; }
+      .mirror-note { padding: 24px; }
+      .dashboard-body { grid-template-columns: 1fr; }
+      .dashboard-nav { display: none; }
+      .dashboard-main { padding: 18px; }
+      .dashboard-cards { grid-template-columns: 1fr; }
+      .dashboard-focus { grid-row: auto; }
+      .next-steps { grid-template-columns: 1fr; }
+      section.promises { grid-template-columns: 1fr; gap: 12px; padding: 24px; }
       .features { grid-template-columns: 1fr; }
       .connections-grid { grid-template-columns: 1fr 1fr; }
       /* Mobile: App Store badge primary, web link secondary */
       .mobile-primary { display: block; }
       .desktop-primary { display: none; }
     }
+
   </style>
   <link rel="stylesheet" href="/site.css">
 </head>
@@ -190,30 +218,47 @@
   </div>
 
   <section class="mirror">
-    <h2>We know where you are.</h2>
-    <p class="accent">We've been there.</p>
-    <p>Googling custody laws at midnight. Re-reading a text from your ex for the fifth time trying to figure out how to respond without making it worse. Holding it together for the kids and quietly breaking down in the car.</p>
-    <p>You don't need another article that says "prioritize self-care" and "control what you can control." You need someone who gets it and can actually help you figure out what to do next.</p>
-  </section>
-
-  <section>
-    <div class="phone-preview">
-      <div class="phone-frame" aria-label="Illustration of the Meridian dashboard">
-        <div class="phone-notch"></div>
-        <div class="preview-brand"><span>Meridian · Your space</span><span>Private</span></div>
-        <div class="preview-today">
-          <small>Your day · Today</small>
-          <strong>A clearer view of what’s ahead.</strong>
-          <p>Plans, dates, and next steps together.</p>
-        </div>
-        <div class="preview-row"><span class="preview-icon">▦</span><span><strong>Your schedule</strong><small>Upcoming dates and important plans</small></span></div>
-        <div class="preview-row"><span class="preview-icon">▤</span><span><strong>Your documents</strong><small>Keep important details close at hand</small></span></div>
-        <div class="preview-row"><span class="preview-icon">✳</span><span><strong>Talk it through</strong><small>Get help thinking through a next step</small></span></div>
+    <div class="mirror-card">
+      <div class="mirror-copy">
+        <p class="eyebrow">When life gets complicated</p>
+        <h2>We know where you are.<br><em>We’ve been there.</em></h2>
+        <p>Googling custody laws at midnight. Re-reading a text, trying to respond without making things worse. Holding it together for the kids while quietly breaking down in the car.</p>
+        <p>You don’t need another reminder to “control what you can control.” You need a place to sort through what’s happening and find a next step that feels possible.</p>
+      </div>
+      <div class="mirror-note">
+        <p class="eyebrow">One step at a time</p>
+        <h3>You don’t have to solve everything tonight.</h3>
+        <p>Start with the piece that needs your attention most. Keep the details close. Come back to the rest when you’re ready.</p>
+        <div class="mirror-tags"><span>The dates</span><span>The documents</span><span>The next step</span></div>
       </div>
     </div>
   </section>
 
-  <section>
+  <section class="product-preview-section">
+    <div class="dashboard-shell" aria-label="Sample view of the Meridian dashboard">
+      <div class="dashboard-bar"><span>Meridian · Your private space</span><span>Sample view</span></div>
+      <div class="dashboard-body">
+        <nav class="dashboard-nav" aria-label="Sample app navigation">
+          <span>Today</span><span>Talk</span><span>Vault</span><span>Calendar</span>
+        </nav>
+        <div class="dashboard-main">
+          <p class="eyebrow">Today</p>
+          <h3>A clearer view of what’s ahead.</h3>
+          <p>Your plans, documents, and next steps—together.</p>
+          <div class="dashboard-cards">
+            <div class="dashboard-focus">
+              <small>Your day, at a glance</small>
+              <strong>Bring the moving pieces together.</strong>
+            </div>
+            <div class="dashboard-mini"><i>▦</i><span><strong>Your schedule</strong><small>Important dates and plans, together.</small></span></div>
+            <div class="dashboard-mini"><i>▤</i><span><strong>Your documents</strong><small>Keep key details close at hand.</small></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="platform">
     <div class="features">
       <p class="label">More than a conversation</p>
       <div class="feature-card">
@@ -263,22 +308,18 @@
   <section>
     <div class="rewrite-demo">
       <p class="label">See it in action</p>
-      <div class="rewrite-card rewrite-before">
-        <div class="rewrite-label">Your draft</div>
-        You can't just change the schedule without asking me. This is exactly why I can't trust you with anything.
-      </div>
-      <div class="rewrite-arrow">&darr;</div>
-      <div class="rewrite-card rewrite-after">
-        <div class="rewrite-label">With Meridian</div>
-        I noticed the schedule changed for this weekend. Can we discuss any changes ahead of time? It helps me plan and keeps things consistent for the kids.
+      <h2>Everything important, easier to see.</h2>
+      <div class="next-steps">
+        <div class="next-step"><span>01 · Keep track</span><h3>See what’s coming up</h3><p>Bring dates and schedule details into view before they become last-minute surprises.</p></div>
+        <div class="next-step"><span>02 · Keep close</span><h3>Find the details you need</h3><p>Keep important documents and notes in your private Meridian space.</p></div>
+        <div class="next-step"><span>03 · Move forward</span><h3>Choose a next step</h3><p>Think through a situation or prepare for a conversation when you’re ready.</p></div>
       </div>
     </div>
   </section>
 
   <section class="promises">
     <p>Your account isn't shared with your co-parent.</p>
-    <p>AI features send messages and relevant document text to Anthropic to generate responses. Read our <a href="/privacy">Privacy Policy</a>.</p>
-    <p>Standard signups get 3 days free; eligible professional referrals get 14 days.</p>
+    <p>When you use AI features, messages and relevant document text are sent to Anthropic to generate responses. Read our <a href="/privacy">Privacy Policy</a>.</p>
   </section>
 
   <section class="testimonials">
