@@ -1981,8 +1981,8 @@ export default function App() {
                   {[
                     { icon: FolderLock, title: "Keep the details together", desc: "Your documents, plans, schedules, and important dates in one private space.", status: "Available now" },
                     { icon: Sparkles, title: "Make sense of what’s next", desc: "Think through a hard moment, understand a document, or prepare a calm response.", status: "Available now" },
-                    { icon: CalendarDays, title: "Bring your tools together", desc: "Google and Apple calendars, Google Drive, and Dropbox connections.", status: "In development" },
-                    { icon: Heart, title: "Find support beyond the app", desc: "Explore therapists, counselors, lawyers, faith communities, and local resources.", status: "In development" },
+                    { icon: CalendarDays, title: "Bring your tools together", desc: "A clearer place for calendars, cloud files, and the plans that matter." },
+                    { icon: Heart, title: "Find support beyond the app", desc: "A path to professional and community support for what you’re navigating." },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
@@ -1991,7 +1991,7 @@ export default function App() {
                       </div>
                       <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
                       <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
-                      <p className={cn("mt-3 text-[10px] font-semibold uppercase tracking-wide", item.status === "Available now" ? "text-emerald-700" : "text-amber-700")}>{item.status}</p>
+                      {item.status && <p className="mt-3 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">{item.status}</p>}
                     </motion.div>
                   ))}
                 </div>
@@ -2197,8 +2197,8 @@ export default function App() {
                   className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">Common questions</motion.p>
                 <div className="space-y-3">
                   {[
-                    { q: "Is Meridian a therapist or a lawyer?", a: "No. Meridian helps you organize information and think through next steps; it isn’t a substitute for professional advice or crisis support. Connections to professional and community resources are in development and are not available yet." },
-                    { q: "What does Meridian actually do?", a: "Keep important documents, schedules, and dates together in one private space. Optional AI tools can help you understand a document, think through a situation, or prepare a message. External calendar and cloud-file connections and a professional and community resource directory are in development." },
+                    { q: "Is Meridian a therapist or a lawyer?", a: "No. Meridian helps you organize information and think through next steps; it isn’t a substitute for professional advice or crisis support." },
+                    { q: "What does Meridian actually do?", a: "Keep important documents, schedules, and dates together in one private space. Optional AI tools can help you understand a document, think through a situation, or prepare a message." },
                     { q: "Is my data private?", a: "Your account isn't shared with your co-parent. Data is encrypted in transit and at rest. When you use AI features, your messages and relevant document text are sent to Anthropic to generate responses.", link: "Privacy Policy" },
                     { q: "Is it really free?", a: "Standard signups get a 3-day free trial; eligible clients who sign up through a participating professional's referral link get 14 days. After the trial, Meridian is $4.99/month. Cancel anytime." },
                     { q: "Can my ex see what I write here?", a: "Your co-parent does not have shared account access or a co-parent portal. AI features send messages and relevant document text to Anthropic to generate responses.", link: "Privacy Policy" },
@@ -3049,9 +3049,8 @@ export default function App() {
                         <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-[11px] font-semibold text-slate-700">More of your support, connected</p>
-                            <span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-amber-700">In development</span>
                           </div>
-                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">External calendar and cloud-file connections, plus a directory of professional and community resources.</p>
+                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">Bring calendars, cloud files, and professional and community support into the picture.</p>
                         </div>
                       </section>
 
@@ -4085,7 +4084,7 @@ export default function App() {
                         {[
                           { id: "privacy", icon: Shield, label: "Privacy & Data", content: <>Data is encrypted in transit and at rest. AI features send your messages and relevant document text to Anthropic to generate responses. Read our <a href="/privacy" className="text-blue-500 underline">Privacy Policy</a> or contact <a href="mailto:privacy@mymeridianapp.com" className="text-blue-500 underline">privacy@mymeridianapp.com</a> to request full account deletion.</> },
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: <>Have a question or running into an issue? Reach out to us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a> and we'll get back to you within 24 hours.</> },
-                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a private place to bring plans, important dates, documents, and next steps together while navigating difficult life changes. Conversation tools are one part of that support. Meridian is not legal, mental-health, or crisis care. External tool integrations and a resource directory are in development." },
+                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a private place to bring plans, important dates, documents, and next steps together while navigating difficult life changes. Conversation tools are one part of that support. Meridian is not legal, mental-health, or crisis care." },
                         ].map((item) => (
                           <div key={item.id} id={item.id === "help" ? "profile-help" : undefined} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all scroll-mt-6">
                             <button onClick={() => setExpandedSetting(expandedSetting === item.id ? null : item.id)} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
