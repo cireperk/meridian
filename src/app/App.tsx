@@ -1660,23 +1660,23 @@ export default function App() {
               <div className="w-full max-w-xl mx-auto lg:mx-0">
               <div className="mb-4 flex items-center justify-center gap-2.5 lg:hidden">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-3.5 w-3.5" /></span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Private support for hard moments</span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Private support through life’s transitions</span>
               </div>
 
               <div className="mb-5 hidden items-center justify-center gap-3 lg:flex lg:justify-start">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-4 w-4" /></span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support for hard moments</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support through life’s transitions</span>
               </div>
 
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[1.9rem] min-[380px]:text-[2.45rem] sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.04] lg:text-left lg:text-[3.5rem] xl:text-[3.8rem]">
-                <span className="hidden lg:inline">Handle co-parenting with<br /></span>
-                <span className="lg:hidden">Handle co-parenting<br />with </span>
-                <span className="hidden bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-normal lg:inline lg:font-serif lg:italic">more clarity.</span>
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-serif font-normal italic lg:hidden">more clarity.</span>
+                <span className="hidden lg:inline">Find your footing<br />through </span>
+                <span className="lg:hidden">Find your footing through<br /></span>
+                <span className="hidden bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-normal lg:inline lg:font-serif lg:italic">life’s big changes.</span>
+                <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-serif font-normal italic lg:hidden">life’s big changes.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-auto text-[15px] text-slate-600 text-center mb-5 max-w-lg leading-relaxed sm:text-base lg:mx-0 lg:mb-7 lg:text-left lg:text-lg lg:leading-8">
-                Draft calmer messages, understand custody documents, and keep important dates organized—with thoughtful guidance whenever you need it.
+                From divorce and co-parenting to starting over, Meridian helps you sort through hard conversations, understand important documents, and find a steadier next step.
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 0.8] }} className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto sm:max-w-md lg:mx-0 lg:items-start lg:gap-4">
