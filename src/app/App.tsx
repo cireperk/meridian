@@ -2839,7 +2839,6 @@ export default function App() {
                     <button key={id} onClick={action} aria-current={selected ? "page" : undefined} className={cn("flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm transition-colors", selected ? "bg-emerald-50 text-emerald-800 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800")}>
                       <Icon className={cn("h-[18px] w-[18px]", selected ? "text-emerald-700" : "text-slate-400")} strokeWidth={1.8} />
                       {label}
-                      {id === "talk" && conversations.length > 0 && <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-medium text-white">{conversations.length}</span>}
                     </button>
                   );
                 })}
