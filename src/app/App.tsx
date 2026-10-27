@@ -857,6 +857,20 @@ export default function App() {
   const [vaultUploadProgress, setVaultUploadProgress] = useState<"uploading" | "processing" | "done" | null>(null);
   const [vaultViewDoc, setVaultViewDoc] = useState<any>(null);
   const [vaultViewUrl, setVaultViewUrl] = useState<string | null>(null);
+  const [vaultViewLoading, setVaultViewLoading] = useState(false);
+  const [vaultViewError, setVaultViewError] = useState("");
+  const [vaultPdf, setVaultPdf] = useState<any>(null);
+  const [vaultPdfPage, setVaultPdfPage] = useState(1);
+  const [vaultPdfPageCount, setVaultPdfPageCount] = useState(0);
+  const [vaultPdfScale, setVaultPdfScale] = useState(1);
+  const [vaultPdfContainerWidth, setVaultPdfContainerWidth] = useState(0);
+  const [vaultPdfSearch, setVaultPdfSearch] = useState("");
+  const [vaultPdfMatches, setVaultPdfMatches] = useState<{ page: number; snippet: string }[]>([]);
+  const [vaultPdfMatchIndex, setVaultPdfMatchIndex] = useState(0);
+  const [vaultPdfSearching, setVaultPdfSearching] = useState(false);
+  const vaultPdfCanvasRef = useRef<HTMLCanvasElement>(null);
+  const vaultPdfContainerRef = useRef<HTMLDivElement>(null);
+  const vaultOpenRequestRef = useRef(0);
   const [vaultRenameId, setVaultRenameId] = useState<string | null>(null);
   const [vaultRenameName, setVaultRenameName] = useState("");
   const [vaultDeleteId, setVaultDeleteId] = useState<string | null>(null);
@@ -1199,6 +1213,13 @@ export default function App() {
   const toName = (s: string) => s.replace(/\S+/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
   const firstName = toName(session?.user?.name?.split(" ")[0] || "");
   const hasConversation = messages.length > 0;
+  const vaultTextSearchTerm = vaultPdfSearch.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const vaultTextSearchParts = vaultViewDoc?.text_content && vaultTextSearchTerm
+    ? vaultViewDoc.text_content.split(new RegExp(`(${vaultTextSearchTerm})`, "gi"))
+    : null;
+  const vaultTextSearchCount = vaultTextSearchTerm && vaultViewDoc?.text_content
+    ? [...vaultViewDoc.text_content.matchAll(new RegExp(vaultTextSearchTerm, "gi"))].length
+    : 0;
 
   // --- Vault ---
   const loadVaultDocs = useCallback(async () => {
@@ -1214,9 +1235,168 @@ export default function App() {
     } finally { setVaultLoading(false); setVaultLoaded(true); }
   }, [session?.token, session?.user?.id, vaultDocs]);
 
+  const openVaultDocument = async (doc: any) => {
+    const requestId = ++vaultOpenRequestRef.current;
+    if (vaultViewUrl?.startsWith("blob:")) URL.revokeObjectURL(vaultViewUrl);
+    setVaultViewDoc(doc);
+    setVaultViewUrl(null);
+    setVaultViewError("");
+    setVaultViewLoading(Boolean(doc.storage_path && !doc.storage_path.startsWith(session?.user?.id + "/migrated")));
+    setVaultPdf(null);
+    setVaultPdfPage(1);
+    setVaultPdfPageCount(0);
+    setVaultPdfScale(1);
+    setVaultPdfSearch("");
+    setVaultPdfMatches([]);
+    if (!doc.storage_path || doc.storage_path.startsWith(session?.user?.id + "/migrated")) {
+      setVaultViewUrl("");
+      setVaultViewLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session.token}` },
+      });
+      if (!response.ok) throw new Error(`Could not load this file (${response.status}).`);
+      const objectUrl = URL.createObjectURL(await response.blob());
+      if (requestId !== vaultOpenRequestRef.current) {
+        URL.revokeObjectURL(objectUrl);
+        return;
+      }
+      setVaultViewUrl(objectUrl);
+    } catch (error) {
+      if (requestId === vaultOpenRequestRef.current) {
+        setVaultViewError(error instanceof Error ? error.message : "Could not load this file. Please try again.");
+        setVaultViewUrl("");
+      }
+    } finally {
+      if (requestId === vaultOpenRequestRef.current) setVaultViewLoading(false);
+    }
+  };
+
+  const closeVaultDocument = () => {
+    vaultOpenRequestRef.current += 1;
+    if (vaultViewUrl?.startsWith("blob:")) URL.revokeObjectURL(vaultViewUrl);
+    setVaultViewDoc(null);
+    setVaultViewUrl(null);
+    setVaultViewError("");
+    setVaultPdf(null);
+    setVaultPdfSearch("");
+    setVaultPdfMatches([]);
+  };
+
+  const moveVaultPdfMatch = (direction: number) => {
+    if (!vaultPdfMatches.length) return;
+    const nextIndex = (vaultPdfMatchIndex + direction + vaultPdfMatches.length) % vaultPdfMatches.length;
+    setVaultPdfMatchIndex(nextIndex);
+    setVaultPdfPage(vaultPdfMatches[nextIndex].page);
+  };
+
   useEffect(() => { if (activeTab === "vault" || activeTab === "talk") loadVaultDocs(); }, [activeTab]);
   // Also load vault docs on session init so chat always has context
   useEffect(() => { if (session?.token) loadVaultDocs(); }, [session?.token]);
+
+  useEffect(() => {
+    if (!vaultViewUrl || !vaultViewDoc?.mime_type?.includes("pdf")) return;
+    let cancelled = false;
+    const loadingTask = pdfjsLib.getDocument(vaultViewUrl);
+    loadingTask.promise.then((pdf) => {
+      if (cancelled) {
+        void pdf.destroy();
+        return;
+      }
+      setVaultPdf(pdf);
+      setVaultPdfPageCount(pdf.numPages);
+    }).catch((error: unknown) => {
+      if (!cancelled) setVaultViewError(error instanceof Error ? error.message : "This PDF could not be opened.");
+    });
+    return () => {
+      cancelled = true;
+      void loadingTask.destroy();
+    };
+  }, [vaultViewUrl, vaultViewDoc?.mime_type]);
+
+  useEffect(() => {
+    const container = vaultPdfContainerRef.current;
+    if (!vaultPdf || !container) return;
+    const observer = new ResizeObserver(([entry]) => setVaultPdfContainerWidth(entry.contentRect.width));
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [vaultPdf]);
+
+  useEffect(() => {
+    if (!vaultPdf || !vaultPdfContainerWidth || !vaultPdfCanvasRef.current) return;
+    let cancelled = false;
+    let renderTask: { cancel: () => void } | null = null;
+    vaultPdf.getPage(vaultPdfPage).then((page: any) => {
+      if (cancelled || !vaultPdfCanvasRef.current) return;
+      const baseViewport = page.getViewport({ scale: 1 });
+      const fitScale = Math.min(1.5, (vaultPdfContainerWidth - 32) / baseViewport.width);
+      const viewport = page.getViewport({ scale: Math.max(0.35, fitScale * vaultPdfScale) });
+      const canvas = vaultPdfCanvasRef.current;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("This browser could not display the PDF page.");
+      const pixelRatio = window.devicePixelRatio || 1;
+      canvas.width = Math.ceil(viewport.width * pixelRatio);
+      canvas.height = Math.ceil(viewport.height * pixelRatio);
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      renderTask = page.render({ canvasContext: context, viewport });
+      return renderTask.promise;
+    }).catch((error: unknown) => {
+      if (!cancelled && (error as { name?: string })?.name !== "RenderingCancelledException") {
+        setVaultViewError(error instanceof Error ? error.message : "This PDF page could not be displayed.");
+      }
+    });
+    return () => {
+      cancelled = true;
+      renderTask?.cancel();
+    };
+  }, [vaultPdf, vaultPdfPage, vaultPdfScale, vaultPdfContainerWidth]);
+
+  useEffect(() => {
+    if (!vaultPdf || !vaultPdfSearch.trim()) {
+      setVaultPdfMatches([]);
+      setVaultPdfMatchIndex(0);
+      setVaultPdfSearching(false);
+      return;
+    }
+    let cancelled = false;
+    const findMatches = async () => {
+      setVaultPdfSearching(true);
+      const matches: { page: number; snippet: string }[] = [];
+      const needle = vaultPdfSearch.trim().toLocaleLowerCase();
+      for (let pageNumber = 1; pageNumber <= vaultPdf.numPages && matches.length < 200; pageNumber += 1) {
+        const page = await vaultPdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item: any) => item.str || "").join(" ").replace(/\s+/g, " ");
+        let index = pageText.toLocaleLowerCase().indexOf(needle);
+        while (index !== -1 && matches.length < 200) {
+          matches.push({
+            page: pageNumber,
+            snippet: pageText.slice(Math.max(0, index - 45), Math.min(pageText.length, index + needle.length + 75)).trim(),
+          });
+          index = pageText.toLocaleLowerCase().indexOf(needle, index + needle.length);
+        }
+        if (cancelled) return;
+      }
+      if (!cancelled) {
+        setVaultPdfMatches(matches);
+        setVaultPdfMatchIndex(0);
+        setVaultPdfSearching(false);
+        if (matches[0]) setVaultPdfPage(matches[0].page);
+      }
+    };
+    void findMatches().catch((error: unknown) => {
+      if (!cancelled) {
+        setVaultPdfSearching(false);
+        setVaultViewError(error instanceof Error ? error.message : "Could not search this PDF.");
+      }
+    });
+    return () => { cancelled = true; };
+  }, [vaultPdf, vaultPdfSearch]);
 
   // Migrate legacy decree (localStorage/profiles) into vault documents table
   // Only runs for decrees loaded from localStorage/profiles (not freshly uploaded ones)
@@ -4013,13 +4193,7 @@ export default function App() {
                         {filteredVaultDocs.map((doc: any, idx: number) => (
                           <motion.div key={doc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.04, duration: 0.3 }}
                             className="bg-white border border-slate-200/60 rounded-xl p-4 hover:border-emerald-300/60 transition-all cursor-pointer active:scale-[0.98]"
-                            onClick={() => {
-                              setVaultViewDoc(doc); setVaultViewUrl(null);
-                              if (doc.storage_path && !doc.storage_path.startsWith(session?.user?.id + "/migrated"))
-                                fetch(`${SUPABASE_URL}/storage/v1/object/documents/${doc.storage_path}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${session?.token}` } })
-                                  .then(r => r.blob()).then(blob => setVaultViewUrl(URL.createObjectURL(blob))).catch(() => setVaultViewUrl(""));
-                              else setVaultViewUrl("");
-                            }}>
+                            onClick={() => { void openVaultDocument(doc); }}>
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5", doc.mime_type?.startsWith("image/") ? "bg-purple-50" : "bg-emerald-50")}>
@@ -4652,10 +4826,9 @@ export default function App() {
 
             {/* Document viewer modal */}
             {vaultViewDoc && (
-              <motion.div className="fixed inset-0 z-[200] bg-black/30 flex items-end justify-center" onClick={() => { setVaultViewDoc(null); if (vaultViewUrl) { URL.revokeObjectURL(vaultViewUrl); setVaultViewUrl(null); } }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <motion.div className="w-full max-w-[480px] bg-white rounded-t-2xl px-6 pb-8 pt-3 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
-                  <div className="w-9 h-1 rounded-full bg-slate-200 mx-auto mb-4" />
-                  <div className="flex items-center justify-between mb-4">
+              <motion.div className="fixed inset-0 z-[200] flex items-stretch justify-center bg-slate-950/50 p-0 sm:items-center sm:p-5" onClick={closeVaultDocument} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div className="flex h-[100dvh] max-h-full w-full max-w-6xl flex-col overflow-hidden bg-white sm:h-[min(92dvh,1000px)] sm:rounded-2xl sm:shadow-2xl" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 pt-[max(12px,env(safe-area-inset-top))] sm:px-6 sm:py-4">
                     <div className="flex-1 min-w-0">
                       {vaultRenameId === vaultViewDoc.id ? (
                         <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
@@ -4674,7 +4847,17 @@ export default function App() {
                         <span className="text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
                       </div>
                     </div>
-                    <button onClick={() => { setVaultViewDoc(null); if (vaultViewUrl) { URL.revokeObjectURL(vaultViewUrl); setVaultViewUrl(null); } }} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><X className="w-4 h-4" /></button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {vaultViewUrl && (
+                        <>
+                          <a href={vaultViewUrl} download={vaultViewDoc.file_name} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-4" aria-label="Download original document">
+                            <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
+                          </a>
+                          <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="hidden h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex">Open original</a>
+                        </>
+                      )}
+                      <button onClick={closeVaultDocument} aria-label="Close document" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+                    </div>
                   </div>
                   {/* Decree Intelligence in vault detail */}
                   {FEATURE_DECREE_INTELLIGENCE && vaultViewDoc.category === "decree" && decreeExtraction?.status === "complete" && (
@@ -4686,22 +4869,89 @@ export default function App() {
                       <ChevronRight className="w-4 h-4 text-emerald-400" />
                     </button>
                   )}
-                  <div className="flex-1 overflow-auto rounded-xl border border-slate-200/60 bg-slate-50/50 min-h-[200px]">
-                    {!vaultViewUrl ? (
-                      <div className="flex items-center justify-center h-48">
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                  <div className="min-h-0 flex-1 overflow-auto bg-slate-100">
+                    {vaultViewLoading ? (
+                      <div className="flex h-full min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-5 w-5 border-2 border-emerald-600 border-t-transparent rounded-full" />
+                        Loading document…
                       </div>
-                    ) : vaultViewDoc.mime_type?.startsWith("image/") ? (
-                      <img src={vaultViewUrl} alt={vaultViewDoc.file_name} className="w-full rounded-xl" />
-                    ) : vaultViewDoc.mime_type === "application/pdf" ? (
-                      <iframe src={vaultViewUrl} className="w-full h-[60vh] rounded-xl" title={vaultViewDoc.file_name} />
-                    ) : vaultViewDoc.text_content ? (
-                      <div className="p-4 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{vaultViewDoc.text_content.slice(0, 10000)}</div>
+                    ) : vaultViewError ? (
+                      <div className="flex h-full min-h-48 flex-col items-center justify-center gap-3 px-6 text-center">
+                        <FileText className="h-8 w-8 text-rose-400" />
+                        <p className="text-sm font-medium text-slate-700">Couldn’t open this document</p>
+                        <p className="max-w-md text-xs text-slate-500">{vaultViewError}</p>
+                        <button onClick={() => { void openVaultDocument(vaultViewDoc); }} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white">Try again</button>
+                      </div>
+                    ) : vaultViewUrl === null || (vaultViewUrl && vaultViewDoc.mime_type?.includes("pdf") && !vaultPdf && !vaultViewError) ? (
+                      <div className="flex h-full min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
+                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-5 w-5 border-2 border-emerald-600 border-t-transparent rounded-full" />
+                        Preparing reader…
+                      </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-                        <FileText className="w-8 h-8 mb-2" strokeWidth={1.5} />
-                        <p className="text-sm">Preview not available</p>
-                        <button onClick={() => window.open(vaultViewUrl, "_blank")} className="mt-3 text-sm text-emerald-600 hover:text-emerald-700 font-medium">Open in new tab</button>
+                      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col bg-white shadow-sm">
+                        {(vaultPdf || vaultViewDoc.text_content) && (
+                          <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 p-3 backdrop-blur sm:px-5">
+                            <label className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
+                              <Search className="h-4 w-4 shrink-0 text-slate-400" />
+                              <input value={vaultPdfSearch} onChange={(e) => setVaultPdfSearch(e.target.value)} placeholder="Find in document" aria-label="Find words in document" className="h-10 min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" />
+                              {vaultPdfSearch && <button onClick={() => setVaultPdfSearch("")} aria-label="Clear search" className="text-slate-400 hover:text-slate-700"><X className="h-4 w-4" /></button>}
+                            </label>
+                            {vaultPdf && (
+                              <div className="flex items-center gap-1">
+                                <span className="min-w-[82px] text-center text-[11px] text-slate-500">{vaultPdfSearching ? "Searching…" : vaultPdfSearch ? `${vaultPdfMatches.length ? vaultPdfMatchIndex + 1 : 0} / ${vaultPdfMatches.length}${vaultPdfMatches.length === 200 ? "+" : ""}` : `${vaultPdfPage} / ${vaultPdfPageCount}`}</span>
+                                {vaultPdfSearch ? (
+                                  <>
+                                    <button onClick={() => moveVaultPdfMatch(-1)} disabled={!vaultPdfMatches.length} aria-label="Previous search result" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+                                    <button onClick={() => moveVaultPdfMatch(1)} disabled={!vaultPdfMatches.length} aria-label="Next search result" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={() => setVaultPdfScale((scale) => Math.max(0.7, +(scale - 0.15).toFixed(2)))} aria-label="Zoom out" className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-slate-600 hover:bg-slate-100">−</button>
+                                    <button onClick={() => setVaultPdfScale((scale) => Math.min(2.5, +(scale + 0.15).toFixed(2)))} aria-label="Zoom in" className="flex h-9 w-9 items-center justify-center rounded-lg text-lg text-slate-600 hover:bg-slate-100">+</button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {vaultPdf ? (
+                          <>
+                            {vaultPdfSearch && vaultPdfMatches.length > 0 && (
+                              <button onClick={() => setVaultPdfPage(vaultPdfMatches[vaultPdfMatchIndex]?.page || 1)} className="border-b border-slate-100 bg-emerald-50/70 px-4 py-2.5 text-left text-xs leading-relaxed text-emerald-900 sm:px-6">
+                                <span className="font-semibold">Page {vaultPdfMatches[vaultPdfMatchIndex]?.page}:</span> {vaultPdfMatches[vaultPdfMatchIndex]?.snippet}
+                              </button>
+                            )}
+                            {vaultPdfSearch && !vaultPdfSearching && vaultPdfMatches.length === 0 && (
+                              <p className="border-b border-slate-100 px-4 py-3 text-xs text-slate-500 sm:px-6">No matches found in this document.</p>
+                            )}
+                            <div ref={vaultPdfContainerRef} className="flex flex-1 justify-center overflow-auto bg-slate-100 p-4 sm:p-6">
+                              <canvas ref={vaultPdfCanvasRef} aria-label={`Page ${vaultPdfPage} of ${vaultPdfPageCount}`} className="h-fit max-w-none bg-white shadow-md" />
+                            </div>
+                            <div className="sticky bottom-0 flex items-center justify-center gap-4 border-t border-slate-200 bg-white px-4 py-2.5">
+                              <button onClick={() => setVaultPdfPage((page) => Math.max(1, page - 1))} disabled={vaultPdfPage <= 1} aria-label="Previous page" className="flex h-10 items-center gap-1 rounded-xl px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-40"><ChevronLeft className="h-4 w-4" />Previous</button>
+                              <span className="text-xs font-medium text-slate-500">Page {vaultPdfPage} of {vaultPdfPageCount}</span>
+                              <button onClick={() => setVaultPdfPage((page) => Math.min(vaultPdfPageCount, page + 1))} disabled={vaultPdfPage >= vaultPdfPageCount} aria-label="Next page" className="flex h-10 items-center gap-1 rounded-xl px-3 text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-40">Next<ChevronRight className="h-4 w-4" /></button>
+                            </div>
+                          </>
+                        ) : vaultViewDoc.mime_type?.startsWith("image/") && vaultViewUrl ? (
+                          <div className="flex flex-1 items-start justify-center overflow-auto bg-slate-100 p-3 sm:p-6"><img src={vaultViewUrl} alt={vaultViewDoc.file_name} className="h-auto max-h-none w-auto max-w-full rounded-lg bg-white shadow-md" /></div>
+                        ) : vaultTextSearchParts ? (
+                          <div className="flex-1 overflow-auto p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap sm:p-8">
+                            {vaultTextSearchParts.map((part: string, index: number) => part.toLocaleLowerCase() === vaultPdfSearch.trim().toLocaleLowerCase()
+                              ? <mark key={index} className="rounded bg-yellow-200 px-0.5 text-slate-900">{part}</mark>
+                              : <span key={index}>{part}</span>)}
+                            <p className="mt-6 border-t border-slate-100 pt-4 text-xs text-slate-400">{vaultTextSearchCount} match{vaultTextSearchCount === 1 ? "" : "es"}</p>
+                          </div>
+                        ) : vaultViewDoc.text_content ? (
+                          <div className="flex-1 overflow-auto p-4 text-sm leading-7 text-slate-700 whitespace-pre-wrap sm:p-8">{vaultViewDoc.text_content}</div>
+                        ) : (
+                          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center text-slate-500">
+                            <FileText className="h-8 w-8 text-slate-300" strokeWidth={1.5} />
+                            <p className="text-sm font-medium text-slate-700">Preview unavailable</p>
+                            <p className="max-w-sm text-xs">Download the original file or open it in a new tab to view it with your device’s reader.</p>
+                            {vaultViewUrl && <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-50">Open original</a>}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
