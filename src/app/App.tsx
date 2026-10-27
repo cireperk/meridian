@@ -1775,8 +1775,7 @@ export default function App() {
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-auto text-[15px] text-slate-600 text-center mb-5 max-w-lg leading-relaxed sm:text-base lg:mx-0 lg:mb-7 lg:text-left lg:text-lg lg:leading-8">
-                <span className="lg:hidden">Support for divorce, co-parenting, and whatever comes next.</span>
-                <span className="hidden lg:inline">From divorce and co-parenting to starting over, Meridian helps you sort through hard conversations, understand important documents, and find a steadier next step.</span>
+                <span>A private place to organize what matters, keep track of next steps, and navigate divorce, co-parenting, and life’s other hard turns.</span>
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1, duration: 0.8, ease: [0.22, 1, 0.36, 0.8] }} className="flex flex-col items-center gap-3 w-full max-w-xs mx-auto sm:max-w-md lg:mx-0 lg:items-start lg:gap-4">
@@ -1976,13 +1975,14 @@ export default function App() {
             {/* ===== SECTION 3: What Meridian Does ===== */}
             <div className="flex items-center justify-center px-6 py-24 relative z-10">
               <motion.div className="max-w-lg w-full" initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-8 text-center">One app for all of it</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 text-center">More than a conversation</p>
+                <h2 className="mb-8 text-center text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">A steadier place to manage the moving pieces.</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { icon: Sparkles, title: "Talk through anything", desc: "AI that listens, understands, and helps you think clearly" },
-                    { icon: MessageSquare, title: "Draft calm messages", desc: "Respond to your co-parent without escalating" },
-                    { icon: FolderLock, title: "Keep documents safe", desc: "Your decree, agreements, and records — locked down" },
-                    { icon: CalendarDays, title: "Stay organized", desc: "Custody schedules, handoffs, and important dates" },
+                    { icon: FolderLock, title: "Keep the details together", desc: "Your documents, plans, schedules, and important dates in one private space.", status: "Available now" },
+                    { icon: Sparkles, title: "Make sense of what’s next", desc: "Think through a hard moment, understand a document, or prepare a calm response.", status: "Available now" },
+                    { icon: CalendarDays, title: "Bring your tools together", desc: "Google and Apple calendars, Google Drive, and Dropbox connections.", status: "In development" },
+                    { icon: Heart, title: "Find support beyond the app", desc: "Explore therapists, counselors, lawyers, faith communities, and local resources.", status: "In development" },
                   ].map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                       className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
@@ -1991,9 +1991,11 @@ export default function App() {
                       </div>
                       <p className="text-sm font-medium text-slate-800 mb-1">{item.title}</p>
                       <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                      <p className={cn("mt-3 text-[10px] font-semibold uppercase tracking-wide", item.status === "Available now" ? "text-emerald-700" : "text-amber-700")}>{item.status}</p>
                     </motion.div>
                   ))}
                 </div>
+                <p className="mt-5 text-center text-xs leading-relaxed text-slate-400">Meridian helps you get organized and find your next step. It isn’t a substitute for legal, mental-health, or crisis care.</p>
               </motion.div>
             </div>
 
@@ -2195,8 +2197,8 @@ export default function App() {
                   className="text-xs font-medium text-slate-400 uppercase tracking-wider text-center mb-8">Common questions</motion.p>
                 <div className="space-y-3">
                   {[
-                    { q: "Is Meridian a therapist or a lawyer?", a: "Neither \u2014 think of it as a knowledgeable friend who\u2019s available anytime. It won\u2019t replace professional advice, but it can help you think clearly, understand your documents, and figure out what to say \u2014 especially at 2am when no one else is picking up." },
-                    { q: "What does Meridian actually do?", a: "Everything you need in one place. Store and reference your legal documents. Get coached on exactly what to say to your co-parent. Understand your decree in plain English. Manage your schedule, handoffs, and deadlines. Build healthier habits for yourself and your kids. Meridian is your private command center for getting through the hardest chapter \u2014 and becoming a better version of yourself on the other side." },
+                    { q: "Is Meridian a therapist or a lawyer?", a: "No. Meridian helps you organize information and think through next steps; it isn’t a substitute for professional advice or crisis support. Connections to professional and community resources are in development and are not available yet." },
+                    { q: "What does Meridian actually do?", a: "Keep important documents, schedules, and dates together in one private space. Optional AI tools can help you understand a document, think through a situation, or prepare a message. External calendar and cloud-file connections and a professional and community resource directory are in development." },
                     { q: "Is my data private?", a: "Your account isn't shared with your co-parent. Data is encrypted in transit and at rest. When you use AI features, your messages and relevant document text are sent to Anthropic to generate responses.", link: "Privacy Policy" },
                     { q: "Is it really free?", a: "Standard signups get a 3-day free trial; eligible clients who sign up through a participating professional's referral link get 14 days. After the trial, Meridian is $4.99/month. Cancel anytime." },
                     { q: "Can my ex see what I write here?", a: "Your co-parent does not have shared account access or a co-parent portal. AI features send messages and relevant document text to Anthropic to generate responses.", link: "Privacy Policy" },
@@ -3022,8 +3024,8 @@ export default function App() {
                         <div className="mb-5 flex items-start gap-3">
                           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Sparkles className="h-5 w-5" /></span>
                           <div>
-                            <h3 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl">What can I help with?</h3>
-                            <p className="mt-1 text-sm text-slate-400">Start wherever you are. We’ll work through it together.</p>
+                            <h3 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl">Bring the moving pieces together</h3>
+                            <p className="mt-1 text-sm text-slate-400">Keep plans, documents, and conversations in one private place. Start with whatever needs attention.</p>
                           </div>
                         </div>
                         <div className="mb-4 grid gap-2">
@@ -3044,6 +3046,13 @@ export default function App() {
                           <Button type="button" onClick={() => handleHomeMessageSubmit()} size="sm" disabled={!input.trim() || loading || streaming} aria-label="Send message" className="h-10 w-10 shrink-0 rounded-xl bg-emerald-700 p-0 text-white hover:bg-emerald-800 disabled:bg-slate-200"><Send className="h-4 w-4" /></Button>
                         </form>
                         <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
+                        <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-[11px] font-semibold text-slate-700">More of your support, connected</p>
+                            <span className="shrink-0 rounded-full bg-amber-50 px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-amber-700">In development</span>
+                          </div>
+                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500">External calendar and cloud-file connections, plus a directory of professional and community resources.</p>
+                        </div>
                       </section>
 
                       <aside className="order-2 space-y-3 lg:order-2">
@@ -4076,7 +4085,7 @@ export default function App() {
                         {[
                           { id: "privacy", icon: Shield, label: "Privacy & Data", content: <>Data is encrypted in transit and at rest. AI features send your messages and relevant document text to Anthropic to generate responses. Read our <a href="/privacy" className="text-blue-500 underline">Privacy Policy</a> or contact <a href="mailto:privacy@mymeridianapp.com" className="text-blue-500 underline">privacy@mymeridianapp.com</a> to request full account deletion.</> },
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: <>Have a question or running into an issue? Reach out to us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a> and we'll get back to you within 24 hours.</> },
-                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a grounding companion for anyone navigating divorce and co-parenting. Built with care, designed for calm and clarity. Meridian is not a law firm and does not provide legal advice." },
+                          { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a private place to bring plans, important dates, documents, and next steps together while navigating difficult life changes. Conversation tools are one part of that support. Meridian is not legal, mental-health, or crisis care. External tool integrations and a resource directory are in development." },
                         ].map((item) => (
                           <div key={item.id} id={item.id === "help" ? "profile-help" : undefined} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all scroll-mt-6">
                             <button onClick={() => setExpandedSetting(expandedSetting === item.id ? null : item.id)} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">

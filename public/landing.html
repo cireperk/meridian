@@ -4,19 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-itunes-app" content="app-id=6760792373">
-  <title>Meridian — Support for Divorce, Co-Parenting & Life’s Transitions</title>
-  <meta name="description" content="Private support through divorce, co-parenting, and life’s big changes. Talk through hard conversations, understand important documents, and find a steadier next step.">
+  <title>Meridian — Support for Life’s Hard Chapters</title>
+  <meta name="description" content="A private place to organize what matters, keep track of next steps, and navigate divorce, co-parenting, and life’s other hard turns.">
   <meta name="keywords" content="divorce app, co-parenting app, custody schedule, divorce support, co-parenting communication, divorce coach, custody help, co-parenting tools">
   <link rel="canonical" href="https://www.mymeridianapp.com/">
-  <meta property="og:title" content="Meridian — Support for Divorce, Co-Parenting & Life’s Transitions">
-  <meta property="og:description" content="Private support through divorce, co-parenting, and life’s big changes. Talk through hard conversations, understand important documents, and find a steadier next step.">
+  <meta property="og:title" content="Meridian — Support for Life’s Hard Chapters">
+  <meta property="og:description" content="A private place to organize what matters, keep track of next steps, and navigate divorce, co-parenting, and life’s other hard turns.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.mymeridianapp.com/">
   <meta property="og:site_name" content="Meridian">
   <meta property="og:image" content="https://www.mymeridianapp.com/brand/logo-stacked-color.png">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Meridian — Support for Divorce, Co-Parenting & Life’s Transitions">
-  <meta name="twitter:description" content="Private support through divorce, co-parenting, and life’s big changes. Find a steadier next step, whenever you need it.">
+  <meta name="twitter:title" content="Meridian — Support for Life’s Hard Chapters">
+  <meta name="twitter:description" content="A private place to organize what matters, keep track of next steps, and navigate life’s hard turns.">
   <meta name="twitter:image" content="https://www.mymeridianapp.com/brand/logo-stacked-color.png">
   <link rel="icon" href="/favicon-32.png" type="image/png">
   <script type="application/ld+json">
@@ -25,7 +25,7 @@
     "@type": "WebSite",
     "name": "Meridian",
     "url": "https://www.mymeridianapp.com",
-    "description": "Private support through divorce, co-parenting, and life's big changes"
+    "description": "A private place to organize what matters, keep track of next steps, and navigate life's hard turns"
   }
   </script>
   <script type="application/ld+json">
@@ -35,7 +35,7 @@
     "name": "Meridian",
     "url": "https://www.mymeridianapp.com",
     "logo": "https://www.mymeridianapp.com/brand/logo-stacked-color.png",
-    "description": "Calm and clarity through divorce, co-parenting, and life's transitions",
+    "description": "A private life-transition hub for organizing plans, important documents, and next steps",
     "sameAs": [
       "https://www.linkedin.com/company/mymeridian/",
       "https://www.youtube.com/@MyMeridianapp"
@@ -71,6 +71,9 @@
     .feature-card { padding: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
     .feature-card h3 { font-size: 14px; font-weight: 500; color: #1e293b; margin-bottom: 4px; }
     .feature-card p { font-size: 13px; color: #64748b; line-height: 1.5; }
+    .feature-status { margin-top: 12px; color: #047857; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .feature-status.planned { color: #a16207; }
+    .features-note { grid-column: 1 / -1; color: #64748b; font-size: 12px; text-align: center; }
 
     .promises { text-align: center; }
     .promises p { font-size: 18px; font-weight: 300; color: #1e293b; margin-bottom: 20px; }
@@ -90,19 +93,22 @@
     .founder-story { font-size: 15px; color: #475569; text-align: left; margin-bottom: 16px; }
     .founder-story strong { color: #1e293b; }
 
-    /* Phone mockup with conversation */
+    /* Product preview */
     .phone-preview { display: flex; justify-content: center; padding: 20px 0; }
-    .phone-frame { width: 280px; border: 2px solid #e2e8f0; border-radius: 32px; padding: 16px; background: #f8fafc; box-shadow: 0 20px 60px rgba(0,0,0,0.08); position: relative; overflow: hidden; }
+    .phone-frame { width: 280px; border: 2px solid #e2e8f0; border-radius: 32px; padding: 16px; background: #f8fafc; box-shadow: 0 20px 60px rgba(0,0,0,0.08); position: relative; }
     .phone-notch { width: 80px; height: 6px; background: #e2e8f0; border-radius: 3px; margin: 0 auto 16px; }
-    .chat-bubble { padding: 12px 16px; border-radius: 18px; font-size: 13px; line-height: 1.5; margin-bottom: 10px; max-width: 90%; }
-    .chat-user { background: #047857; color: white; margin-left: auto; border-bottom-right-radius: 6px; }
-    .chat-ai { background: #ffffff; color: #475569; border: 1px solid #e2e8f0; border-bottom-left-radius: 6px; }
-    .chat-typing { display: flex; gap: 4px; padding: 12px 16px; }
-    .chat-typing span { width: 6px; height: 6px; background: #cbd5e1; border-radius: 50%; animation: typing 1.2s infinite; }
-    .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes typing { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
-    .phone-fade { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(transparent, #f8fafc); pointer-events: none; }
+    .preview-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; color: #1e293b; font-size: 12px; font-weight: 650; }
+    .preview-brand span:last-child { color: #047857; font-size: 9px; font-weight: 500; }
+    .preview-today { padding: 16px; border-radius: 18px; color: white; background: linear-gradient(145deg, #155e4b, #0f766e); }
+    .preview-today small, .preview-today strong { display: block; }
+    .preview-today small { margin-bottom: 8px; color: #b7e4d1; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .preview-today strong { font-family: Georgia, serif; font-size: 19px; font-weight: 400; }
+    .preview-today p { margin-top: 6px; color: #e5f5ec; font-size: 11px; }
+    .preview-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 14px; background: white; }
+    .preview-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #047857; background: #ecfdf5; font-size: 15px; }
+    .preview-row strong, .preview-row small { display: block; }
+    .preview-row strong { color: #1e293b; font-size: 11px; }
+    .preview-row small { margin-top: 2px; color: #64748b; font-size: 9px; line-height: 1.4; }
 
     /* Message coach transformation */
     .rewrite-demo { max-width: 480px; margin: 0 auto; }
@@ -157,8 +163,8 @@
   </nav>
 
   <div class="hero">
-    <h1>Find your footing<br><em>through life's big changes.</em></h1>
-    <p>From divorce and co-parenting to starting over, Meridian helps you sort through hard conversations, understand important documents, and find a steadier next step.</p>
+    <h1>Hard chapter.<br><em>Not the last one.</em></h1>
+    <p>A private place to organize what matters, keep track of next steps, and navigate divorce, co-parenting, and life’s other hard turns.</p>
     <!-- Mobile: App Store primary -->
     <div class="mobile-primary">
       <a href="https://apps.apple.com/us/app/meridian-calm-clarity/id6760792373" class="app-store-badge">
@@ -186,36 +192,45 @@
 
   <section>
     <div class="phone-preview">
-      <div class="phone-frame">
+      <div class="phone-frame" aria-label="Illustration of the Meridian dashboard">
         <div class="phone-notch"></div>
-        <div class="chat-bubble chat-user">My ex just told the kids we're selling the house before we even agreed on anything.</div>
-        <div class="chat-bubble chat-ai">That's really hard — especially when you're trying to protect your kids from the conflict. Let's think through this together. What feels most urgent right now?</div>
-        <div class="chat-bubble chat-user">I don't even know. I feel like I'm losing control of everything.</div>
-        <div class="chat-bubble chat-ai">You're not losing control. You're dealing with a lot at once, and that's different. Let's start with what you <em>can</em> do right now...</div>
-        <div class="phone-fade"></div>
+        <div class="preview-brand"><span>Meridian · Your space</span><span>Private</span></div>
+        <div class="preview-today">
+          <small>Your day · Today</small>
+          <strong>A clearer view of what’s ahead.</strong>
+          <p>Plans, dates, and next steps together.</p>
+        </div>
+        <div class="preview-row"><span class="preview-icon">▦</span><span><strong>Your schedule</strong><small>Upcoming dates and important plans</small></span></div>
+        <div class="preview-row"><span class="preview-icon">▤</span><span><strong>Your documents</strong><small>Keep important details close at hand</small></span></div>
+        <div class="preview-row"><span class="preview-icon">✳</span><span><strong>Talk it through</strong><small>Get help thinking through a next step</small></span></div>
       </div>
     </div>
   </section>
 
   <section>
     <div class="features">
-      <p class="label">One app for all of it</p>
+      <p class="label">More than a conversation</p>
       <div class="feature-card">
-        <h3>Talk through anything</h3>
-        <p>Someone that listens, understands, and helps you think clearly</p>
+        <h3>Keep the details together</h3>
+        <p>Your documents, plans, schedules, and important dates in one private space.</p>
+        <div class="feature-status">Available now</div>
       </div>
       <div class="feature-card">
-        <h3>Draft calm messages</h3>
-        <p>Respond to your co-parent without escalating</p>
+        <h3>Make sense of what’s next</h3>
+        <p>Think through a hard moment, understand a document, or prepare a calm response.</p>
+        <div class="feature-status">Available now</div>
       </div>
       <div class="feature-card">
-        <h3>Keep documents safe</h3>
-        <p>Your decree, agreements, and records — locked down</p>
+        <h3>Bring your tools together</h3>
+        <p>Google and Apple calendars, Google Drive, and Dropbox connections.</p>
+        <div class="feature-status planned">In development</div>
       </div>
       <div class="feature-card">
-        <h3>Stay organized</h3>
-        <p>Custody schedules, handoffs, and important dates</p>
+        <h3>Find support beyond the app</h3>
+        <p>Explore therapists, counselors, lawyers, faith communities, and local resources.</p>
+        <div class="feature-status planned">In development</div>
       </div>
+      <p class="features-note">Meridian helps you get organized and find your next step. It isn’t a substitute for legal, mental-health, or crisis care.</p>
     </div>
   </section>
 
@@ -260,11 +275,11 @@
     <p class="label">Common questions</p>
     <div class="faq-item">
       <h3>Is Meridian a therapist or a lawyer?</h3>
-      <p>Neither — think of it as a knowledgeable friend who's available anytime. It won't replace professional advice, but it can help you think clearly, understand your documents, and figure out what to say — especially at 2am when no one else is picking up.</p>
+      <p>No. Meridian helps you organize information and think through next steps; it isn’t a substitute for professional advice or crisis support. Connections to professional and community resources are in development and are not available yet.</p>
     </div>
     <div class="faq-item">
       <h3>What does Meridian actually do?</h3>
-      <p>Everything you need in one place. Store and reference your legal documents. Get coached on exactly what to say to your co-parent. Understand your decree in plain English. Manage your schedule, handoffs, and deadlines. Build healthier habits for yourself and your kids.</p>
+      <p>Keep important documents, schedules, and dates together in one private space. Optional AI tools can help you understand a document, think through a situation, or prepare a message. External calendar and cloud-file connections and a professional and community resource directory are in development.</p>
     </div>
     <div class="faq-item">
       <h3>Is my data private?</h3>
