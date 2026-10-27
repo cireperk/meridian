@@ -1667,7 +1667,7 @@ export default function App() {
                 <span className="hidden lg:inline">Find your footing<br />through </span>
                 <span className="lg:hidden">When life changes,<br /></span>
                 <span className="hidden bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-normal lg:inline lg:font-serif lg:italic">life’s big changes.</span>
-                <span className="lg:hidden">find your footing.</span>
+                <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-serif font-normal italic lg:hidden">find your footing.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="mx-auto text-[15px] text-slate-600 text-center mb-5 max-w-lg leading-relaxed sm:text-base lg:mx-0 lg:mb-7 lg:text-left lg:text-lg lg:leading-8">
