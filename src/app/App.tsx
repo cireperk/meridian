@@ -885,7 +885,7 @@ export default function App() {
   const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
   const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
   const [homeDayOffset, setHomeDayOffset] = useState(0);
-  const homeCardPointerStart = useRef<{ pointerId: number; x: number } | null>(null);
+  const [homeDayDirection, setHomeDayDirection] = useState<1 | -1>(1);
   // Custody schedule state
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
@@ -1541,6 +1541,13 @@ export default function App() {
     setShowFullCalendar(false);
     setHomeDayOffset(0);
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 50);
+  };
+
+  const navigateHomeDay = (direction: 1 | -1) => {
+    const nextOffset = Math.max(0, Math.min(3, homeDayOffset + direction));
+    if (nextOffset === homeDayOffset) return;
+    setHomeDayDirection(direction);
+    setHomeDayOffset(nextOffset);
   };
 
   const updateCustodyOverride = async (parent: "me" | "coparent" | null) => {
@@ -3020,34 +3027,40 @@ export default function App() {
                           return (
                             <div
                               className="relative mb-2 touch-pan-y select-none px-1 pb-3"
-                              onPointerDown={event => {
-                                if (event.pointerType === "touch" && event.isPrimary) {
-                                  homeCardPointerStart.current = { pointerId: event.pointerId, x: event.clientX };
-                                }
-                              }}
-                              onPointerUp={event => {
-                                const start = homeCardPointerStart.current;
-                                homeCardPointerStart.current = null;
-                                if (!start || start.pointerId !== event.pointerId || Math.abs(event.clientX - start.x) < 45) return;
-                                setHomeDayOffset(offset => Math.max(0, Math.min(3, offset + (event.clientX < start.x ? 1 : -1))));
-                              }}
-                              onPointerCancel={() => { homeCardPointerStart.current = null; }}
                             >
                               <div aria-hidden="true" className="absolute inset-x-3 top-2 bottom-1 rounded-[22px] bg-emerald-900/10" />
                               <div aria-hidden="true" className="absolute inset-x-1 top-1 bottom-2 rounded-[22px] bg-emerald-900/20" />
-                              <motion.div
-                                key={homeDayOffset}
-                                initial={{ opacity: 0.75, x: 12 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.18 }}
-                                className="relative z-10 rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]"
-                              >
+                              <AnimatePresence initial={false} custom={homeDayDirection} mode="sync">
+                                <motion.div
+                                  key={homeDayOffset}
+                                  custom={homeDayDirection}
+                                  variants={{
+                                    enter: (direction: 1 | -1) => ({ opacity: 0, x: direction * 72, rotate: direction * 2.5, scale: 0.98 }),
+                                    center: { opacity: 1, x: 0, rotate: 0, scale: 1 },
+                                    exit: (direction: 1 | -1) => ({ opacity: 0, x: direction * -112, rotate: direction * -4, scale: 0.96 }),
+                                  }}
+                                  initial="enter"
+                                  animate="center"
+                                  exit="exit"
+                                  transition={{ type: "spring", stiffness: 340, damping: 34, mass: 0.8 }}
+                                  drag="x"
+                                  dragConstraints={{ left: 0, right: 0 }}
+                                  dragElastic={0.78}
+                                  dragMomentum={false}
+                                  onDragEnd={(_, info) => {
+                                    if (Math.abs(info.offset.x) > 64 || Math.abs(info.velocity.x) > 500) {
+                                      navigateHomeDay(info.offset.x < 0 ? 1 : -1);
+                                    }
+                                  }}
+                                  style={{ touchAction: "pan-y", transformOrigin: "center center" }}
+                                  className="relative z-10 rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]"
+                                >
                                 <div className="mb-3 flex items-center gap-3 lg:mb-6">
                                   <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-emerald-600 text-center text-white lg:rounded-full lg:border lg:border-white/20 lg:bg-transparent"><span className="text-[8px] uppercase tracking-wider text-emerald-100 lg:text-emerald-200">{dayLabel}</span><span className="font-serif text-2xl leading-none">{cardDate.getDate()}</span></span>
                                   <span className="flex-1 text-xs font-medium text-slate-500 lg:text-emerald-100/80">{cardDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
                                   <div className="flex items-center gap-1">
-                                    <button type="button" onClick={() => setHomeDayOffset(offset => Math.max(0, offset - 1))} disabled={homeDayOffset === 0} aria-label="Show previous day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
-                                    <button type="button" onClick={() => setHomeDayOffset(offset => Math.min(3, offset + 1))} disabled={homeDayOffset === 3} aria-label="Show next day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronRight className="h-4 w-4" /></button>
+                                    <button type="button" onClick={() => navigateHomeDay(-1)} disabled={homeDayOffset === 0} aria-label="Show previous day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
+                                    <button type="button" onClick={() => navigateHomeDay(1)} disabled={homeDayOffset === 3} aria-label="Show next day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronRight className="h-4 w-4" /></button>
                                   </div>
                                 </div>
                                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
@@ -3060,7 +3073,8 @@ export default function App() {
                                 )}
                                 <button onClick={() => openTodayCalendar(cardDateStr)} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
                                 <p className="mt-2 text-center text-[10px] text-slate-400 lg:text-white/45" aria-live="polite">Swipe or use arrows · {homeDayOffset + 1} of 4</p>
-                              </motion.div>
+                                </motion.div>
+                              </AnimatePresence>
                             </div>
                           );
                         })()}
