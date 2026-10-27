@@ -885,7 +885,7 @@ export default function App() {
   const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
   const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
   const [homeDayOffset, setHomeDayOffset] = useState(0);
-  const homeCardTouchStartX = useRef<number | null>(null);
+  const homeCardPointerStart = useRef<{ pointerId: number; x: number } | null>(null);
   // Custody schedule state
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
@@ -3010,8 +3010,8 @@ export default function App() {
                           const cardDate = new Date();
                           cardDate.setDate(cardDate.getDate() + homeDayOffset);
                           const cardDateStr = `${cardDate.getFullYear()}-${String(cardDate.getMonth() + 1).padStart(2, "0")}-${String(cardDate.getDate()).padStart(2, "0")}`;
-                          const dayLabel = homeDayOffset === 0 ? "Today" : homeDayOffset === 1 ? "Tomorrow" : cardDate.toLocaleDateString("en-US", { weekday: "long" });
-                          const dateContext = homeDayOffset === 0 ? "today" : homeDayOffset === 1 ? "tomorrow" : `on ${dayLabel}`;
+                          const dayLabel = homeDayOffset === 0 ? "Today" : homeDayOffset === 1 ? "Tomorrow" : cardDate.toLocaleDateString("en-US", { weekday: "short" });
+                          const dateContext = homeDayOffset === 0 ? "today" : homeDayOffset === 1 ? "tomorrow" : `on ${cardDate.toLocaleDateString("en-US", { weekday: "long" })}`;
                           const custodyForCardDate = getCustodyForDate(cardDateStr, custodySchedule, calEvents);
                           const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
                           const dayEvent = calEvents
@@ -3019,15 +3019,19 @@ export default function App() {
                             .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))[0];
                           return (
                             <div
-                              className="relative mb-2 touch-pan-y px-1 pb-3"
-                              onTouchStart={event => { homeCardTouchStartX.current = event.touches[0]?.clientX ?? null; }}
-                              onTouchEnd={event => {
-                                const startX = homeCardTouchStartX.current;
-                                const endX = event.changedTouches[0]?.clientX;
-                                homeCardTouchStartX.current = null;
-                                if (startX === null || endX === undefined || Math.abs(endX - startX) < 45) return;
-                                setHomeDayOffset(offset => Math.max(0, Math.min(3, offset + (endX < startX ? 1 : -1))));
+                              className="relative mb-2 touch-pan-y select-none px-1 pb-3"
+                              onPointerDown={event => {
+                                if (event.pointerType === "touch" && event.isPrimary) {
+                                  homeCardPointerStart.current = { pointerId: event.pointerId, x: event.clientX };
+                                }
                               }}
+                              onPointerUp={event => {
+                                const start = homeCardPointerStart.current;
+                                homeCardPointerStart.current = null;
+                                if (!start || start.pointerId !== event.pointerId || Math.abs(event.clientX - start.x) < 45) return;
+                                setHomeDayOffset(offset => Math.max(0, Math.min(3, offset + (event.clientX < start.x ? 1 : -1))));
+                              }}
+                              onPointerCancel={() => { homeCardPointerStart.current = null; }}
                             >
                               <div aria-hidden="true" className="absolute inset-x-3 top-2 bottom-1 rounded-[22px] bg-emerald-900/10" />
                               <div aria-hidden="true" className="absolute inset-x-1 top-1 bottom-2 rounded-[22px] bg-emerald-900/20" />
