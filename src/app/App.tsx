@@ -886,6 +886,7 @@ export default function App() {
   const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
   const [homeDayOffset, setHomeDayOffset] = useState(0);
   const [homeDayDirection, setHomeDayDirection] = useState<1 | -1>(1);
+  const homeCardPointerStart = useRef<{ pointerId: number; x: number; y: number } | null>(null);
   // Custody schedule state
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
@@ -3027,32 +3028,37 @@ export default function App() {
                           return (
                             <div
                               className="relative mb-2 touch-pan-y select-none px-1 pb-3"
+                              onPointerDown={event => {
+                                if (event.pointerType === "touch" && event.isPrimary) {
+                                  homeCardPointerStart.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+                                }
+                              }}
+                              onPointerUp={event => {
+                                const start = homeCardPointerStart.current;
+                                homeCardPointerStart.current = null;
+                                if (!start || start.pointerId !== event.pointerId) return;
+                                const deltaX = event.clientX - start.x;
+                                const deltaY = event.clientY - start.y;
+                                if (Math.abs(deltaX) < 55 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) return;
+                                navigateHomeDay(deltaX < 0 ? 1 : -1);
+                              }}
+                              onPointerCancel={() => { homeCardPointerStart.current = null; }}
                             >
                               <div aria-hidden="true" className="absolute inset-x-3 top-2 bottom-1 rounded-[22px] bg-emerald-900/10" />
                               <div aria-hidden="true" className="absolute inset-x-1 top-1 bottom-2 rounded-[22px] bg-emerald-900/20" />
-                              <AnimatePresence initial={false} custom={homeDayDirection} mode="sync">
+                              <AnimatePresence initial={false} custom={homeDayDirection} mode="wait">
                                 <motion.div
                                   key={homeDayOffset}
                                   custom={homeDayDirection}
                                   variants={{
-                                    enter: (direction: 1 | -1) => ({ opacity: 0, x: direction * 72, rotate: direction * 2.5, scale: 0.98 }),
+                                    enter: (direction: 1 | -1) => ({ opacity: 0, x: direction * 40 }),
                                     center: { opacity: 1, x: 0, rotate: 0, scale: 1 },
-                                    exit: (direction: 1 | -1) => ({ opacity: 0, x: direction * -112, rotate: direction * -4, scale: 0.96 }),
+                                    exit: (direction: 1 | -1) => ({ opacity: 0, x: direction * -80 }),
                                   }}
                                   initial="enter"
                                   animate="center"
                                   exit="exit"
-                                  transition={{ type: "spring", stiffness: 340, damping: 34, mass: 0.8 }}
-                                  drag="x"
-                                  dragConstraints={{ left: 0, right: 0 }}
-                                  dragElastic={0.78}
-                                  dragMomentum={false}
-                                  onDragEnd={(_, info) => {
-                                    if (Math.abs(info.offset.x) > 64 || Math.abs(info.velocity.x) > 500) {
-                                      navigateHomeDay(info.offset.x < 0 ? 1 : -1);
-                                    }
-                                  }}
-                                  style={{ touchAction: "pan-y", transformOrigin: "center center" }}
+                                  transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                                   className="relative z-10 rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]"
                                 >
                                 <div className="mb-3 flex items-center gap-3 lg:mb-6">
