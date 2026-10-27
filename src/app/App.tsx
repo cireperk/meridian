@@ -4200,7 +4200,7 @@ export default function App() {
                                   {doc.mime_type?.startsWith("image/") ? <Eye className="w-4.5 h-4.5 text-purple-500" /> : <FileText className="w-4.5 h-4.5 text-emerald-600" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  {vaultRenameId === doc.id ? (
+                                  {vaultRenameId === doc.id && !vaultViewDoc ? (
                                     <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
                                       onBlur={() => handleVaultRename(doc.id, vaultRenameName)}
                                       onKeyDown={(e) => { if (e.key === "Enter") handleVaultRename(doc.id, vaultRenameName); if (e.key === "Escape") setVaultRenameId(null); }}
@@ -4831,14 +4831,17 @@ export default function App() {
                   <div className="flex items-center gap-2 border-b border-slate-200 py-2.5 pl-4 pr-2 pt-[max(10px,env(safe-area-inset-top))] sm:gap-3 sm:py-4 sm:pl-6 sm:pr-4">
                     <div className="min-w-0 flex-1">
                       {vaultRenameId === vaultViewDoc.id ? (
-                        <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
+                        <input autoFocus onFocus={(e) => e.currentTarget.select()} value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
                           onBlur={() => handleVaultRename(vaultViewDoc.id, vaultRenameName)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleVaultRename(vaultViewDoc.id, vaultRenameName); if (e.key === "Escape") setVaultRenameId(null); }}
                           className="w-full rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-base font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
                       ) : (
                         <button onClick={() => { setVaultRenameId(vaultViewDoc.id); setVaultRenameName(vaultViewDoc.file_name); }}
                           className="group block w-full min-w-0 text-left" aria-label="Rename document">
-                          <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-5 text-slate-900 sm:text-base">{vaultViewDoc.file_name}</h3>
+                          <span className="flex items-start gap-1.5">
+                            <h3 className="line-clamp-2 min-w-0 break-words text-[15px] font-semibold leading-5 text-slate-900 sm:text-base">{vaultViewDoc.file_name}</h3>
+                            <Edit3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-emerald-500" />
+                          </span>
                         </button>
                       )}
                       <p className="mt-0.5 truncate text-xs text-slate-400">
