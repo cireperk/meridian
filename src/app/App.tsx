@@ -4828,8 +4828,8 @@ export default function App() {
             {vaultViewDoc && (
               <motion.div className="fixed inset-0 z-[200] flex items-stretch justify-center bg-slate-950/50 p-0 sm:items-center sm:p-5" onClick={closeVaultDocument} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <motion.div className="flex h-[100dvh] max-h-full w-full max-w-6xl flex-col overflow-hidden bg-white sm:h-[min(92dvh,1000px)] sm:rounded-2xl sm:shadow-2xl" onClick={(e) => e.stopPropagation()} initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={spring}>
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 pt-[max(12px,env(safe-area-inset-top))] sm:px-6 sm:py-4">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex flex-col gap-2 border-b border-slate-200 px-4 py-3 pt-[max(12px,env(safe-area-inset-top))] sm:flex-row sm:items-center sm:gap-3 sm:px-6 sm:py-4">
+                    <div className="w-full min-w-0 sm:flex-1">
                       {vaultRenameId === vaultViewDoc.id ? (
                         <input autoFocus value={vaultRenameName} onChange={(e) => setVaultRenameName(e.target.value)}
                           onBlur={() => handleVaultRename(vaultViewDoc.id, vaultRenameName)}
@@ -4837,26 +4837,28 @@ export default function App() {
                           className="w-full text-base font-medium text-slate-800 bg-emerald-50 border border-emerald-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
                       ) : (
                         <button onClick={() => { setVaultRenameId(vaultViewDoc.id); setVaultRenameName(vaultViewDoc.file_name); }}
-                          className="flex items-center gap-1.5 group text-left">
-                          <h3 className="text-base font-medium text-slate-800 truncate">{vaultViewDoc.file_name}</h3>
+                          className="flex w-full min-w-0 items-start gap-1.5 text-left group">
+                          <h3 className="min-w-0 flex-1 break-words text-sm font-medium leading-5 text-slate-800 sm:text-base">{vaultViewDoc.file_name}</h3>
                           <Edit3 className="w-3.5 h-3.5 text-slate-300 group-hover:text-emerald-500 transition-colors shrink-0" />
                         </button>
                       )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-600 rounded-md">{VAULT_CATEGORIES.find(c => c.id === vaultViewDoc.category)?.label}</span>
-                        <span className="text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                      <div className="mt-1 flex min-h-10 items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">{VAULT_CATEGORIES.find(c => c.id === vaultViewDoc.category)?.label}</span>
+                          <span className="truncate text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {vaultViewUrl && (
+                            <>
+                              <a href={vaultViewUrl} download={vaultViewDoc.file_name} className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 sm:w-auto sm:gap-2 sm:px-4" aria-label="Download original document">
+                                <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
+                              </a>
+                              <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="hidden h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex">Open original</a>
+                            </>
+                          )}
+                          <button onClick={closeVaultDocument} aria-label="Close document" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {vaultViewUrl && (
-                        <>
-                          <a href={vaultViewUrl} download={vaultViewDoc.file_name} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-4" aria-label="Download original document">
-                            <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
-                          </a>
-                          <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="hidden h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex">Open original</a>
-                        </>
-                      )}
-                      <button onClick={closeVaultDocument} aria-label="Close document" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
                     </div>
                   </div>
                   {/* Decree Intelligence in vault detail */}
@@ -4890,14 +4892,14 @@ export default function App() {
                     ) : (
                       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col bg-white shadow-sm">
                         {(vaultPdf || vaultViewDoc.text_content) && (
-                          <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/95 p-3 backdrop-blur sm:px-5">
-                            <label className="flex min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
+                          <div className="sticky top-0 z-10 flex flex-col gap-2 border-b border-slate-200 bg-white/95 p-3 backdrop-blur sm:flex-row sm:items-center sm:gap-3 sm:px-5">
+                            <label className="flex min-h-11 w-full min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 sm:flex-1">
                               <Search className="h-4 w-4 shrink-0 text-slate-400" />
                               <input value={vaultPdfSearch} onChange={(e) => setVaultPdfSearch(e.target.value)} placeholder="Find in document" aria-label="Find words in document" className="h-10 min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400" />
                               {vaultPdfSearch && <button onClick={() => setVaultPdfSearch("")} aria-label="Clear search" className="text-slate-400 hover:text-slate-700"><X className="h-4 w-4" /></button>}
                             </label>
                             {vaultPdf && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-end">
                                 <span className="min-w-[82px] text-center text-[11px] text-slate-500">{vaultPdfSearching ? "Searching…" : vaultPdfSearch ? `${vaultPdfMatches.length ? vaultPdfMatchIndex + 1 : 0} / ${vaultPdfMatches.length}${vaultPdfMatches.length === 200 ? "+" : ""}` : `${vaultPdfPage} / ${vaultPdfPageCount}`}</span>
                                 {vaultPdfSearch ? (
                                   <>
