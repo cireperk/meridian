@@ -882,6 +882,7 @@ export default function App() {
   const [custodyOverrideSaving, setCustodyOverrideSaving] = useState(false);
   const [custodyOverrideError, setCustodyOverrideError] = useState("");
   const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const [showCustodyDayChoices, setShowCustodyDayChoices] = useState(false);
   const [activeGuide, setActiveGuide] = useState<{ title: string; href: string } | null>(null);
   const [completingEvents, setCompletingEvents] = useState<Set<string>>(new Set());
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1510,8 +1511,9 @@ export default function App() {
     setActiveTab("today");
     setCalMonth({ year, month: month - 1 });
     setShowFullCalendar(true);
-    setCalSelectedDate(date);
-    window.setTimeout(() => document.getElementById("today-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    setCalSelectedDate(null);
+    setShowCustodyDayChoices(false);
+    window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 300);
   };
 
   const openTodayDashboard = () => {
@@ -2885,7 +2887,7 @@ export default function App() {
                   { id: "today", label: "Today", icon: Home, action: openTodayDashboard },
                   { id: "talk", label: "Talk", icon: MessageSquare, action: () => { setActiveTab("talk"); setTalkMode("chat"); } },
                   { id: "vault", label: "Vault", icon: FolderLock, action: () => setActiveTab("vault") },
-                  { id: "calendar", label: "Calendar", icon: CalendarDays, action: openTodayCalendar },
+                  { id: "calendar", label: "Calendar", icon: CalendarDays, action: () => openTodayCalendar() },
                   { id: "guides", label: "Guides", icon: BookOpen, action: () => { setActiveTab("today"); setShowFullCalendar(false); window.setTimeout(() => document.getElementById("today-guides")?.scrollIntoView({ behavior: "smooth" }), 50); } },
                 ] as const).map(({ id, label, icon: Icon, action }) => {
                   const selected = id === "calendar" ? activeTab === "today" && showFullCalendar : id === "guides" ? false : activeTab === id;
@@ -2943,7 +2945,7 @@ export default function App() {
                           {firstName && <span className="font-serif italic text-emerald-600">{firstName}.</span>}
                         </h2>
                       </div>
-                      <button onClick={openTodayCalendar} aria-label="Open calendar" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:hidden"><CalendarDays className="h-5 w-5" /></button>
+                      <button onClick={() => openTodayCalendar()} aria-label="Open calendar" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:hidden"><CalendarDays className="h-5 w-5" /></button>
                       <button onClick={() => { setCalForm({ title: "", date: todayStr, time: "", type: "handoff", notes: "", location: "" }); setCalEditEvent(null); setCalShowAdd(true); }} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:flex"><Plus className="h-4 w-4" />Add an event</button>
                     </div>
 
@@ -2999,11 +3001,7 @@ export default function App() {
                                   <span><span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-slate-400 lg:text-emerald-200/75">Coming up</span><span className="font-medium text-slate-700 lg:text-white">{nextEvent.title}</span><span className="mt-1 block text-slate-400 lg:text-white/55">{new Date(`${nextEvent.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}{nextEvent.time ? ` · ${nextEvent.time}` : ""}</span></span>
                                 </div>
                               )}
-                              <button onClick={openTodayCalendar} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
-                              {custodySchedule && <div className="mt-3 flex items-center justify-between gap-3 text-[11px] lg:text-white/70">
-                                <button onClick={() => openTodayCalendar(todayStr)} className="text-emerald-700 hover:text-emerald-800 lg:text-emerald-200 lg:hover:text-white">Correct today</button>
-                                <button onClick={openCustodySetup} className="text-slate-500 hover:text-slate-700 lg:text-white/70 lg:hover:text-white">Edit usual schedule</button>
-                              </div>}
+                              <button onClick={() => openTodayCalendar()} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
                             </div>
                           );
                         })()}
@@ -3118,14 +3116,15 @@ export default function App() {
 
                       return (
                         <div id="today-calendar" className="mt-6 scroll-mt-6 bg-gradient-to-br from-emerald-50/60 to-white border border-emerald-100/60 rounded-2xl p-5">
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : weekLabel}</p>
-                            {showFullCalendar && (
-                              <div className="flex items-center gap-1">
+                          <div className="mb-3 flex items-center justify-between gap-2">
+                            <p className="whitespace-nowrap text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : weekLabel}</p>
+                            {showFullCalendar && <div className="flex items-center gap-2">
+                              {custodySchedule && <button onClick={openCustodySetup} className="whitespace-nowrap rounded-lg px-2 py-1 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50">Edit schedule</button>}
+                              <div className="flex shrink-0 items-center gap-1">
                                 <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-4 h-4" /></button>
                                 <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronRight className="w-4 h-4" /></button>
                               </div>
-                            )}
+                            </div>}
                           </div>
                           <AnimatePresence mode="wait">
                             {!showFullCalendar ? (
@@ -3173,7 +3172,9 @@ export default function App() {
                                     const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
                                     const custodyDay = getCustodyForDate(cell.dateStr, custodySchedule, calEvents);
                                     return (
-                                      <button key={i} onClick={() => setCalSelectedDate(cell.dateStr === calSelectedDate ? null : cell.dateStr)}
+                                      <button key={i} onClick={() => { setCalSelectedDate(cell.dateStr === calSelectedDate ? null : cell.dateStr); setShowCustodyDayChoices(false); }}
+                                        aria-label={new Date(`${cell.dateStr}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                                        aria-pressed={isSelected}
                                         className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isTodayCell && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
                                         <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isTodayCell ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
                                         <div className="flex gap-0.5 mt-0.5">
@@ -3194,17 +3195,22 @@ export default function App() {
                                         </div>
                                         {custodySchedule && (
                                           <div className="mb-4 rounded-xl border border-emerald-100 bg-white p-3.5">
-                                            <p className="text-xs font-medium text-slate-700">Who is your child with?</p>
-                                            <p className="mt-1 text-[11px] text-slate-400">{selectedDateCustodyOverride ? "This is a one-day change to your usual schedule." : "Based on your usual schedule. Change this day if plans are different."}</p>
-                                            <div className="mt-3 flex gap-2">
+                                            <div className="flex items-center justify-between gap-3">
+                                              <div>
+                                                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{selectedDateCustodyOverride ? "Changed for this day" : "Usual schedule"}</p>
+                                                <p className="mt-1 text-xs font-medium text-slate-700">{selectedDateCustody === "me" ? `With you${childrenNames ? ` · ${toName(childrenNames.split(",")[0].trim())}` : ""}` : selectedDateCustody === "coparent" ? `With ${toName(coparentName || "your co-parent")}${childrenNames ? ` · ${toName(childrenNames.split(",")[0].trim())}` : ""}` : "No schedule set for this day"}</p>
+                                              </div>
+                                              <button onClick={() => setShowCustodyDayChoices(open => !open)} disabled={custodyOverrideSaving} aria-expanded={showCustodyDayChoices} className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-[11px] font-medium text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50">{showCustodyDayChoices ? "Cancel" : "Change day"}</button>
+                                            </div>
+                                            {showCustodyDayChoices && <div className="mt-3 flex gap-2">
                                               {([
                                                 { parent: "me", label: "With me" },
                                                 { parent: "coparent", label: `With ${toName(coparentName || "co-parent")}` },
                                               ] as const).map(({ parent, label }) => (
                                                 <button key={parent} onClick={() => updateCustodyOverride(parent)} disabled={custodyOverrideSaving} aria-pressed={selectedDateCustody === parent} className={cn("flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50", selectedDateCustody === parent ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500 hover:border-emerald-300")}>{label}</button>
                                               ))}
-                                            </div>
-                                            {selectedDateCustodyOverride && <button onClick={() => updateCustodyOverride(null)} disabled={custodyOverrideSaving} className="mt-2 text-[11px] text-slate-400 underline underline-offset-2 disabled:opacity-50">Use usual schedule</button>}
+                                            </div>}
+                                            {selectedDateCustodyOverride && <button onClick={() => updateCustodyOverride(null)} disabled={custodyOverrideSaving} className="mt-2 text-[11px] text-slate-400 underline underline-offset-2 disabled:opacity-50">Restore usual schedule</button>}
                                             {custodyOverrideError && <p role="alert" className="mt-2 text-[11px] text-red-600">{custodyOverrideError}</p>}
                                           </div>
                                         )}
@@ -4002,7 +4008,7 @@ export default function App() {
                   { id: "today", icon: Home, label: "Today", active: activeTab === "today" && !showFullCalendar, action: openTodayDashboard },
                   { id: "talk", icon: MessageSquare, label: "Talk", active: activeTab === "talk", action: () => { setActiveTab("talk"); setTalkMode("chat"); } },
                   { id: "vault", icon: FolderLock, label: "Vault", active: activeTab === "vault", action: () => setActiveTab("vault") },
-                  { id: "calendar", icon: CalendarDays, label: "Calendar", active: activeTab === "today" && showFullCalendar, action: openTodayCalendar },
+                  { id: "calendar", icon: CalendarDays, label: "Calendar", active: activeTab === "today" && showFullCalendar, action: () => openTodayCalendar() },
                 ] as const).map((tab) => (
                   <button key={tab.id} onClick={tab.action} aria-current={tab.active ? "page" : undefined} className={cn("flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all duration-300 relative", tab.active ? "bg-emerald-50 text-emerald-700" : "text-slate-400 hover:text-slate-600")}>
                     <tab.icon className="w-5 h-5" strokeWidth={tab.active ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
