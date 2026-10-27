@@ -3230,8 +3230,8 @@ export default function App() {
                       <button onClick={() => { setCalForm({ title: "", date: todayStr, time: "", type: "handoff", notes: "", location: "" }); setCalEditEvent(null); setCalShowAdd(true); }} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:flex"><Plus className="h-4 w-4" />Add an event</button>
                     </div>
 
-                    <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
-                      <section className="order-1 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-1 lg:p-7">
+                    <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.35fr)]">
+                      <section className="order-2 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-2 lg:p-7">
                         <div className="mb-4 grid gap-2">
                           {([
                             { id: "draft", title: "Draft a message", detail: "Say it calmly and clearly", icon: MessageSquare },
@@ -3252,7 +3252,7 @@ export default function App() {
                         <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
                       </section>
 
-                      <aside className="order-2 space-y-3 lg:order-2">
+                      <aside className="order-1 space-y-3 lg:order-1">
                         {(() => {
                           const cardDate = new Date();
                           cardDate.setDate(cardDate.getDate() + homeDayOffset);
