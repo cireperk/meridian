@@ -884,6 +884,8 @@ export default function App() {
   const [calEditEvent, setCalEditEvent] = useState<any | null>(null);
   const [calDeleteConfirm, setCalDeleteConfirm] = useState<string | null>(null);
   const [calForm, setCalForm] = useState({ title: "", date: "", time: "", type: "handoff", notes: "", location: "" });
+  const [homeDayOffset, setHomeDayOffset] = useState(0);
+  const homeCardTouchStartX = useRef<number | null>(null);
   // Custody schedule state
   const [custodySchedule, setCustodySchedule] = useState<any>(() => { try { return JSON.parse(localStorage.getItem("m_custody_schedule") || "null"); } catch { return null; } });
   const [showCustodySetup, setShowCustodySetup] = useState(false);
@@ -1537,6 +1539,7 @@ export default function App() {
   const openTodayDashboard = () => {
     setActiveTab("today");
     setShowFullCalendar(false);
+    setHomeDayOffset(0);
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 50);
   };
 
@@ -3004,27 +3007,56 @@ export default function App() {
 
                       <aside className="order-1 space-y-3 lg:order-2">
                         {(() => {
-                          const custodyToday = getCustodyForDate(todayStr, custodySchedule, calEvents);
+                          const cardDate = new Date();
+                          cardDate.setDate(cardDate.getDate() + homeDayOffset);
+                          const cardDateStr = `${cardDate.getFullYear()}-${String(cardDate.getMonth() + 1).padStart(2, "0")}-${String(cardDate.getDate()).padStart(2, "0")}`;
+                          const dayLabel = homeDayOffset === 0 ? "Today" : homeDayOffset === 1 ? "Tomorrow" : cardDate.toLocaleDateString("en-US", { weekday: "long" });
+                          const dateContext = homeDayOffset === 0 ? "today" : homeDayOffset === 1 ? "tomorrow" : `on ${dayLabel}`;
+                          const custodyForCardDate = getCustodyForDate(cardDateStr, custodySchedule, calEvents);
                           const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
-                          const nextEvent = calEvents
-                            .filter(event => event.date >= todayStr && !event.completed && !isCustodyOverride(event))
+                          const dayEvent = calEvents
+                            .filter(event => event.date === cardDateStr && !event.completed && !isCustodyOverride(event))
                             .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))[0];
                           return (
-                            <div className="rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]">
-                              <div className="mb-3 flex items-center gap-3 lg:mb-6">
-                                <span className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-emerald-600 text-center text-white lg:rounded-full lg:border lg:border-white/20 lg:bg-transparent"><span className="text-[8px] uppercase tracking-wider text-emerald-100 lg:text-emerald-200">Today</span><span className="font-serif text-2xl leading-none">{new Date().getDate()}</span></span>
-                                <span className="text-xs font-medium text-slate-500 lg:text-emerald-100/80">{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
-                              </div>
-                              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
-                                  <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? `${childFirst || "Your child"} is with you today.` : custodyToday === "coparent" ? `${childFirst || "Your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
-                              <div className="my-3 border-t border-slate-100 lg:my-5 lg:border-white/10" />
-                              {nextEvent && (
-                                <div className="flex items-start gap-2.5 text-xs text-slate-500 lg:text-white/75">
-                                  <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 lg:text-emerald-200" />
-                                  <span><span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-slate-400 lg:text-emerald-200/75">Coming up</span><span className="font-medium text-slate-700 lg:text-white">{nextEvent.title}</span><span className="mt-1 block text-slate-400 lg:text-white/55">{new Date(`${nextEvent.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}{nextEvent.time ? ` · ${nextEvent.time}` : ""}</span></span>
+                            <div
+                              className="relative mb-2 touch-pan-y px-1 pb-3"
+                              onTouchStart={event => { homeCardTouchStartX.current = event.touches[0]?.clientX ?? null; }}
+                              onTouchEnd={event => {
+                                const startX = homeCardTouchStartX.current;
+                                const endX = event.changedTouches[0]?.clientX;
+                                homeCardTouchStartX.current = null;
+                                if (startX === null || endX === undefined || Math.abs(endX - startX) < 45) return;
+                                setHomeDayOffset(offset => Math.max(0, Math.min(3, offset + (endX < startX ? 1 : -1))));
+                              }}
+                            >
+                              <div aria-hidden="true" className="absolute inset-x-3 top-2 bottom-1 rounded-[22px] bg-emerald-900/10" />
+                              <div aria-hidden="true" className="absolute inset-x-1 top-1 bottom-2 rounded-[22px] bg-emerald-900/20" />
+                              <motion.div
+                                key={homeDayOffset}
+                                initial={{ opacity: 0.75, x: 12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.18 }}
+                                className="relative z-10 rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]"
+                              >
+                                <div className="mb-3 flex items-center gap-3 lg:mb-6">
+                                  <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-emerald-600 text-center text-white lg:rounded-full lg:border lg:border-white/20 lg:bg-transparent"><span className="text-[8px] uppercase tracking-wider text-emerald-100 lg:text-emerald-200">{dayLabel}</span><span className="font-serif text-2xl leading-none">{cardDate.getDate()}</span></span>
+                                  <span className="flex-1 text-xs font-medium text-slate-500 lg:text-emerald-100/80">{cardDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                                  <div className="flex items-center gap-1">
+                                    <button type="button" onClick={() => setHomeDayOffset(offset => Math.max(0, offset - 1))} disabled={homeDayOffset === 0} aria-label="Show previous day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronLeft className="h-4 w-4" /></button>
+                                    <button type="button" onClick={() => setHomeDayOffset(offset => Math.min(3, offset + 1))} disabled={homeDayOffset === 3} aria-label="Show next day" className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 lg:text-white/80 lg:hover:bg-white/10"><ChevronRight className="h-4 w-4" /></button>
+                                  </div>
                                 </div>
-                              )}
-                              <button onClick={() => openTodayCalendar()} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
+                                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
+                                <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyForCardDate === "me" ? `${childFirst || "Your child"} is with you ${dateContext}.` : custodyForCardDate === "coparent" ? `${childFirst || "Your child"} is with ${toName(coparentName || "your co-parent")} ${dateContext}.` : "Your schedule is ready to view." : dayEvent ? dayEvent.title : "No plans on your calendar yet."}</p>
+                                {dayEvent && (
+                                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 lg:text-white/75">
+                                    <CalendarDays className="h-4 w-4 shrink-0 text-emerald-700 lg:text-emerald-200" />
+                                    <span>{dayEvent.time ? `${dayEvent.time} · ` : ""}{dayEvent.title}</span>
+                                  </div>
+                                )}
+                                <button onClick={() => openTodayCalendar(cardDateStr)} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
+                                <p className="mt-2 text-center text-[10px] text-slate-400 lg:text-white/45" aria-live="polite">Swipe or use arrows · {homeDayOffset + 1} of 4</p>
+                              </motion.div>
                             </div>
                           );
                         })()}
