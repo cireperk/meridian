@@ -21,12 +21,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.10.38/b
 // --- Supabase raw fetch helpers ---
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const HERO_REPLIES = {
-  neutral: "Thanks for letting me know. I'll have Emma ready for pickup at 5:00. Please message me if your timing changes.",
-  warmer: "Thanks for the update. Emma will be ready for you at 5:00. I appreciate you letting me know.",
-  firm: "I'll have Emma ready for pickup at 5:00 as scheduled. Please let me know in advance if the timing needs to change.",
-} as const;
-
 const sbFetch = async (path: string, { method = "GET", body, token }: any = {}) => {
   const headers: any = { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -793,7 +787,6 @@ export default function App() {
   const [oauthProcessing, setOauthProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [previewSlide, setPreviewSlide] = useState(0);
-  const [heroTone, setHeroTone] = useState<keyof typeof HERO_REPLIES>("neutral");
   const [showLaunchSplash, setShowLaunchSplash] = useState(isNative);
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -1817,85 +1810,102 @@ export default function App() {
               <p className="mx-auto mt-4 hidden max-w-lg text-[10px] leading-relaxed text-slate-400 lg:block lg:mx-0">When you use AI features, your messages and relevant document text may be sent to Anthropic to generate responses. <a href="/privacy" className="underline underline-offset-2 hover:text-slate-600">Privacy details</a>.</p>
               </div>
 
-              <div className="w-full max-w-xl mx-auto overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_12px_36px_-24px_rgba(31,68,54,0.3)] lg:hidden">
-                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <Logo size="sm" />
-                    <span className="text-xs font-semibold text-slate-800">Message coach</span>
-                  </div>
-                  <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-700"><Shield className="h-3.5 w-3.5" />Private</span>
-                </div>
-                <div className="space-y-3 p-4">
-                  <div className="ml-auto max-w-[92%] rounded-xl rounded-tr-sm bg-slate-100 px-3 py-2.5 text-[11px] leading-[1.55] text-slate-700">“I’m picking Emma up at 5. Don’t make me wait again like last time.”</div>
-                  <div className="overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/40">
-                    <div className="flex items-center gap-1.5 px-3 pt-2.5 text-[10px] font-semibold text-emerald-700"><Sparkles className="h-3.5 w-3.5" />Meridian suggestion</div>
-                    <p className="px-3 py-2 text-[11px] leading-[1.55] text-slate-700">{HERO_REPLIES[heroTone]}</p>
-                    <div className="flex items-center justify-between border-t border-emerald-100 px-3 py-2">
-                      <span className="text-[9px] text-slate-600">Calm · Clear · Child-focused</span>
-                      <button onClick={() => copyToClipboard(HERO_REPLIES[heroTone], -1)} className="flex h-7 items-center gap-1 rounded-lg bg-white px-2.5 text-[10px] font-medium text-slate-700 shadow-sm">
-                        {copied === -1 ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                        {copied === -1 ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {([
-                      ["neutral", "Neutral"],
-                      ["warmer", "Warmer"],
-                      ["firm", "Firm boundary"],
-                    ] as const).map(([tone, label]) => (
-                      <button key={tone} onClick={() => setHeroTone(tone)} aria-pressed={heroTone === tone} className={cn("rounded-full border px-3 py-1.5 text-[10px] transition-colors", heroTone === tone ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600")}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <motion.div initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto w-full max-w-xl lg:max-w-[660px]">
+                <div className="absolute -inset-8 rounded-[4rem] bg-gradient-to-br from-emerald-100/80 via-teal-50/70 to-amber-50/80 blur-3xl" aria-hidden="true" />
 
-              <motion.div initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="relative mx-auto hidden w-full max-w-[620px] lg:block">
-              <div className="absolute -inset-8 rounded-[4rem] bg-gradient-to-br from-emerald-100/80 via-teal-50/70 to-amber-50/80 blur-3xl" aria-hidden="true" />
-              <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_24px_70px_-28px_rgba(31,68,54,0.28)]">
-                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-                  <div className="flex items-center gap-3">
-                    <Logo size="sm" />
-                    <span className="text-sm font-semibold text-slate-800">Message coach</span>
+                <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_24px_70px_-28px_rgba(31,68,54,0.28)] sm:rounded-[28px]">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-4">
+                    <div className="flex items-center gap-2.5">
+                      <Logo size="sm" />
+                      <span className="text-sm font-semibold text-slate-800">Your day, at a glance</span>
+                    </div>
+                    <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-700 sm:text-xs"><Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />Private</span>
                   </div>
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-700"><Shield className="h-4 w-4" />Private</span>
-                </div>
-                <div className="p-6 sm:p-7">
-                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Message from Alex</p>
-                  <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-slate-100 px-4 py-4 text-[13px] leading-5 text-slate-700">I’m picking Emma up at 5. Don’t make me wait again like last time.</div>
-                  <div className="mb-3 mt-5 flex items-center gap-2 text-xs font-semibold text-emerald-700"><Sparkles className="h-4 w-4" />Meridian suggestion</div>
-                  <div className="overflow-hidden rounded-2xl rounded-tl-md border border-emerald-200 bg-emerald-50/40">
-                    <p className="min-h-[88px] px-5 py-4 text-[13px] leading-6 text-slate-700">{HERO_REPLIES[heroTone]}</p>
-                    <div className="flex items-center justify-between border-t border-emerald-100 px-4 py-3">
-                      <span className="text-[10px] text-slate-600">Calm · Clear · Child-focused</span>
-                      <button onClick={() => copyToClipboard(HERO_REPLIES[heroTone], -1)} className="flex h-8 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-emerald-50">
-                        {copied === -1 ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
-                        {copied === -1 ? "Copied" : "Copy"}
-                      </button>
+
+                  <div className="grid gap-4 bg-[#f7f9f8] p-3.5 sm:gap-5 sm:p-5 lg:grid-cols-[112px_minmax(0,1fr)] lg:gap-4 lg:p-5">
+                    <aside className="hidden rounded-2xl bg-white p-3 lg:block">
+                      <p className="mb-4 px-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400">Meridian</p>
+                      <div className="space-y-1">
+                        {[
+                          { icon: Home, label: "Today", active: true },
+                          { icon: MessageSquare, label: "Talk", active: false },
+                          { icon: FolderLock, label: "Vault", active: false },
+                          { icon: CalendarDays, label: "Calendar", active: false },
+                        ].map(({ icon: Icon, label, active }) => (
+                          <div key={label} className={cn("flex items-center gap-2 rounded-lg px-2 py-2 text-[10px] font-medium", active ? "bg-emerald-50 text-emerald-800" : "text-slate-400")}>
+                            <Icon className={cn("h-3.5 w-3.5", active ? "text-emerald-700" : "text-slate-300")} />
+                            {label}
+                          </div>
+                        ))}
+                      </div>
+                    </aside>
+
+                    <div className="min-w-0">
+                      <div className="mb-3 flex items-end justify-between px-0.5 sm:mb-4 lg:px-1">
+                        <div>
+                          <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[10px]">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+                          <p className="text-lg font-light tracking-tight text-slate-800 sm:text-xl">Good morning.</p>
+                        </div>
+                        <span className="mb-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm"><CalendarDays className="h-4 w-4" /></span>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-[1.25fr_0.85fr]">
+                        <div className="rounded-2xl bg-[#173b33] p-4 text-white shadow-[0_16px_30px_-22px_rgba(15,55,45,0.65)] sm:p-5">
+                          <div className="mb-5 flex items-center gap-3">
+                            <span className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl border border-white/20 text-center">
+                              <span className="text-[7px] uppercase tracking-wider text-emerald-200">Today</span>
+                              <span className="font-serif text-xl leading-none">{new Date().getDate()}</span>
+                            </span>
+                            <span className="text-[10px] font-medium text-emerald-100/80">{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                          </div>
+                          <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-200/75">Your day</p>
+                          <p className="text-[15px] font-medium leading-snug sm:text-base">A clearer view of what’s ahead.</p>
+                          <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-3 text-[10px] text-white/75">
+                            <CalendarDays className="h-3.5 w-3.5 text-emerald-200" />
+                            Your schedule, events, and next steps
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                            <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700"><Sparkles className="h-3.5 w-3.5" /></span>
+                            <p className="text-[10px] font-semibold text-slate-700 sm:text-[11px]">Talk it through</p>
+                            <p className="mt-1 hidden text-[9px] leading-relaxed text-slate-400 sm:block">Get help with what’s on your mind</p>
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+                            <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-700"><FileText className="h-3.5 w-3.5" /></span>
+                            <p className="text-[10px] font-semibold text-slate-700 sm:text-[11px]">Your documents</p>
+                            <p className="mt-1 hidden text-[9px] leading-relaxed text-slate-400 sm:block">Find important details when you need them</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-2xl border border-emerald-100 bg-white p-3 sm:mt-4 sm:p-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-emerald-700">This week</p>
+                          <span className="text-[9px] text-slate-400">Your schedule</span>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {Array.from({ length: 7 }, (_, index) => {
+                            const day = new Date();
+                            day.setDate(day.getDate() + index);
+                            return (
+                              <div key={index} className="flex flex-col items-center gap-1 rounded-lg py-1.5">
+                                <span className="text-[8px] font-medium uppercase text-slate-400">{day.toLocaleDateString("en-US", { weekday: "short" })}</span>
+                                <span className={cn("flex h-6 w-6 items-center justify-center rounded-full text-[9px]", index === 0 ? "bg-emerald-700 font-semibold text-white" : "text-slate-600")}>{day.getDate()}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-5">
-                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Adjust the tone</p>
-                    <div className="flex flex-wrap gap-2">
-                      {([
-                        ["neutral", "Neutral"],
-                        ["warmer", "Warmer"],
-                        ["firm", "Firm boundary"],
-                      ] as const).map(([tone, label]) => (
-                        <button key={tone} onClick={() => setHeroTone(tone)} aria-pressed={heroTone === tone} className={cn("rounded-full border px-3.5 py-2 text-[11px] transition-colors", heroTone === tone ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600 hover:border-emerald-200")}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-              </div>
-              <div className="absolute -bottom-5 -right-4 flex max-w-[270px] items-center gap-3 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-lg shadow-slate-900/10 xl:-right-6">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Shield className="h-4 w-4" /></span>
-                <span><strong className="block text-[11px] font-semibold text-slate-800">Your space is yours</strong><span className="mt-1 block text-[10px] leading-relaxed text-slate-600">Your co-parent can’t see what you write.</span></span>
-              </div>
+
+                <div className="absolute -bottom-4 right-3 hidden items-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white px-3 py-2.5 shadow-lg shadow-slate-900/10 sm:flex lg:-right-4">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Shield className="h-4 w-4" /></span>
+                  <span><strong className="block text-[10px] font-semibold text-slate-800">A space that’s yours</strong><span className="mt-0.5 block text-[9px] text-slate-500">Support on your terms</span></span>
+                </div>
               </motion.div>
 
               {/* Scroll hint */}
