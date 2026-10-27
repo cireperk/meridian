@@ -4842,23 +4842,21 @@ export default function App() {
                           <Edit3 className="w-3.5 h-3.5 text-slate-300 group-hover:text-emerald-500 transition-colors shrink-0" />
                         </button>
                       )}
-                      <div className="mt-1 flex min-h-10 items-center justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-2">
+                      <div className="mt-1 flex min-w-0 items-center gap-2">
                           <span className="shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">{VAULT_CATEGORIES.find(c => c.id === vaultViewDoc.category)?.label}</span>
                           <span className="truncate text-[11px] text-slate-400">{new Date(vaultViewDoc.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {vaultViewUrl && (
-                            <>
-                              <a href={vaultViewUrl} download={vaultViewDoc.file_name} className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 sm:w-auto sm:gap-2 sm:px-4" aria-label="Download original document">
-                                <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
-                              </a>
-                              <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="hidden h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex">Open original</a>
-                            </>
-                          )}
-                          <button onClick={closeVaultDocument} aria-label="Close document" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
-                        </div>
                       </div>
+                    </div>
+                    <div className="flex w-full shrink-0 items-center justify-end gap-1.5 border-t border-slate-100 pt-2 sm:w-auto sm:border-0 sm:pt-0">
+                      {vaultViewUrl && (
+                        <>
+                          <a href={vaultViewUrl} download={vaultViewDoc.file_name} className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-700 text-xs font-semibold text-white hover:bg-emerald-800 sm:w-auto sm:gap-2 sm:px-4" aria-label="Download original document">
+                            <Download className="h-4 w-4" /><span className="hidden sm:inline">Download</span>
+                          </a>
+                          <a href={vaultViewUrl} target="_blank" rel="noreferrer" className="hidden h-10 items-center justify-center rounded-xl border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:flex">Open original</a>
+                        </>
+                      )}
+                      <button onClick={closeVaultDocument} aria-label="Close document" className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"><X className="h-5 w-5" /></button>
                     </div>
                   </div>
                   {/* Decree Intelligence in vault detail */}
