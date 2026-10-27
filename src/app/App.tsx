@@ -2526,43 +2526,53 @@ export default function App() {
                   </div>
                 </motion.div>
               ) : authView === "onboard-situation" ? (
-                /* Step 2: Situation — tap to advance */
+                /* Step 2: Choose a starting point */
                 <motion.div key="situation" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
                   <button onClick={() => setAuthView("onboarding")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
-                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Where are you<br/>right now?</h2>
-                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">There's no wrong answer.</p>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">What would help<br/>most right now?</h2>
+                  <p className="text-[15px] text-slate-400 mb-6 text-center leading-relaxed">Choose what feels useful. You can explore everything anytime.</p>
                   <div className="w-full flex flex-col gap-3 mb-8">
                     {[
-                      { id: "during", label: "Going through it now", desc: "Separation or divorce in progress" },
-                      { id: "after", label: "Recently finalized", desc: "Adjusting to life after divorce" },
-                      { id: "coparenting", label: "Focused on co-parenting", desc: "Making it work for the kids" },
+                      { id: "talk", label: "Talk it through or find a next step", desc: "Start with what’s on your mind" },
+                      { id: "documents", label: "Understand a document", desc: "Get clear on important details and questions" },
+                      { id: "coparenting", label: "Co-parenting and schedules", desc: "Keep plans and communication organized" },
                     ].map((option) => (
-                      <button key={option.id} onClick={() => { localStorage.setItem("m_phase", option.id); setAuthView("onboard-people"); }} className="w-full p-5 rounded-2xl bg-white border border-slate-200/60 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/8 transition-all text-left group">
+                      <button key={option.id} onClick={() => {
+                        localStorage.setItem("m_phase", option.id);
+                        if (option.id === "talk") {
+                          finishOnboarding();
+                          setActiveTab("talk");
+                          setTalkMode("chat");
+                          setShowHistory(false);
+                        } else {
+                          setAuthView(option.id === "documents" ? "onboard-decree" : "onboard-people");
+                        }
+                      }} className="w-full p-4 rounded-2xl bg-white border border-slate-200/60 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/8 transition-all text-left group">
                         <div className="text-[15px] font-medium text-slate-800 mb-1 group-hover:text-emerald-700 transition-colors">{option.label}</div>
                         <div className="text-[13px] text-slate-400 leading-snug">{option.desc}</div>
                       </button>
                     ))}
                   </div>
-                  <button onClick={() => setAuthView("onboard-people")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors">I'd rather not say</button>
+                  <button onClick={() => { localStorage.removeItem("m_phase"); finishOnboarding(); setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); }} className="w-full h-12 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-base font-medium text-white shadow-md shadow-emerald-500/15 transition-all hover:from-emerald-600 hover:to-teal-600">Start a conversation now</button>
                 </motion.div>
               ) : authView === "onboard-people" ? (
                 /* Step 3: People */
                 <motion.div key="people" className="w-full flex flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
                   <button onClick={() => setAuthView("onboard-situation")} className="self-start flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors mb-4"><ArrowLeft className="w-3.5 h-3.5" /> Back</button>
-                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Who's involved?</h2>
-                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">Just first names — so things feel personal,<br/>not clinical.</p>
+                  <h2 className="text-[26px] font-light tracking-tight text-slate-700 mb-3 text-center leading-snug">Personalize co-parenting support</h2>
+                  <p className="text-[15px] text-slate-400 mb-10 text-center leading-relaxed">First names can make guidance feel more personal. Both fields are optional.</p>
                   <div className="w-full flex flex-col gap-5 mb-8">
                     <div>
-                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Your co-parent</label>
+                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Co-parent <span className="font-normal text-slate-400">· optional</span></label>
                       <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Their first name" value={coparentName} onChange={(e) => setCoparentName(e.target.value)} />
                     </div>
                     <div>
-                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Your children</label>
-                      <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="First names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthView("onboard-decree")} />
+                      <label className="text-[13px] font-medium text-slate-500 mb-2 block">Children <span className="font-normal text-slate-400">· optional</span></label>
+                      <input className="w-full pl-4 pr-4 py-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="First names, separated by commas" value={childrenNames} onChange={(e) => setChildrenNames(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthView("onboard-ready")} />
                     </div>
                   </div>
-                  <Button onClick={() => setAuthView("onboard-decree")} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">Continue</Button>
-                  <button onClick={() => setAuthView("onboard-decree")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-5">I'll do this later</button>
+                  <Button onClick={() => setAuthView("onboard-ready")} className="w-full h-13 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-md shadow-emerald-500/15 rounded-2xl text-base">Continue</Button>
+                  <button onClick={() => setAuthView("onboard-ready")} className="text-sm text-slate-400 hover:text-slate-600 transition-colors mt-5">I'll do this later</button>
                 </motion.div>
               ) : authView === "onboard-decree" ? (
                 /* Step 4: Decree upload */
@@ -2667,7 +2677,7 @@ export default function App() {
                     {localStorage.getItem("m_phase") && (
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0"><Check size={12} className="text-emerald-600" /></div>
-                        <span className="text-sm text-slate-600">{{ during: "Going through it now", after: "Recently finalized", coparenting: "Focused on co-parenting" }[localStorage.getItem("m_phase") as string] || "Your situation"}</span>
+                        <span className="text-sm text-slate-600">{{ talk: "Talk it through or find a next step", documents: "Understand a document", coparenting: "Co-parenting and schedules", during: "Going through it now", after: "Recently finalized" }[localStorage.getItem("m_phase") as string] || "Your situation"}</span>
                       </div>
                     )}
                     {(coparentName || childrenNames) && (
@@ -2995,7 +3005,7 @@ export default function App() {
                     </div>
 
                     <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
-                      <section className="order-2 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-1 lg:p-7">
+                      <section className="order-1 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-1 lg:p-7">
                         <div className="mb-5 flex items-start gap-3">
                           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Sparkles className="h-5 w-5" /></span>
                           <div>
@@ -3003,15 +3013,15 @@ export default function App() {
                             <p className="mt-1 text-sm text-slate-400">Start wherever you are. We’ll work through it together.</p>
                           </div>
                         </div>
-                        <div className="-mx-1 mb-4 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:grid lg:snap-none lg:grid-cols-1 lg:overflow-visible lg:px-0">
+                        <div className="mb-4 grid gap-2">
                           {([
                             { id: "draft", title: "Draft a message", detail: "Say it calmly and clearly", icon: MessageSquare },
                             { id: "decree", title: "Understand a document", detail: "Get a plain-language explanation", icon: FileText },
                             { id: "situation", title: "Talk through a situation", detail: "Sort out what to do next", icon: Sparkles },
                           ] as const).map(({ id, title, detail, icon: Icon }) => (
-                            <button key={id} onClick={() => { setInput(ACTION_PROMPTS[id]); setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); }} className="flex min-h-[76px] w-[220px] shrink-0 snap-start items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/40 lg:w-full lg:min-h-[60px] lg:rounded-xl">
-                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-emerald-700 shadow-sm"><Icon className="h-[18px] w-[18px]" /></span>
-                              <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-semibold text-slate-700">{title}</span><span className="mt-1 block truncate text-[11px] text-slate-400">{detail}</span></span>
+                            <button key={id} onClick={() => { setInput(ACTION_PROMPTS[id]); setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); }} className="flex min-h-[60px] w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/40">
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-emerald-700 shadow-sm"><Icon className="h-[18px] w-[18px]" /></span>
+                              <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold text-slate-700">{title}</span><span className="mt-0.5 block text-[11px] text-slate-400">{detail}</span></span>
                               <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
                             </button>
                           ))}
@@ -3023,7 +3033,7 @@ export default function App() {
                         <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
                       </section>
 
-                      <aside className="order-1 space-y-3 lg:order-2">
+                      <aside className="order-2 space-y-3 lg:order-2">
                         {(() => {
                           const cardDate = new Date();
                           cardDate.setDate(cardDate.getDate() + homeDayOffset);
@@ -3103,40 +3113,56 @@ export default function App() {
                       </>
                     )}
 
-                    {/* Getting Started — shows when not everything is set up */}
+                    {/* Optional setup suggestions tailored to the user's chosen starting point */}
                     {!showFullCalendar && (() => {
                       // Skip checklist entirely if setup already completed (from profile, loads at auth time)
                       if (setupComplete) return null;
                       // For users still setting up, wait for vault to load before computing steps
                       if (setupComplete === null && !vaultLoaded) return null;
                       const hasDecree = !!decreeText || vaultDocs.some((d: any) => d.category === "decree");
-                      const hasDetails = !!(coparentName && childrenNames);
+                      const hasDetails = !!(coparentName || childrenNames);
                       const hasSchedule = !!custodySchedule;
                       const hasChat = conversations.length > 0;
-                      const steps = [
-                        { id: "decree", done: hasDecree, label: "Upload your decree", desc: hasDecree ? (decreeExtraction ? "Analyzed and ready" : "Uploaded") : "Unlocks personalized answers and legal context", action: () => { if (!hasDecree) fileRef.current?.click(); else { setActiveTab("vault" as any); } } },
-                        { id: "details", done: hasDetails, label: "Confirm your details", desc: hasDetails ? `${toName(coparentName)} · ${toName(childrenNames)}` : (hasDecree && decreeExtraction ? "We found some details — tap to confirm" : "Co-parent and children's names"), action: () => setActiveTab("profile" as any) },
-                        { id: "schedule", done: hasSchedule, label: "Set your custody schedule", desc: hasSchedule ? "Schedule active" : "Unlocks the weekly view and handoff tracking", action: () => { if (!hasSchedule) openCustodySetup(); } },
-                        { id: "chat", done: hasChat, label: "Have your first conversation", desc: hasChat ? "You're connected" : "Ask anything — about your decree, a hard text, or just how you're feeling", action: () => { setActiveTab("talk" as any); setTalkMode("chat"); } },
+                      const startingPoint = localStorage.getItem("m_phase");
+                      const steps: { id: string; done: boolean; label: string; desc: string; action: () => void }[] = [
+                        { id: "chat", done: hasChat, label: hasChat ? "Continue a conversation" : "Talk through what’s on your mind", desc: hasChat ? "Pick up where you left off" : "No setup needed to get started", action: () => { setActiveTab("talk"); setTalkMode("chat"); } },
                       ];
+                      if (startingPoint === "documents") {
+                        steps.push({ id: "decree", done: hasDecree, label: "Add a document for context", desc: hasDecree ? (decreeExtraction ? "Analyzed and ready" : "Uploaded") : "Optional · get answers grounded in your own document", action: () => { if (!hasDecree) fileRef.current?.click(); else setActiveTab("vault"); } });
+                      }
+                      if (startingPoint === "coparenting") {
+                        steps.push(
+                          { id: "details", done: hasDetails, label: "Add names for personal support", desc: hasDetails ? [coparentName && toName(coparentName), childrenNames && toName(childrenNames)].filter(Boolean).join(" · ") : "Optional · add a co-parent or children’s first names", action: () => setActiveTab("profile") },
+                          { id: "schedule", done: hasSchedule, label: "Add a co-parenting schedule", desc: hasSchedule ? "Schedule active" : "Optional · see handoffs and important dates", action: () => { if (!hasSchedule) openCustodySetup(); } },
+                        );
+                      }
                       const completed = steps.filter(s => s.done).length;
-                      if (completed >= 4) {
-                        // All done — persist so checklist never shows again
+                      if (completed >= steps.length) {
+                        // All personalized steps are complete — persist so the card stays dismissed.
                         if (!setupComplete && session?.token) {
                           setSetupComplete(true);
-                          dbUpdate("profiles", `id=eq.${session.user.id}`, { setup_complete: true }, session.token).catch(() => {});
+                          dbUpdate("profiles", `id=eq.${session.user.id}`, { setup_complete: true }, session.token).catch(error => console.error("Failed to save setup completion:", error));
                         }
                         return null;
                       }
                       return (
-                        <div className="mt-6 mb-2">
-                          <p className="text-sm text-slate-500 mb-5">Let's set things up so we can show up for you.</p>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Getting started</span>
-                            <span className="text-[11px] text-slate-400">{completed} of {steps.length} complete</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-4">
-                            <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" initial={{ width: "0%" }} animate={{ width: `${(completed / steps.length) * 100}%` }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} />
+                        <div className="mt-6 mb-2 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                          <div className="mb-4 flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700">Make Meridian yours, at your pace</p>
+                              <p className="mt-1 text-xs leading-relaxed text-slate-400">You can start a conversation now. Add details only when they’re useful to you.</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSetupComplete(true);
+                                if (session?.token) {
+                                  dbUpdate("profiles", `id=eq.${session.user.id}`, { setup_complete: true }, session.token).catch(error => console.error("Failed to save setup dismissal:", error));
+                                }
+                              }}
+                              className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+                            >
+                              Later
+                            </button>
                           </div>
                           <div className="space-y-2">
                             {steps.map((step, i) => (
