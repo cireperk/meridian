@@ -1995,6 +1995,23 @@ export default function App() {
                     </motion.div>
                   ))}
                 </div>
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-white/90 p-5 shadow-sm">
+                  <p className="text-center text-sm font-medium text-slate-700">Your tools, in one clearer picture</p>
+                  <p className="mx-auto mt-1 max-w-sm text-center text-xs leading-relaxed text-slate-400">We’re bringing calendars, files, and support closer together for the moments that matter.</p>
+                  <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[
+                      { name: "Google Drive", logo: <svg viewBox="0 0 40 36" aria-hidden="true" className="h-7 w-8"><path fill="#00832d" d="M13.3 2h13.4L40 25.2H26.7z" /><path fill="#0066da" d="M0 25.2h13.3L6.7 36H0l-6.7-10.8z" transform="translate(6.7)" /><path fill="#ffba00" d="M13.3 2 0 25.2h13.3l13.4-23.2z" /></svg> },
+                      { name: "Dropbox", logo: <svg viewBox="0 0 40 36" aria-hidden="true" className="h-7 w-8"><path fill="#0061ff" d="m12 2 10 6-10 6L2 8zm16 0 10 6-10 6-10-6zM2 19l10-6 10 6-10 6zm26-6 10 6-10 6-10-6zm-16 14 10-6 10 6-10 6z" /></svg> },
+                      { name: "Google Calendar", logo: <svg viewBox="0 0 36 36" aria-hidden="true" className="h-7 w-7"><rect x="3" y="5" width="30" height="28" rx="6" fill="#4285f4" /><path fill="#34a853" d="M3 11h7v22H9a6 6 0 0 1-6-6z" /><path fill="#fbbc04" d="M26 5h1a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6h-1z" /><path fill="#ea4335" d="M9 3h18v7H9z" /><path fill="#fff" d="M12 14h12v12H12z" /><text x="18" y="23" textAnchor="middle" fill="#4285f4" fontSize="8" fontWeight="700">31</text></svg> },
+                      { name: "Apple Calendar", logo: <svg viewBox="0 0 36 36" aria-hidden="true" className="h-7 w-7"><rect x="4" y="4" width="28" height="29" rx="7" fill="#f1f5f9" stroke="#cbd5e1" /><path fill="#ef4444" d="M4 11a7 7 0 0 1 7-7h14a7 7 0 0 1 7 7v3H4z" /><path d="M12 2v7M24 2v7" stroke="#fff" strokeWidth="2" strokeLinecap="round" /><text x="18" y="27" textAnchor="middle" fill="#334155" fontSize="13" fontWeight="700">27</text></svg> },
+                    ].map((item) => (
+                      <div key={item.name} className="flex min-h-16 items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2">
+                        {item.logo}
+                        <span className="text-[11px] font-medium leading-tight text-slate-600">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <p className="mt-5 text-center text-xs leading-relaxed text-slate-400">Meridian helps you get organized and find your next step. It isn’t a substitute for legal, mental-health, or crisis care.</p>
               </motion.div>
             </div>
