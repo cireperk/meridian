@@ -2981,7 +2981,6 @@ export default function App() {
                       <aside className="order-1 space-y-3 lg:order-2">
                         {(() => {
                           const custodyToday = getCustodyForDate(todayStr, custodySchedule, calEvents);
-                          const custodyOverrideToday = calEvents.some(event => event.date === todayStr && isCustodyOverride(event));
                           const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
                           const nextEvent = calEvents
                             .filter(event => event.date >= todayStr && !event.completed && !isCustodyOverride(event))
@@ -2993,7 +2992,7 @@ export default function App() {
                                 <span className="text-xs font-medium text-slate-500 lg:text-emerald-100/80">{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
                               </div>
                               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
-                                  <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? custodyOverrideToday ? `${childFirst || "Your child"} is marked as with you today.` : `Your schedule says ${childFirst || "your child"} is with you today.` : custodyToday === "coparent" ? custodyOverrideToday ? `${childFirst || "Your child"} is marked as with ${toName(coparentName || "your co-parent")} today.` : `Your schedule says ${childFirst || "your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
+                                  <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? `${childFirst || "Your child"} is with you today.` : custodyToday === "coparent" ? `${childFirst || "Your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
                               <div className="my-3 border-t border-slate-100 lg:my-5 lg:border-white/10" />
                               {nextEvent && (
                                 <div className="flex items-start gap-2.5 text-xs text-slate-500 lg:text-white/75">
