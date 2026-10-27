@@ -1531,6 +1531,13 @@ export default function App() {
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 300);
   };
 
+  const openProfileSection = (section: "details" | "settings" | "help") => {
+    const target = section === "details" ? "profile-details" : section === "help" ? "profile-help" : "profile-settings";
+    setActiveTab("profile");
+    setExpandedSetting(section === "details" ? "my-details" : section === "help" ? "help" : "privacy");
+    window.setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  };
+
   const navigateCalendarMonth = (direction: -1 | 1) => {
     const nextMonth = new Date(calMonth.year, calMonth.month + direction, 1);
     setCalMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
@@ -2963,10 +2970,10 @@ export default function App() {
                 })}
               </nav>
               <div className="space-y-1 border-b border-slate-100 pb-5">
-                <button onClick={() => { setActiveTab("profile"); window.setTimeout(() => document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth" }), 50); }} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><HelpCircle className="h-[18px] w-[18px] text-slate-400" />Help &amp; support</button>
-                <button onClick={() => { setActiveTab("profile"); window.setTimeout(() => document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth" }), 50); }} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><Settings className="h-[18px] w-[18px] text-slate-400" />Settings</button>
+                <button onClick={() => openProfileSection("help")} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><HelpCircle className="h-[18px] w-[18px] text-slate-400" />Help &amp; support</button>
+                <button onClick={() => openProfileSection("settings")} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><Settings className="h-[18px] w-[18px] text-slate-400" />Settings</button>
               </div>
-              <button onClick={() => setActiveTab("profile")} className="mt-4 flex items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-slate-50">
+              <button onClick={() => openProfileSection("details")} className="mt-4 flex items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-slate-50">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-800">{firstName.charAt(0) || "M"}</span>
                 <span className="min-w-0"><span className="block truncate text-xs font-semibold text-slate-700">{session?.user?.name || "Your account"}</span><span className="mt-0.5 block text-[10px] text-slate-400">{isSubscribed ? "Meridian Pro" : "Personal account"}</span></span>
                 <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-slate-300" />
@@ -2988,7 +2995,7 @@ export default function App() {
                 {(hasConversation || showHistory) && (
                   <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
                 )}
-                <button onClick={() => setActiveTab("profile")} aria-label="Account and settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-200">{firstName.charAt(0) || "M"}</button>
+                <button onClick={() => openProfileSection("details")} aria-label="Account and settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-200">{firstName.charAt(0) || "M"}</button>
               </div>
             </motion.header>
 
@@ -3140,7 +3147,7 @@ export default function App() {
                       }
                       if (startingPoint === "coparenting") {
                         steps.push(
-                          { id: "details", done: hasDetails, label: "Add names for personal support", desc: hasDetails ? [coparentName && toName(coparentName), childrenNames && toName(childrenNames)].filter(Boolean).join(" · ") : "Optional · add a co-parent or children’s first names", action: () => setActiveTab("profile") },
+                          { id: "details", done: hasDetails, label: "Add names for personal support", desc: hasDetails ? [coparentName && toName(coparentName), childrenNames && toName(childrenNames)].filter(Boolean).join(" · ") : "Optional · add a co-parent or children’s first names", action: () => openProfileSection("details") },
                           { id: "schedule", done: hasSchedule, label: "Add a co-parenting schedule", desc: hasSchedule ? "Schedule active" : "Optional · see handoffs and important dates", action: () => { if (!hasSchedule) openCustodySetup(); } },
                         );
                       }
@@ -4024,7 +4031,7 @@ export default function App() {
                     <h2 className="text-2xl font-light tracking-tight text-slate-700 mb-6">{firstName ? `Hi, ${firstName}` : "Profile"}</h2>
 
                     {/* My Details */}
-                    <div className="mb-6">
+                    <div id="profile-details" className="mb-6 scroll-mt-6">
                       <div className="bg-white border border-slate-200/60 rounded-xl overflow-hidden">
                         <button onClick={() => setExpandedSetting(expandedSetting === "my-details" ? null : "my-details")} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
                           <div className="flex items-center gap-3"><User className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">My Details</span></div>
@@ -4073,7 +4080,7 @@ export default function App() {
                           { id: "help", icon: HelpCircle, label: "Help & Support", content: <>Have a question or running into an issue? Reach out to us at <a href="mailto:support@mymeridianapp.com" className="text-blue-500 underline">support@mymeridianapp.com</a> and we'll get back to you within 24 hours.</> },
                           { id: "about", icon: Info, label: "About Meridian", content: "Meridian is a grounding companion for anyone navigating divorce and co-parenting. Built with care, designed for calm and clarity. Meridian is not a law firm and does not provide legal advice." },
                         ].map((item) => (
-                          <div key={item.id} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all">
+                          <div key={item.id} id={item.id === "help" ? "profile-help" : undefined} className="bg-white border border-slate-200/60 rounded-xl overflow-hidden transition-all scroll-mt-6">
                             <button onClick={() => setExpandedSetting(expandedSetting === item.id ? null : item.id)} className="w-full p-4 hover:bg-slate-50 transition-all text-left flex items-center justify-between">
                               <div className="flex items-center gap-3"><item.icon className="w-4 h-4 text-slate-400" /><span className="text-sm text-slate-700">{item.label}</span></div>
                               <motion.div animate={{ rotate: expandedSetting === item.id ? 90 : 0 }} transition={{ duration: 0.2 }}><ChevronRight className="w-4 h-4 text-slate-400" /></motion.div>
