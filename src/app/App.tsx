@@ -6,7 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
 import { Preferences } from "@capacitor/preferences";
 import { App as CapApp } from "@capacitor/app";
-import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock, MapPin } from "lucide-react";
+import { Upload, Check, Send, X, Edit3, Play, Pause, MessageSquare, User, BookOpen, ChevronRight, FileText, Heart, DollarSign, Users, Baby, Sparkles, Search, Square, Clock, Copy, Trash2, LogOut, Shield, HelpCircle, Info, ArrowLeft, Eye, EyeOff, ThumbsUp, ThumbsDown, Volume2, VolumeX, FolderLock, Download, CalendarDays, Plus, ChevronLeft, ChevronDown, Home, Lock, MapPin, Settings } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
@@ -1485,6 +1485,19 @@ export default function App() {
 
   const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
 
+  const openTodayCalendar = () => {
+    setActiveTab("today");
+    setShowFullCalendar(true);
+    setCalSelectedDate(null);
+    window.setTimeout(() => document.getElementById("today-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+  };
+
+  const openTodayDashboard = () => {
+    setActiveTab("today");
+    setShowFullCalendar(false);
+    window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 50);
+  };
+
   const handleCalSave = async () => {
     if (!calForm.title.trim() || !calForm.date || !session?.token) return;
     const body = { user_id: session.user.id, title: calForm.title.trim(), date: calForm.date, time: calForm.time ? formatTime12(calForm.time) : null, type: calForm.type, notes: calForm.notes.trim() || null, location: calForm.location.trim() || null };
@@ -2794,11 +2807,11 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 flex flex-col max-w-3xl mx-auto bg-white overflow-hidden" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="fixed inset-0 mx-auto flex max-w-[1600px] flex-col overflow-hidden bg-white lg:flex-row lg:bg-[#f7f9f8] lg:shadow-2xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
 
             {/* Trial banner */}
             {isTrialActive && !isSubscribed && trialDaysLeft < TRIAL_DAYS && (
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0 lg:absolute lg:left-64 lg:right-0 lg:top-0 lg:z-30">
                 <span className="text-xs text-slate-500">
                   {trialDaysLeft === 0 ? "Your trial ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial`}
                 </span>
@@ -2808,12 +2821,48 @@ export default function App() {
               </div>
             )}
 
+            <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white px-5 py-6 lg:flex">
+              <div className="mb-10 flex items-center gap-3 px-2">
+                <Logo size="sm" />
+                <span className="font-sans text-base font-semibold tracking-tight text-slate-800">Meridian</span>
+              </div>
+              <nav aria-label="Main navigation" className="flex-1 space-y-1">
+                {([
+                  { id: "today", label: "Today", icon: Home, action: openTodayDashboard },
+                  { id: "talk", label: "Talk", icon: MessageSquare, action: () => { setActiveTab("talk"); setTalkMode("chat"); } },
+                  { id: "vault", label: "Vault", icon: FolderLock, action: () => setActiveTab("vault") },
+                  { id: "calendar", label: "Calendar", icon: CalendarDays, action: openTodayCalendar },
+                  { id: "guides", label: "Guides", icon: BookOpen, action: () => { setActiveTab("today"); setShowFullCalendar(false); window.setTimeout(() => document.getElementById("today-guides")?.scrollIntoView({ behavior: "smooth" }), 50); } },
+                ] as const).map(({ id, label, icon: Icon, action }) => {
+                  const selected = id === "calendar" ? activeTab === "today" && showFullCalendar : id === "guides" ? false : activeTab === id;
+                  return (
+                    <button key={id} onClick={action} aria-current={selected ? "page" : undefined} className={cn("flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm transition-colors", selected ? "bg-emerald-50 text-emerald-800 font-semibold" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800")}>
+                      <Icon className={cn("h-[18px] w-[18px]", selected ? "text-emerald-700" : "text-slate-400")} strokeWidth={1.8} />
+                      {label}
+                      {id === "talk" && conversations.length > 0 && <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-medium text-white">{conversations.length}</span>}
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="space-y-1 border-b border-slate-100 pb-5">
+                <button onClick={() => { setActiveTab("profile"); window.setTimeout(() => document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth" }), 50); }} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><HelpCircle className="h-[18px] w-[18px] text-slate-400" />Help &amp; support</button>
+                <button onClick={() => { setActiveTab("profile"); window.setTimeout(() => document.getElementById("profile-settings")?.scrollIntoView({ behavior: "smooth" }), 50); }} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"><Settings className="h-[18px] w-[18px] text-slate-400" />Settings</button>
+              </div>
+              <button onClick={() => setActiveTab("profile")} className="mt-4 flex items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-slate-50">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-800">{firstName.charAt(0) || "M"}</span>
+                <span className="min-w-0"><span className="block truncate text-xs font-semibold text-slate-700">{session?.user?.name || "Your account"}</span><span className="mt-0.5 block text-[10px] text-slate-400">{isSubscribed ? "Meridian Pro" : "Personal account"}</span></span>
+                <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-slate-300" />
+              </button>
+            </aside>
+
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {/* Header */}
-            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between px-6 py-4 border-b border-slate-100/80 bg-white shrink-0 z-20">
-              <div className="flex items-center gap-3">
+            <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }} className="flex items-center justify-between border-b border-slate-100/80 bg-white px-6 py-4 shrink-0 z-20 lg:min-h-[72px] lg:border-b-slate-200/70 lg:px-8 lg:py-3">
+              <div className="flex items-center gap-3 lg:hidden">
                 <Logo size="sm" />
                 <span className="font-sans font-medium text-base tracking-normal text-slate-800">Meridian</span>
               </div>
+              <div className="hidden items-center gap-2 text-[11px] font-medium text-slate-400 lg:flex"><Shield className="h-4 w-4 text-emerald-600" />Your private space</div>
               <div className="flex items-center gap-1">
                 {conversations.length > 0 && (
                   <Button variant="ghost" size="sm" onClick={() => { if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setShowHistory(!showHistory); }} className={cn("text-slate-500 hover:text-slate-700 hover:bg-slate-100", showHistory && activeTab === "talk" && "text-emerald-600 bg-emerald-50")} aria-label="Conversation history"><Clock className="w-4 h-4" /></Button>
@@ -2821,23 +2870,96 @@ export default function App() {
                 {(hasConversation || showHistory) && (
                   <Button variant="ghost" size="sm" onClick={() => { if (streaming) handleStop(); if (activeTab !== "talk") setActiveTab("talk"); setTalkMode("chat"); setActiveConvId(null); setShowHistory(false); }} className="text-slate-500 hover:text-slate-700 hover:bg-slate-100"><Edit3 className="w-4 h-4" /></Button>
                 )}
+                <button onClick={() => setActiveTab("profile")} aria-label="Account and settings" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-200">{firstName.charAt(0) || "M"}</button>
               </div>
             </motion.header>
 
             {/* Content */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div id="today-content" className="flex-1 min-h-0 overflow-y-auto bg-white lg:bg-[#f7f9f8]">
               <AnimatePresence mode="wait">
                 {/* TODAY */}
                 {activeTab === "today" && (
-                  <motion.div key="today" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="px-6 py-6 pb-6">
-                    {/* Greeting */}
-                    <h2 className="text-2xl font-light tracking-tight text-slate-700">
-                      Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}{firstName ? ", " : ""}<span className="text-emerald-600">{firstName}</span>{firstName ? "." : "."}
-                    </h2>
-                    <p className="text-sm text-slate-400 mt-1">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+                  <motion.div key="today" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} className="mx-auto w-full max-w-[1200px] px-5 py-6 pb-8 sm:px-7 lg:px-9 lg:py-9">
+                    {!showFullCalendar && (
+                      <>
+                    <div className="mb-6 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
+                        <h2 className="text-[23px] font-light leading-tight tracking-tight text-slate-800 sm:text-3xl">
+                          Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}{firstName ? ", " : "."}
+                          {firstName && <span className="font-serif italic text-emerald-600">{firstName}.</span>}
+                        </h2>
+                      </div>
+                      <button onClick={openTodayCalendar} aria-label="Open calendar" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:hidden"><CalendarDays className="h-5 w-5" /></button>
+                      <button onClick={() => { setCalForm({ title: "", date: todayStr, time: "", type: "handoff", notes: "", location: "" }); setCalEditEvent(null); setCalShowAdd(true); }} className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:flex"><Plus className="h-4 w-4" />Add an event</button>
+                    </div>
+
+                    <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
+                      <section className="order-2 overflow-hidden rounded-[24px] border border-emerald-100 bg-white p-5 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6 lg:order-1 lg:p-7">
+                        <div className="mb-5 flex items-start gap-3">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><Sparkles className="h-5 w-5" /></span>
+                          <div>
+                            <h3 className="text-lg font-semibold tracking-tight text-slate-800 sm:text-xl">What can I help with?</h3>
+                            <p className="mt-1 text-sm text-slate-400">Start wherever you are. We’ll work through it together.</p>
+                          </div>
+                        </div>
+                        <div className="-mx-1 mb-4 flex snap-x gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:grid lg:snap-none lg:grid-cols-1 lg:overflow-visible lg:px-0">
+                          {([
+                            { id: "draft", title: "Draft a message", detail: "Say it calmly and clearly", icon: MessageSquare },
+                            { id: "decree", title: "Understand a document", detail: "Get a plain-language explanation", icon: FileText },
+                            { id: "situation", title: "Talk through a situation", detail: "Sort out what to do next", icon: Sparkles },
+                          ] as const).map(({ id, title, detail, icon: Icon }) => (
+                            <button key={id} onClick={() => { setInput(ACTION_PROMPTS[id]); setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); }} className="flex min-h-[76px] w-[220px] shrink-0 snap-start items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3.5 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/40 lg:w-full lg:min-h-[60px] lg:rounded-xl">
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-emerald-700 shadow-sm"><Icon className="h-[18px] w-[18px]" /></span>
+                              <span className="min-w-0 flex-1"><span className="block truncate text-[13px] font-semibold text-slate-700">{title}</span><span className="mt-1 block truncate text-[11px] text-slate-400">{detail}</span></span>
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                            </button>
+                          ))}
+                        </div>
+                        <form onSubmit={(event) => { event.preventDefault(); if (!input.trim() || loading || streaming) return; setActiveTab("talk"); setTalkMode("chat"); setShowHistory(false); handleSend(input); }} className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm transition-colors focus-within:border-emerald-300">
+                          <Textarea ref={textareaRef} aria-label="Message Meridian" className="min-h-[42px] max-h-[120px] flex-1 resize-none border-0 bg-transparent px-2 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="What would you like help with today?" value={input} onChange={(event) => { setInput(event.target.value); resizeTextarea(); }} onKeyDown={handleKeyDown} rows={1} />
+                          <Button type="submit" size="sm" disabled={!input.trim() || loading || streaming} aria-label="Send message" className="h-10 w-10 shrink-0 rounded-xl bg-emerald-700 p-0 text-white hover:bg-emerald-800 disabled:bg-slate-200"><Send className="h-4 w-4" /></Button>
+                        </form>
+                        <p className="mt-3 flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-400"><Shield className="mt-px h-3 w-3 shrink-0 text-emerald-600" />Meridian can make mistakes. Important legal decisions should be reviewed by a professional.</p>
+                      </section>
+
+                      <aside className="order-1 space-y-3 lg:order-2">
+                        {(() => {
+                          const custodyToday = getCustodyForDate(todayStr, custodySchedule);
+                          const childFirst = toName(childrenNames?.split(",")[0]?.trim() || "");
+                          const nextEvent = calEvents
+                            .filter(event => event.date >= todayStr && !event.completed)
+                            .sort((a: any, b: any) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || ""))[0];
+                          return (
+                            <div className="rounded-[22px] border border-slate-200 bg-white p-4 text-slate-800 shadow-sm lg:border-0 lg:bg-[#173b33] lg:p-6 lg:text-white lg:shadow-[0_20px_40px_-24px_rgba(15,55,45,0.65)]">
+                              <div className="mb-3 flex items-center gap-3 lg:mb-6">
+                                <span className="flex h-14 w-14 flex-col items-center justify-center rounded-2xl bg-emerald-600 text-center text-white lg:rounded-full lg:border lg:border-white/20 lg:bg-transparent"><span className="text-[8px] uppercase tracking-wider text-emerald-100 lg:text-emerald-200">Today</span><span className="font-serif text-2xl leading-none">{new Date().getDate()}</span></span>
+                                <span className="text-xs font-medium text-slate-500 lg:text-emerald-100/80">{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                              </div>
+                              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 lg:text-emerald-200/75">Your day</p>
+                              <p className="text-base font-semibold leading-snug text-slate-700 lg:text-lg lg:font-medium lg:text-white">{custodySchedule ? custodyToday === "me" ? `${childFirst || "Your child"} is with you today.` : custodyToday === "coparent" ? `${childFirst || "Your child"} is with ${toName(coparentName || "your co-parent")} today.` : "Your schedule is ready to view." : "No plans on your calendar yet."}</p>
+                              <div className="my-3 border-t border-slate-100 lg:my-5 lg:border-white/10" />
+                              {nextEvent && (
+                                <div className="flex items-start gap-2.5 text-xs text-slate-500 lg:text-white/75">
+                                  <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 lg:text-emerald-200" />
+                                  <span><span className="mb-1 block text-[9px] font-semibold uppercase tracking-wider text-slate-400 lg:text-emerald-200/75">Coming up</span><span className="font-medium text-slate-700 lg:text-white">{nextEvent.title}</span><span className="mt-1 block text-slate-400 lg:text-white/55">{new Date(`${nextEvent.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}{nextEvent.time ? ` · ${nextEvent.time}` : ""}</span></span>
+                                </div>
+                              )}
+                              <button onClick={openTodayCalendar} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700 lg:mt-5 lg:border-white/10 lg:bg-white/10 lg:font-medium lg:text-white lg:hover:bg-white/15">View your calendar</button>
+                            </div>
+                          );
+                        })()}
+                        <div className="hidden rounded-2xl border border-slate-200 bg-white p-4 lg:block">
+                          <p className="flex items-center gap-2 text-xs font-semibold text-slate-700"><Shield className="h-4 w-4 text-emerald-600" />Your space stays private</p>
+                          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">Your co-parent can’t access your conversations or documents.</p>
+                        </div>
+                      </aside>
+                    </div>
+                      </>
+                    )}
 
                     {/* Getting Started — shows when not everything is set up */}
-                    {(() => {
+                    {!showFullCalendar && (() => {
                       // Skip checklist entirely if setup already completed (from profile, loads at auth time)
                       if (setupComplete) return null;
                       // For users still setting up, wait for vault to load before computing steps
@@ -2903,7 +3025,7 @@ export default function App() {
                     })()}
 
                     {/* This Week's Schedule */}
-                    {custodySchedule ? (() => {
+                    {custodySchedule || showFullCalendar ? (() => {
                       const today = new Date();
                       const dayOfWeek = today.getDay(); // 0=Sun
                       const monday = new Date(today);
@@ -2938,7 +3060,7 @@ export default function App() {
                       }
 
                       return (
-                        <div className="mt-6 bg-gradient-to-br from-emerald-50/60 to-white border border-emerald-100/60 rounded-2xl p-5">
+                        <div id="today-calendar" className="mt-6 scroll-mt-6 bg-gradient-to-br from-emerald-50/60 to-white border border-emerald-100/60 rounded-2xl p-5">
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : weekLabel}</p>
                             {showFullCalendar && (
@@ -3044,21 +3166,23 @@ export default function App() {
                             )}
                           </AnimatePresence>
                           <div className="flex items-center justify-between mt-4">
-                            <div className="flex items-center gap-4">
+                            {custodySchedule && <div className="flex items-center gap-4">
                               <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-xs text-slate-500">Your days</span></div>
                               <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-slate-200" /><span className="text-xs text-slate-500">{cpName}'s days</span></div>
-                            </div>
-                            <button onClick={() => { setShowFullCalendar(p => !p); if (!showFullCalendar) setCalSelectedDate(null); }} className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition-colors">
-                              {showFullCalendar ? "This week" : "Full month"}
-                              <motion.span animate={{ rotate: showFullCalendar ? 180 : 0 }} transition={{ duration: 0.25 }}>
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              </motion.span>
-                            </button>
+                            </div>}
+                            {custodySchedule && <button onClick={() => { setShowFullCalendar(p => !p); if (!showFullCalendar) setCalSelectedDate(null); }} className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition-colors">
+                                {showFullCalendar ? "This week" : "Full month"}
+                                <motion.span animate={{ rotate: showFullCalendar ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </motion.span>
+                              </button>}
                           </div>
                         </div>
                       );
                     })() : null}
 
+                    {!showFullCalendar && (
+                      <>
                     {/* Coming Up */}
                     {(() => {
                       const upcoming = calEvents
@@ -3117,7 +3241,7 @@ export default function App() {
                     })()}
 
                     {/* Guides */}
-                    <div className="mt-8">
+                    <div id="today-guides" className="mt-8 scroll-mt-6">
                       <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">Guides</p>
                       <div className="space-y-2">
                         {[
@@ -3146,6 +3270,8 @@ export default function App() {
                         <p className="text-xs text-slate-400 leading-relaxed">Tell us what's going on. A hard conversation, a confusing clause, or just a rough day. We're here.</p>
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 mt-3 group-hover:gap-1.5 transition-all">Start a conversation <ChevronRight className="w-3.5 h-3.5" /></span>
                       </button>
+                    )}
+                      </>
                     )}
 
                   </motion.div>
@@ -3699,7 +3825,7 @@ export default function App() {
                     </div>
 
                     {/* Settings */}
-                    <div className="mb-8">
+                    <div id="profile-settings" className="mb-8 scroll-mt-6">
                       <h3 className="text-sm font-medium text-slate-700 mb-3">Settings</h3>
                       <div className="space-y-2">
                         {[
@@ -3797,16 +3923,21 @@ export default function App() {
             )}
 
             {/* Bottom Nav */}
-            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} className="border-t border-slate-100/60 bg-white shrink-0 z-10" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-              <div className="flex items-center justify-around px-6 py-2.5">
-                {([{ id: "today" as Tab, icon: Home, label: "Today" }, { id: "talk" as Tab, icon: MessageSquare, label: "Talk" }, { id: "vault" as Tab, icon: FolderLock, label: "Vault" }, { id: "profile" as Tab, icon: User, label: "Profile" }]).map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn("flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative", activeTab === tab.id ? "text-emerald-600" : "text-slate-300 hover:text-slate-500")}>
-                    <tab.icon className="w-5 h-5" strokeWidth={activeTab === tab.id ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
-                    {activeTab === tab.id && <motion.div layoutId="nav-indicator" className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" transition={{ type: "spring", stiffness: 500, damping: 30 }} />}
+            <motion.nav initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }} aria-label="Main navigation" className="border-t border-slate-100/80 bg-white shrink-0 z-10 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+              <div className="flex items-center justify-around px-4 py-2.5">
+                {([
+                  { id: "today", icon: Home, label: "Today", active: activeTab === "today" && !showFullCalendar, action: openTodayDashboard },
+                  { id: "talk", icon: MessageSquare, label: "Talk", active: activeTab === "talk", action: () => { setActiveTab("talk"); setTalkMode("chat"); } },
+                  { id: "vault", icon: FolderLock, label: "Vault", active: activeTab === "vault", action: () => setActiveTab("vault") },
+                  { id: "calendar", icon: CalendarDays, label: "Calendar", active: activeTab === "today" && showFullCalendar, action: openTodayCalendar },
+                ] as const).map((tab) => (
+                  <button key={tab.id} onClick={tab.action} aria-current={tab.active ? "page" : undefined} className={cn("flex min-w-[64px] flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all duration-300 relative", tab.active ? "bg-emerald-50 text-emerald-700" : "text-slate-400 hover:text-slate-600")}>
+                    <tab.icon className="w-5 h-5" strokeWidth={tab.active ? 2 : 1.5} /><span className="text-[10px] font-medium tracking-wide">{tab.label}</span>
                   </button>
                 ))}
               </div>
             </motion.nav>
+            </div>
           </motion.div>
 
 
