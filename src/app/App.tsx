@@ -1658,11 +1658,6 @@ export default function App() {
             {/* ===== SECTION 1: Hero ===== */}
             <div className="min-h-[calc(100dvh-60px)] grid grid-cols-1 items-center gap-7 px-6 py-8 max-w-7xl mx-auto relative z-10 lg:grid-cols-2 lg:gap-14 lg:px-10 lg:py-12 xl:px-14">
               <div className="w-full max-w-xl mx-auto lg:mx-0">
-              <div className="mb-4 flex items-center justify-center gap-2.5 lg:hidden">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-3.5 w-3.5" /></span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Private support through life’s transitions</span>
-              </div>
-
               <div className="mb-5 hidden items-center justify-center gap-3 lg:flex lg:justify-start">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-4 w-4" /></span>
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support through life’s transitions</span>
