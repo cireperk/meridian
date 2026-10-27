@@ -1466,13 +1466,14 @@ export default function App() {
     if (!session?.token) return;
     setCalLoading(true);
     try {
-      // Load current calendar month + 30 days ahead from today for "Coming Up"
+      // Load the full visible month plus 30 days ahead for the calendar and "Coming Up".
       const monthStart = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, "0")}-01`;
       const monthEnd = new Date(calMonth.year, calMonth.month + 1, 0);
-      monthEnd.setDate(monthEnd.getDate() + 11);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const ahead = new Date(); ahead.setDate(ahead.getDate() + 30);
-      const rangeEnd = monthEnd > ahead ? monthEnd : ahead;
-      const startStr = monthStart < new Date().toISOString().slice(0, 10) ? monthStart : new Date().toISOString().slice(0, 10);
+      const rangeEnd = monthEnd < today ? monthEnd : monthEnd > ahead ? monthEnd : ahead;
+      const startStr = monthStart;
       const endStr = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, "0")}-${String(rangeEnd.getDate()).padStart(2, "0")}`;
       const events = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${startStr}&date=lte.${endStr}&order=date,time`, session.token);
       setCalEvents(events || []);
@@ -1525,9 +1526,16 @@ export default function App() {
     setActiveTab("today");
     setCalMonth({ year, month: month - 1 });
     setShowFullCalendar(true);
-    setCalSelectedDate(null);
+    setCalSelectedDate(date);
     setShowCustodyDayChoices(false);
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 300);
+  };
+
+  const navigateCalendarMonth = (direction: -1 | 1) => {
+    const nextMonth = new Date(calMonth.year, calMonth.month + direction, 1);
+    setCalMonth({ year: nextMonth.getFullYear(), month: nextMonth.getMonth() });
+    setCalSelectedDate(`${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-01`);
+    setShowCustodyDayChoices(false);
   };
 
   const openTodayDashboard = () => {
@@ -3230,17 +3238,41 @@ export default function App() {
                       }
 
                       return (
-                        <div id="today-calendar" className="mt-6 scroll-mt-6 bg-gradient-to-br from-emerald-50/60 to-white border border-emerald-100/60 rounded-2xl p-5">
-                          <div className="mb-3 flex items-center justify-between gap-2">
-                            <p className="whitespace-nowrap text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{showFullCalendar ? MONTHS[calMonth.month] + " " + calMonth.year : weekLabel}</p>
-                            {showFullCalendar && <div className="flex items-center gap-2">
-                              {custodySchedule && <button onClick={openCustodySetup} className="whitespace-nowrap rounded-lg px-2 py-1 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50">Edit schedule</button>}
-                              <div className="flex shrink-0 items-center gap-1">
-                                <button onClick={() => setCalMonth(p => { const m = p.month - 1; return m < 0 ? { year: p.year - 1, month: 11 } : { ...p, month: m }; })} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                                <button onClick={() => setCalMonth(p => { const m = p.month + 1; return m > 11 ? { year: p.year + 1, month: 0 } : { ...p, month: m }; })} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"><ChevronRight className="w-4 h-4" /></button>
+                        <div id="today-calendar" className="mt-6 scroll-mt-6 rounded-[24px] border border-emerald-100/80 bg-gradient-to-br from-emerald-50/50 via-white to-white p-4 shadow-[0_12px_36px_-28px_rgba(20,83,69,0.3)] sm:p-6">
+                          {showFullCalendar ? (
+                            <>
+                              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">Your calendar</p>
+                                  <h3 className="text-xl font-semibold tracking-tight text-slate-800">{MONTHS[calMonth.month]} {calMonth.year}</h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => openTodayCalendar()} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-emerald-300 hover:text-emerald-700">Today</button>
+                                  <button onClick={() => openAddEvent()} className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-800"><Plus className="h-3.5 w-3.5" /> Add event</button>
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => navigateCalendarMonth(-1)} aria-label="Previous month" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-300 hover:text-emerald-700"><ChevronLeft className="h-4 w-4" /></button>
+                                    <button onClick={() => navigateCalendarMonth(1)} aria-label="Next month" className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-colors hover:border-emerald-300 hover:text-emerald-700"><ChevronRight className="h-4 w-4" /></button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>}
-                          </div>
+                              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white/80 px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><CalendarDays className="h-4 w-4" /></span>
+                                  <div>
+                                    <p className="text-xs font-semibold text-slate-700">{custodySchedule ? "Co-parenting schedule" : "Your schedule"}</p>
+                                    <p className="mt-0.5 text-[11px] text-slate-400">{custodySchedule ? "Your planned days and handoffs at a glance" : "Add a schedule or events to see them here"}</p>
+                                  </div>
+                                </div>
+                                {custodySchedule
+                                  ? <button onClick={openCustodySetup} className="rounded-lg px-2 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-50">Edit schedule</button>
+                                  : <button onClick={openCustodySetup} className="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50">Set up schedule</button>}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="mb-3 flex items-center justify-between gap-2">
+                              <p className="whitespace-nowrap text-[11px] font-medium text-emerald-600 uppercase tracking-wider">{weekLabel}</p>
+                            </div>
+                          )}
                           <AnimatePresence mode="wait">
                             {!showFullCalendar ? (
                               <motion.div
@@ -3278,8 +3310,8 @@ export default function App() {
                               </motion.div>
                             ) : (
                               <motion.div key="month" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                                <div className="grid grid-cols-7 mb-2">{DAYS.map(d => <div key={d} className="text-center text-[11px] font-medium text-slate-400">{d}</div>)}</div>
-                                <div className="grid grid-cols-7 gap-y-1">
+                                <div className="mb-2 grid grid-cols-7">{DAYS.map(d => <div key={d} className="py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px]">{d}</div>)}</div>
+                                <div className="grid grid-cols-7 gap-x-1 gap-y-1 sm:gap-y-2">
                                   {calDays.map((cell: any, i: number) => {
                                     const isTodayCell = cell.dateStr === todayStr;
                                     const isSelected = cell.dateStr === calSelectedDate;
@@ -3287,12 +3319,19 @@ export default function App() {
                                     const eventTypes = [...new Set(dayEvents.map((e: any) => e.type))].slice(0, 3);
                                     const custodyDay = getCustodyForDate(cell.dateStr, custodySchedule, calEvents);
                                     return (
-                                      <button key={i} onClick={() => { setCalSelectedDate(cell.dateStr === calSelectedDate ? null : cell.dateStr); setShowCustodyDayChoices(false); }}
+                                      <button key={i} onClick={() => {
+                                        if (cell.month !== "current") {
+                                          const cellDate = new Date(`${cell.dateStr}T12:00:00`);
+                                          setCalMonth({ year: cellDate.getFullYear(), month: cellDate.getMonth() });
+                                        }
+                                        setCalSelectedDate(cell.dateStr);
+                                        setShowCustodyDayChoices(false);
+                                      }}
                                         aria-label={new Date(`${cell.dateStr}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                                         aria-pressed={isSelected}
-                                        className={cn("flex flex-col items-center py-1.5 rounded-xl transition-all relative", cell.month !== "current" && "opacity-30", isSelected && "bg-emerald-50", isTodayCell && !isSelected && "ring-1 ring-emerald-400 ring-inset")}>
-                                        <span className={cn("text-sm w-7 h-7 flex items-center justify-center rounded-full", isSelected ? "bg-emerald-500 text-white font-medium" : isTodayCell ? "text-emerald-600 font-medium" : "text-slate-700")}>{cell.day}</span>
-                                        <div className="flex gap-0.5 mt-0.5">
+                                        className={cn("relative flex min-h-[48px] flex-col items-center justify-center rounded-xl py-1 transition-all sm:min-h-[56px]", cell.month !== "current" && "opacity-35", custodySchedule && custodyDay === "me" && !isSelected && "bg-emerald-50/80", custodySchedule && custodyDay === "coparent" && !isSelected && "bg-slate-100/80", isSelected && "bg-emerald-100 ring-1 ring-emerald-300", isTodayCell && !isSelected && "ring-1 ring-emerald-500 ring-inset")}>
+                                        <span className={cn("flex h-8 w-8 items-center justify-center rounded-full text-sm", isSelected ? "bg-emerald-600 font-semibold text-white" : isTodayCell ? "font-semibold text-emerald-700" : "text-slate-700")}>{cell.day}</span>
+                                        <div className="mt-0.5 flex min-h-[6px] gap-1">
                                           {custodyDay && <div className={cn("w-1.5 h-1.5 rounded-full", custodyDay === "me" ? "bg-emerald-400" : "bg-slate-300")} />}
                                           {eventTypes.map((t: any) => <div key={t} className={cn("w-1.5 h-1.5 rounded-full", EVENT_TYPES.find(et => et.id === t)?.color || "bg-slate-400")} />)}
                                         </div>
@@ -3331,8 +3370,12 @@ export default function App() {
                                         )}
                                         {selectedDateEvents.length === 0 ? (
                                           <div className="text-center py-6">
-                                            <p className="text-sm text-slate-400 mb-1">Nothing scheduled</p>
-                                            <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-sm">Add event</Button>
+                                            <p className="text-sm font-medium text-slate-600 mb-1">Nothing planned for this day</p>
+                                            <p className="mb-3 text-xs text-slate-400">{custodySchedule ? "Add an event whenever you need it." : "Add a schedule or event to make this calendar yours."}</p>
+                                            <div className="flex flex-wrap justify-center gap-2">
+                                              <Button size="sm" onClick={() => openAddEvent()} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-sm"><Plus className="mr-1 h-3.5 w-3.5" />Add event</Button>
+                                              {!custodySchedule && <Button size="sm" variant="outline" onClick={openCustodySetup} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">Set up schedule</Button>}
+                                            </div>
                                           </div>
                                         ) : (
                                           <div className="space-y-2">
@@ -3360,11 +3403,14 @@ export default function App() {
                             )}
                           </AnimatePresence>
                           <div className="flex items-center justify-between mt-4">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             {custodySchedule && <div className="flex items-center gap-4">
                               <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-xs text-slate-500">Your days</span></div>
                               <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-slate-200" /><span className="text-xs text-slate-500">{cpName}'s days</span></div>
                             </div>}
-                            {custodySchedule && <button onClick={() => { setShowFullCalendar(p => !p); if (!showFullCalendar) setCalSelectedDate(null); }} className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition-colors">
+                            {showFullCalendar && <div className="flex items-center gap-1.5"><div className="h-1.5 w-1.5 rounded-full bg-slate-400" /><span className="text-xs text-slate-500">Calendar events</span></div>}
+                            </div>
+                            {custodySchedule && <button onClick={() => { setShowFullCalendar(p => !p); if (!showFullCalendar) setCalSelectedDate(todayStr); }} className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 transition-colors">
                                 {showFullCalendar ? "This week" : "Full month"}
                                 <motion.span animate={{ rotate: showFullCalendar ? 180 : 0 }} transition={{ duration: 0.25 }}>
                                   <ChevronDown className="w-3.5 h-3.5" />
