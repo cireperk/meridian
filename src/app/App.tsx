@@ -11,6 +11,7 @@ import { Button } from "./components/ui/button";
 import { Textarea } from "./components/ui/textarea";
 import { cn } from "./components/ui/utils";
 import { trackEvent } from "./analytics";
+import { buildCalendarIcs } from "../../lib/calendar-export.js";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Logo } from "./components/Logo";
 
@@ -1711,8 +1712,44 @@ export default function App() {
     window.setTimeout(() => document.getElementById("today-content")?.scrollTo({ top: 0, behavior: "smooth" }), 300);
   };
 
-  const openProfileSection = (section: "details" | "settings" | "help") => {
-    const target = section === "details" ? "profile-details" : section === "help" ? "profile-help" : "profile-settings";
+  const [calendarExporting, setCalendarExporting] = useState(false);
+  const [calendarExportMessage, setCalendarExportMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const exportCalendar = async () => {
+    if (!session?.token || calendarExporting) return;
+    setCalendarExporting(true);
+    setCalendarExportMessage(null);
+    try {
+      const from = new Date(); from.setDate(from.getDate() - 30);
+      const to = new Date(); to.setFullYear(to.getFullYear() + 1);
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const rows = await dbSelect("calendar_events", `user_id=eq.${session.user.id}&date=gte.${fmt(from)}&date=lte.${fmt(to)}&order=date,time`, session.token);
+      if (!Array.isArray(rows)) throw new Error("Could not load your events.");
+      const ics = buildCalendarIcs({
+        events: rows.filter((event: any) => !isCustodyOverride(event)),
+        custodyFor: (date: string) => getCustodyForDate(date, custodySchedule, rows),
+        startDate: fmt(from),
+        days: 395,
+        childName: toName(childrenNames?.split(",")[0]?.trim() || ""),
+        coparentName: toName(coparentName || ""),
+      });
+      const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "meridian-calendar.ics";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setCalendarExportMessage({ tone: "ok", text: "Your calendar file is ready. Open it to add everything to your calendar." });
+    } catch {
+      setCalendarExportMessage({ tone: "error", text: "We couldn’t prepare your calendar. Please try again." });
+    } finally {
+      setCalendarExporting(false);
+    }
+  };
+
+  const openProfileSection = (section: "details" | "settings" | "help" | "connections") => {
+    const target = section === "details" ? "profile-details" : section === "help" ? "profile-help" : section === "connections" ? "profile-connections" : "profile-settings";
     setActiveTab("profile");
     setExpandedSetting(section === "details" ? "my-details" : section === "help" ? "help" : "privacy");
     window.setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
@@ -3323,6 +3360,11 @@ export default function App() {
                             </div>
                           );
                         })()}
+                        <button onClick={() => openProfileSection("connections")} className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-emerald-300">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><CalendarDays className="h-[18px] w-[18px]" /></span>
+                          <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold text-slate-700">Add to your calendar</span><span className="block text-[11px] text-slate-400">Apple, Google or Outlook</span></span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                        </button>
                         <div className="hidden rounded-2xl border border-slate-200 bg-white p-4 lg:block">
                           <p className="flex items-center gap-2 text-xs font-semibold text-slate-700"><Shield className="h-4 w-4 text-emerald-600" />Your space stays private</p>
                           <p className="mt-2 text-[11px] leading-relaxed text-slate-400">Your co-parent can’t access your conversations or documents.</p>
@@ -4266,6 +4308,23 @@ export default function App() {
                             </motion.div>
                           )}
                         </AnimatePresence>
+                      </div>
+                    </div>
+
+                    {/* Connections */}
+                    <div id="profile-connections" className="mb-8 scroll-mt-6">
+                      <h3 className="text-sm font-medium text-slate-700 mb-3">Connections</h3>
+                      <div className="bg-white border border-slate-200/60 rounded-xl p-4">
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><CalendarDays className="h-5 w-5" /></span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-700">Apple, Google &amp; Outlook Calendar</p>
+                            <p className="mt-1 text-xs leading-relaxed text-slate-400">Add your {custodySchedule ? "custody schedule and " : ""}events to the calendar you already use. Covers the next year.</p>
+                          </div>
+                        </div>
+                        <button onClick={exportCalendar} disabled={calendarExporting} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60"><Download className="h-4 w-4" />{calendarExporting ? "Preparing…" : "Add to my calendar"}</button>
+                        {calendarExportMessage && <p role="status" className={cn("mt-2 text-xs", calendarExportMessage.tone === "ok" ? "text-emerald-700" : "text-rose-600")}>{calendarExportMessage.text}</p>}
+                        <p className="mt-3 text-[11px] leading-relaxed text-slate-400">On iPhone or Mac, open the file to add it to Apple Calendar. For Google Calendar, choose Settings → Import &amp; export and upload it. This adds a snapshot; re-export after you change your schedule.</p>
                       </div>
                     </div>
 
