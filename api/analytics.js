@@ -6,6 +6,15 @@ const ALLOWED_EVENTS = new Set([
   "guide_search",
   "professional_referral_requested",
   "professional_referral_link_issued",
+  "paywall_viewed",
+  "checkout_started",
+  "subscription_completed",
+  "document_uploaded",
+  "custody_schedule_saved",
+  "calendar_exported",
+  "tool_schedule_generated",
+  "tool_calendar_downloaded",
+  "tool_signup_clicked",
 ]);
 
 export default async function handler(req, res) {

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Custody Schedule Calendar Generator (2-2-3, 2-2-5-5, Week On/Off) | Meridian</title>
+  <meta name="description" content="Build a custody schedule calendar in seconds. Pick 2-2-3, 2-2-5-5, week on/week off or every other weekend, preview three months, and download a calendar file for Apple, Google or Outlook. Free, no signup.">
+  <meta name="keywords" content="custody schedule generator, custody calendar template, 2-2-3 custody schedule, 2-2-5-5 schedule calendar, week on week off custody calendar, co-parenting calendar">
+  <link rel="canonical" href="https://www.mymeridianapp.com/tools/custody-schedule/">
+  <meta property="og:title" content="Free Custody Schedule Calendar Generator">
+  <meta property="og:description" content="Pick a schedule, preview three months, and add it to your calendar. Free, no signup.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mymeridianapp.com/tools/custody-schedule/">
+  <meta property="og:site_name" content="Meridian">
+  <link rel="icon" href="/favicon-32.png" type="image/png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #334155; background: #FDFCFB; line-height: 1.7; }
+    .header { border-bottom: 1px solid #f1f5f9; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; max-width: 760px; margin: 0 auto; }
+    .header a { text-decoration: none; color: #334155; font-weight: 600; font-size: 16px; }
+    .header .cta-btn { background: linear-gradient(135deg, #047857, #0f766e); color: white; padding: 8px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+    .page { max-width: 760px; margin: 0 auto; padding: 40px 24px 72px; }
+    h1 { font-size: 32px; font-weight: 300; line-height: 1.25; color: #1e293b; margin-bottom: 12px; letter-spacing: -0.02em; }
+    .lead { font-size: 16px; color: #64748b; margin-bottom: 32px; }
+    h2 { font-size: 20px; font-weight: 400; color: #1e293b; margin: 48px 0 12px; }
+    h3 { font-size: 15px; font-weight: 600; color: #1e293b; }
+    p { font-size: 15px; color: #475569; margin-bottom: 14px; }
+    form { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+    input, select { width: 100%; height: 44px; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0 12px; font-size: 16px; color: #0f172a; background: #fff; }
+    .full { grid-column: 1 / -1; }
+    .hint { font-size: 13px; color: #64748b; margin: 0; }
+    #preview { margin-top: 24px; }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; margin-bottom: 14px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+    .p-a { background: #d1fae5; color: #065f46; }
+    .p-b { background: #e0e7ff; color: #3730a3; }
+    .months { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+    .month { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; }
+    .month h3 { margin-bottom: 8px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .dow { text-align: center; font-size: 10px; color: #94a3b8; }
+    .cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; border-radius: 6px; }
+    .cell.empty, .cell.none { background: transparent; color: #94a3b8; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 22px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; border: 0; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, #047857, #0f766e); color: #fff; }
+    .btn-secondary { background: #fff; color: #047857; border: 1px solid #a7f3d0; }
+    .cta { background: #f8fdfb; border: 1px solid #d1fae5; border-radius: 16px; padding: 28px; margin-top: 40px; text-align: center; }
+    .cta h2 { margin-top: 0; }
+    .cta ul { list-style: none; margin: 0 auto 20px; max-width: 420px; text-align: left; }
+    .cta li { font-size: 14px; color: #475569; padding: 4px 0; }
+    .cta li::before { content: "✓"; color: #047857; font-weight: 700; margin-right: 8px; }
+    .faq h3 { margin-top: 20px; }
+    .footer { text-align: center; padding: 40px 24px; border-top: 1px solid #f1f5f9; }
+    .footer p { font-size: 13px; color: #64748b; }
+    .footer a { color: #047857; text-decoration: none; }
+    @media (max-width: 640px) {
+      h1 { font-size: 26px; }
+      form { grid-template-columns: 1fr; }
+      .months { grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+    }
+  </style>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <div class="header">
+    <a href="/">Meridian</a>
+    <a href="/signup" class="cta-btn" data-signup>Try Meridian</a>
+  </div>
+
+  <main class="page">
+    <h1>Free custody schedule calendar generator</h1>
+    <p class="lead">Choose a schedule, see exactly whose days are whose, and add it to your phone's calendar. No signup, nothing is stored. Everything runs in your browser.</p>
+
+    <form id="generator-form" autocomplete="off">
+      <div class="full">
+        <label for="template">Schedule</label>
+        <select id="template">
+          <option value="2-2-3">2-2-3</option>
+          <option value="2-2-5-5">2-2-5-5</option>
+          <option value="week-on-week-off">Week on / week off</option>
+          <option value="every-other-weekend">Every other weekend</option>
+        </select>
+        <p class="hint" id="template-blurb" style="margin-top:6px;"></p>
+      </div>
+      <div>
+        <label for="name-a">First parent's name</label>
+        <input id="name-a" type="text" placeholder="e.g. Mom" maxlength="30">
+      </div>
+      <div>
+        <label for="name-b">Second parent's name</label>
+        <input id="name-b" type="text" placeholder="e.g. Dad" maxlength="30">
+      </div>
+      <div>
+        <label for="start-date">The pattern starts on</label>
+        <input id="start-date" type="date" required>
+      </div>
+      <div>
+        <label for="start-parent">Who has the kids that day</label>
+        <select id="start-parent">
+          <option value="a">First parent</option>
+          <option value="b">Second parent</option>
+        </select>
+      </div>
+    </form>
+
+    <section id="preview" hidden aria-live="polite">
+      <div class="legend" id="legend"></div>
+      <div class="months" id="months"></div>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="download-ics">Add to my calendar (.ics)</button>
+      </div>
+      <p class="hint" style="margin-top:10px;">Opens in Apple Calendar on iPhone and Mac. For Google Calendar, use Settings → Import &amp; export. Covers one year from your start date. Check it against your court order or parenting plan.</p>
+
+      <div class="cta">
+        <h2>Schedules change. Meridian keeps up.</h2>
+        <ul>
+          <li>Swap a weekend and every view updates</li>
+          <li>Keep your decree and key documents in one private vault</li>
+          <li>Draft calmer messages to your co-parent</li>
+        </ul>
+        <a class="btn btn-primary" href="/signup" data-signup>Keep this schedule in Meridian</a>
+        <p class="hint" style="margin-top:12px;">3-day free trial. Cancel anytime.</p>
+      </div>
+    </section>
+
+    <h2>How the common custody schedules work</h2>
+    <div class="faq">
+      <h3>2-2-3</h3>
+      <p>One parent has the children for two days, the other for two, then the first has a three-day stretch. The next week it flips, so each parent gets a long weekend every other week. Children never go more than three days without seeing either parent.</p>
+      <h3>2-2-5-5</h3>
+      <p>Each parent has two weekdays, then five-day blocks that cover the weekend on alternating weeks. The weekly rhythm stays the same, which many families find easier to remember than 2-2-3.</p>
+      <h3>Week on / week off</h3>
+      <p>The children live with one parent for seven days, then the other. There is one handoff a week. It suits older children and parents who live close enough to manage a longer gap.</p>
+      <h3>Every other weekend</h3>
+      <p>One parent has the children on weekdays, and the other has alternating weekends. Many orders add a midweek dinner or extra holiday time on top of this base pattern.</p>
+      <h3>Does this replace my court order?</h3>
+      <p>No. This is a planning tool. Your court order or parenting plan controls holidays, summers, and exceptions, so use the calendar as a starting point and confirm it matches your agreement.</p>
+    </div>
+  </main>
+
+  <div class="footer">
+    <p>&copy; <span data-current-year></span> <a href="/">Meridian</a> · <a href="/guides/">Guides</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/professionals/">For Professionals</a></p>
+  </div>
+  <script type="module" src="/tools/custody-schedule/app.js"></script>
+  <script src="/site.js" defer></script>
+</body>
+</html>

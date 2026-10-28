@@ -2,7 +2,7 @@ document.querySelectorAll("[data-current-year]").forEach((element) => {
   element.textContent = new Date().getFullYear();
 });
 
-const allowedEvents = new Set(["guide_search", "professional_referral_requested"]);
+const allowedEvents = new Set(["guide_search", "professional_referral_requested", "tool_schedule_generated", "tool_calendar_downloaded", "tool_signup_clicked"]);
 const trackEvent = (event) => {
   if (!allowedEvents.has(event)) return;
   const body = new Blob([JSON.stringify({ event })], { type: "application/json" });
