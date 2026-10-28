@@ -52,7 +52,7 @@ function AppleCalendarLogo({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-// October 2026 starts on a Thursday. Mon–Tue Jordan, Wed–Thu Sam, Fri–Sun alternates by week.
+// October 2026 starts on a Thursday. Mon–Tue Eric, Wed–Thu Sam, Fri–Sun alternates by week.
 function owner(day: number): "me" | "co" {
   const mondayIndex = (4 + day - 1 + 6) % 7;
   if (mondayIndex <= 1) return "me";
@@ -91,7 +91,7 @@ function TodayPanel({ go }: { go: (t: Tab) => void }) {
     <div>
       <div className="mb-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Wednesday, October 28</p>
-        <h3 className="mt-1 text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">Good evening, Jordan.</h3>
+        <h3 className="mt-1 text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">Good evening, Eric.</h3>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-[22px] bg-gradient-to-br from-[#123f36] to-[#0f766e] p-5 text-white sm:p-6">
@@ -274,8 +274,8 @@ export function ProductPreview() {
           <span className="text-sm font-semibold text-slate-800">Meridian</span>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="hidden text-xs text-slate-500 sm:block">Jordan Ellis</span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-semibold text-emerald-800">JE</span>
+          <span className="hidden text-xs text-slate-500 sm:block">Eric Walker</span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-semibold text-emerald-800">EW</span>
         </div>
       </div>
 

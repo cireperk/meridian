@@ -10,11 +10,11 @@ test("merges consecutive custody days into single all-day events", () => {
     days: 4,
     custodyFor: (date) => (date < "2026-11-03" ? "me" : "coparent"),
     childName: "Dawson",
-    coparentName: "Jordan",
+    coparentName: "Eric",
     now,
   });
   assert.match(ics, /SUMMARY:Dawson with you/);
-  assert.match(ics, /SUMMARY:Dawson with Jordan/);
+  assert.match(ics, /SUMMARY:Dawson with Eric/);
   assert.match(ics, /DTSTART;VALUE=DATE:20261101\r\nDTEND;VALUE=DATE:20261103/);
   assert.match(ics, /DTSTART;VALUE=DATE:20261103\r\nDTEND;VALUE=DATE:20261105/);
   assert.equal(ics.match(/BEGIN:VEVENT/g).length, 2);
