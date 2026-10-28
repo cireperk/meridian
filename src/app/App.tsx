@@ -1981,11 +1981,6 @@ export default function App() {
             {/* ===== SECTION 1: Hero ===== */}
             <div className="min-h-[calc(100dvh-60px)] grid grid-cols-1 items-center gap-7 px-6 py-8 max-w-7xl mx-auto relative z-10 lg:grid-cols-2 lg:gap-14 lg:px-10 lg:py-12 xl:px-14">
               <div className="w-full max-w-xl mx-auto lg:mx-0">
-              <div className="mb-5 hidden items-center justify-center gap-3 lg:flex lg:justify-start">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-700"><Sparkles className="h-4 w-4" /></span>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Private support through life’s transitions</span>
-              </div>
-
               <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="text-[1.9rem] min-[380px]:text-[2.45rem] sm:text-5xl font-light tracking-tight text-slate-800 text-center mb-3 leading-[1.04] lg:text-left lg:text-[3.5rem] xl:text-[3.8rem]">
                 <span>Hard chapter.<br /></span>
                 <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-serif font-normal italic">Not the last one.</span>
