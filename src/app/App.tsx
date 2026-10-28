@@ -2479,20 +2479,6 @@ export default function App() {
                   <p className="text-slate-800 font-medium">That's why I built Meridian.</p>
                 </div>
 
-                {/* Founder video */}
-                <div className="w-full rounded-2xl overflow-hidden shadow-lg shadow-slate-900/10 mb-10">
-                  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src="https://www.youtube.com/embed/wlnhSIS11I8?rel=0&modestbranding=1"
-                      title="A message from our founder"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-
                 {/* Final CTA */}
                 <div className="flex flex-col items-center gap-3">
                   <p className="text-lg sm:text-xl font-light text-slate-800 mb-2">Whenever you're ready.</p>
