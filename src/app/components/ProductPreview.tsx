@@ -94,21 +94,38 @@ function TodayPanel({ go }: { go: (t: Tab) => void }) {
         <h3 className="mt-1 text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">Good evening, Eric.</h3>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[22px] bg-gradient-to-br from-[#123f36] to-[#0f766e] p-5 text-white sm:p-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-100/80">Next handoff</p>
-          <p className="mt-2 text-xl font-medium leading-snug sm:text-2xl">Friday at 6:00 PM</p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-50/85"><MapPin className="h-3.5 w-3.5" />Oakridge Elementary pickup · Maya &amp; Eli with you through Sunday</p>
+        <div className="flex flex-col rounded-[22px] bg-gradient-to-br from-[#123f36] to-[#0f766e] p-5 text-white sm:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-100/80">Next handoff</p>
+              <p className="mt-2 text-xl font-medium leading-snug sm:text-2xl">Friday at 6:00 PM</p>
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-emerald-50/85"><MapPin className="h-3.5 w-3.5" />Oakridge Elementary pickup</p>
+            </div>
+            <span className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-semibold">in 2 days</span>
+          </div>
           <div className="mt-5 grid grid-cols-7 gap-1.5">
             {[26, 27, 28, 29, 30, 31, 1].map((d, i) => {
-              const mine = d === 1 ? false : owner(d) === "me";
+              const mine = d === 1 || owner(d) === "me";
               return (
                 <div key={d} className={cn("rounded-lg px-1 py-2 text-center", d === 28 ? "bg-white text-emerald-900" : mine ? "bg-white/20" : "bg-white/8 text-white/70")}>
-                  <p className="text-[8px] uppercase opacity-70">{["M", "T", "W", "T", "F", "S", "S"][i]}</p>
+                  <p className="text-[8px] uppercase opacity-70">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}</p>
                   <p className="text-xs font-semibold">{d}</p>
-                  <span className={cn("mx-auto mt-1 block h-1 w-1 rounded-full", mine ? "bg-emerald-300" : "bg-white/40")} />
+                  <p className={cn("mt-1 text-[8px] font-medium", d === 28 ? "text-emerald-700" : "text-white/70")}>{mine ? "You" : "Sam"}</p>
                 </div>
               );
             })}
+          </div>
+          <div className="mt-5 grid flex-1 content-end gap-2.5 sm:grid-cols-2">
+            <div className="rounded-xl bg-white/10 p-3.5">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-100/70">This week</p>
+              <p className="mt-1 text-sm font-medium">Kids with Sam until Friday</p>
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-full w-[45%] rounded-full bg-emerald-300" /></div>
+            </div>
+            <div className="rounded-xl bg-white/10 p-3.5">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-100/70">Thanksgiving · 29 days</p>
+              <p className="mt-1 text-sm font-medium">With Sam, Wed 6 PM – Sun 6 PM</p>
+              <p className="mt-1.5 text-[10px] text-emerald-50/75">Travel notice due Nov 11</p>
+            </div>
           </div>
         </div>
         <div className="space-y-3">
