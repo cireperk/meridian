@@ -14,6 +14,7 @@ import { trackEvent } from "./analytics";
 import { buildCalendarIcs } from "../../lib/calendar-export.js";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Logo } from "./components/Logo";
+import { ProductPreview } from "./components/ProductPreview";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -787,7 +788,6 @@ export default function App() {
   const [appReady, setAppReady] = useState(() => window.location.hash.includes("access_token=") ? false : (!!localStorage.getItem("m_session") || isNative));
   const [oauthProcessing, setOauthProcessing] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
-  const [previewSlide, setPreviewSlide] = useState(0);
   const [showLaunchSplash, setShowLaunchSplash] = useState(isNative);
   const [showVideo, setShowVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
@@ -2254,134 +2254,7 @@ export default function App() {
                   <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">Your plans, documents, and next steps—organized around what matters to you.</p>
                 </div>
 
-                <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_28px_80px_-40px_rgba(15,23,42,0.28)]">
-                  <div className="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="flex items-center gap-2.5">
-                      <Logo size="sm" />
-                      <span className="text-sm font-semibold text-slate-800">Your private space</span>
-                      <span className="hidden rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-500 sm:inline-flex">Sample view</span>
-                    </div>
-                    <div className="flex w-full rounded-xl bg-slate-100 p-1 sm:w-auto" role="tablist" aria-label="Meridian sample screens">
-                      {[
-                        { label: "Today", icon: Home, index: 0 },
-                        { label: "Vault", icon: FolderLock, index: 1 },
-                      ].map(({ label, icon: Icon, index }) => (
-                        <button key={label} id={`preview-tab-${index}`} role="tab" aria-selected={previewSlide === index} aria-controls="meridian-preview-panel" onClick={() => setPreviewSlide(index)} className={cn("flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg px-5 text-xs font-semibold transition-colors sm:flex-none", previewSlide === index ? "bg-white text-emerald-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
-                          <Icon className="h-4 w-4" />{label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid min-h-[440px] bg-[#f7f9f8] md:grid-cols-[168px_minmax(0,1fr)]">
-                    <aside className="hidden border-r border-slate-100 bg-white p-4 md:block">
-                      <p className="mb-4 px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">Meridian</p>
-                      {[
-                        { label: "Today", icon: Home, active: previewSlide === 0 },
-                        { label: "Talk", icon: MessageSquare, active: false },
-                        { label: "Vault", icon: FolderLock, active: previewSlide === 1 },
-                        { label: "Calendar", icon: CalendarDays, active: false },
-                      ].map(({ label, icon: Icon, active }) => (
-                        <div key={label} className={cn("mb-1 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-medium", active ? "bg-emerald-50 text-emerald-800" : "text-slate-400")}>
-                          <Icon className="h-4 w-4" strokeWidth={1.7} />{label}
-                        </div>
-                      ))}
-                      <div className="mt-8 rounded-2xl bg-emerald-50/80 p-3">
-                        <Shield className="h-4 w-4 text-emerald-700" />
-                        <p className="mt-2 text-[10px] font-semibold text-slate-700">Your space, your pace</p>
-                        <p className="mt-1 text-[9px] leading-relaxed text-slate-500">Keep the important pieces together.</p>
-                      </div>
-                    </aside>
-
-                    <div id="meridian-preview-panel" role="tabpanel" aria-labelledby={`preview-tab-${previewSlide}`} className="min-w-0 p-4 sm:p-6 lg:p-8">
-                      <AnimatePresence mode="wait">
-                        {previewSlide === 0 ? (
-                          <motion.div key="today-preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-                              <div>
-                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Today</p>
-                                <h3 className="text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">A clearer view of what’s ahead.</h3>
-                              </div>
-                              <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-[10px] font-medium text-emerald-800"><Shield className="h-3.5 w-3.5" />Private to you</span>
-                            </div>
-                            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                              <div className="rounded-[22px] bg-gradient-to-br from-[#123f36] to-[#0f766e] p-5 text-white sm:p-6">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200">Your day, at a glance</p>
-                                <p className="mt-3 max-w-sm text-xl font-medium leading-snug sm:text-2xl">Bring the moving pieces together.</p>
-                                <p className="mt-2 max-w-sm text-xs leading-relaxed text-emerald-50/80 sm:text-sm">A home for the dates, documents, and next steps you want to keep close.</p>
-                                <div className="mt-6 flex flex-wrap gap-2">
-                                  {[
-                                    { label: "Calendar", icon: CalendarDays },
-                                    { label: "Documents", icon: FolderLock },
-                                    { label: "Next steps", icon: Check },
-                                  ].map(({ label, icon: Icon }) => (
-                                    <span key={label} className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-2 text-[10px] font-medium text-white/90">
-                                      <Icon className="h-3.5 w-3.5" />{label}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                                {[
-                                  { icon: CalendarDays, title: "Your schedule", desc: "Important dates and plans, together.", color: "bg-emerald-50 text-emerald-700" },
-                                  { icon: FolderLock, title: "Your documents", desc: "Keep key details close at hand.", color: "bg-amber-50 text-amber-700" },
-                                ].map(({ icon: Icon, title, desc, color }) => (
-                                  <div key={title} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                                    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", color)}><Icon className="h-4 w-4" /></span>
-                                    <span><strong className="block text-xs font-semibold text-slate-800">{title}</strong><span className="mt-1 block text-[10px] leading-relaxed text-slate-500">{desc}</span></span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                              {[
-                                { icon: MessageSquare, title: "Talk it through", desc: "Make room to think clearly." },
-                                { icon: FileText, title: "Understand a document", desc: "Get a plain-language explanation." },
-                                { icon: Sparkles, title: "Find a next step", desc: "Start with what needs attention." },
-                              ].map(({ icon: Icon, title, desc }) => (
-                                <div key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5">
-                                  <Icon className="h-4 w-4 shrink-0 text-emerald-700" />
-                                  <span><strong className="block text-[11px] font-semibold text-slate-700">{title}</strong><span className="mt-0.5 block text-[9px] text-slate-400">{desc}</span></span>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <motion.div key="vault-preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-                              <div>
-                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Your Vault</p>
-                                <h3 className="text-2xl font-light tracking-tight text-slate-800 sm:text-3xl">Important details, in one place.</h3>
-                              </div>
-                              <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-white px-3 py-1.5 text-[10px] font-medium text-emerald-800"><Lock className="h-3.5 w-3.5" />Your private files</span>
-                            </div>
-                            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                              <div className="space-y-3">
-                                {[
-                                  { icon: FileText, title: "Parenting plan.pdf", meta: "PDF · Added to your Vault", tone: "text-rose-600 bg-rose-50" },
-                                  { icon: CalendarDays, title: "School calendar", meta: "Schedule · Saved for reference", tone: "text-emerald-700 bg-emerald-50" },
-                                  { icon: FileText, title: "Important notes", meta: "Document · Added to your Vault", tone: "text-blue-700 bg-blue-50" },
-                                ].map(({ icon: Icon, title, meta, tone }) => (
-                                  <div key={title} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-                                    <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", tone)}><Icon className="h-5 w-5" /></span>
-                                    <span className="min-w-0 flex-1"><strong className="block truncate text-xs font-semibold text-slate-800">{title}</strong><span className="mt-1 block text-[10px] text-slate-500">{meta}</span></span>
-                                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="rounded-[22px] border border-emerald-100 bg-emerald-50/70 p-5 sm:p-6">
-                                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm"><Shield className="h-5 w-5" /></span>
-                                <h4 className="mt-4 text-base font-semibold text-slate-800">Your documents stay yours.</h4>
-                                <p className="mt-2 text-xs leading-relaxed text-slate-600">Your Vault belongs to your account. Choose what to keep, and use document tools when you need help understanding what’s there.</p>
-                                <p className="mt-5 flex items-center gap-2 text-[10px] font-medium text-emerald-800"><Lock className="h-3.5 w-3.5" />Private account storage</p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
+                <ProductPreview />
               </motion.div>
             </div>
 
